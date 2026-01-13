@@ -1183,6 +1183,88 @@
         </div>
       </section>
 
+      <section class="page-section content-width--wide">
+        <div class="content-wrapper">
+          <div class="content">
+            <style>
+              .aravt-gallery {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
+                padding: 20px 0;
+              }
+
+              .gallery-item {
+                position: relative;
+                overflow: hidden;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                aspect-ratio: 16 / 9;
+              }
+
+              .gallery-item:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+              }
+
+              .gallery-item img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+              }
+
+              .gallery-caption {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+                color: white;
+                padding: 20px 15px 10px;
+                font-size: 0.9rem;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+              }
+
+              .gallery-item:hover .gallery-caption {
+                opacity: 1;
+              }
+
+              @media (max-width: 768px) {
+                .aravt-gallery {
+                  grid-template-columns: 1fr;
+                }
+              }
+            </style>
+
+            <div class="aravt-gallery">
+              <div class="gallery-item">
+                <img src="/images/aravt/combat.png" alt="Steppe Combat">
+                <div class="gallery-caption">Historical tactical combat on the open steppe.</div>
+              </div>
+              <div class="gallery-item">
+                <img src="/images/aravt/map.png" alt="Hexploration">
+                <div class="gallery-caption">Explore a vast, procedurally generated world.</div>
+              </div>
+              <div class="gallery-item">
+                <img src="/images/aravt/camp.png" alt="Living Camp">
+                <div class="gallery-caption">Manage your camp and base of operations.</div>
+              </div>
+              <div class="gallery-item">
+                <img src="/images/aravt/soldier.png" alt="Hidden Attributes">
+                <div class="gallery-caption">Deep social simulation and character traits.</div>
+              </div>
+              <div class="gallery-item">
+                <img src="/images/aravt/reports.png" alt="Detailed Reports">
+                <div class="gallery-caption">Detailed mechanics and decision-rich reports.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
 
 
 
