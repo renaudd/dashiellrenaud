@@ -1,0 +1,115 @@
+/* Seahorse Comedy Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --bg-dark: hsla(205.56, 61%, 17%, 1);
+    --text-primary: #28211e;
+    --accent-teal: hsla(185.27, 36%, 49%, 1);
+    --font-heading: 'Archivo Black', sans-serif;
+    --font-body: 'Space Grotesk', sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    background-color: #fff;
+    overflow-x: hidden;
+}
+
+header {
+    background-color: var(--bg-dark);
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+header img {
+    height: 60px;
+}
+
+header nav {
+    display: flex;
+    gap: 2rem;
+}
+
+header nav a {
+    color: var(--accent-teal);
+    text-decoration: none;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+header nav a:hover {
+    color: white;
+}
+
+footer {
+    padding: 4rem 2rem;
+    background-color: #f9f9f9;
+    text-align: center;
+}
+
+footer img {
+    height: 100px;
+    margin-bottom: 2rem;
+}
+
+footer .social-links {
+    margin: 2rem 0;
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+footer .social-links a {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+}
+
+footer p {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Home Page specific */
+.hero {
+    min-height: 80vh;
+    background-image: url('images/home_bg.png');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+}
+
+.hero h2 {
+    font-family: var(--font-heading);
+    font-size: 4rem;
+    max-width: 800px;
+    margin-bottom: 2rem;
+}
+
+.hero .logo-main {
+    height: 200px;
+    margin-bottom: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero h2 {
+        font-size: 2.5rem;
+    }
+    header nav {
+        display: none; /* Add burger menu later */
+    }
+}

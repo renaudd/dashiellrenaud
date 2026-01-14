@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking - Seahorse Comedy</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .booking-hero {
+            background-image: url('../images/booking_bg.png');
+            background-size: cover;
+            background-position: center;
+            padding: 6rem 2rem;
+            text-align: center;
+            min-height: 80vh;
+        }
+        .marquee {
+            font-family: var(--font-heading);
+            font-size: 3rem;
+            color: var(--accent-teal);
+            background: var(--bg-dark);
+            padding: 1rem 0;
+            overflow: hidden;
+            white-space: nowrap;
+            margin-bottom: 3rem;
+        }
+        .marquee span {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 20s linear infinite;
+        }
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+        .booking-form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        iframe {
+            width: 100%;
+            height: 800px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <a href="../index.html">
+            <img src="../images/seahorse_icon_2.png" alt="Seahorse Comedy Icon">
+        </a>
+    </div>
+    <nav>
+        <a href="../about/index.html">About</a>
+        <a href="../barbary/index.html">Up in Jokes</a>
+        <a href="../unwined/index.html">Sip Happens!</a>
+        <a href="index.html">Booking</a>
+    </nav>
+</header>
+
+<main>
+    <div class="marquee">
+        <span>WANNA GET BOOKED? WANNA GET BOOKED? WANNA GET BOOKED? WANNA GET BOOKED?</span>
+    </div>
+
+    <section class="booking-hero">
+        <div class="booking-form-container">
+            <h2>GET IN TOUCH</h2>
+            <p>Please fill out the interest form below (opening in a new window for security), or email us at seahorsecomedysf@gmail.com</p>
+            <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSe6G1qbU52QLyzhKsCrH9PPRx9v4_O3caqy3HkV4Crm_b6TfA/viewform?embedded=true">Loading…</iframe>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <img src="../images/logo_main.png" alt="Seahorse Comedy Logo">
+    <div class="social-links">
+        <a href="https://www.instagram.com/seahorsecomedy/">Instagram</a>
+        <a href="https://www.facebook.com/profile.php?id=100087659251176">Facebook</a>
+        <a href="https://www.youtube.com/@seahorsecomedy">YouTube</a>
+    </div>
+    <p>© Seahorse Comedy. Website by Dotdaaz Digital.</p>
+</footer>
+
+</body>
+</html>
