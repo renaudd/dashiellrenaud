@@ -13,66 +13,74 @@
             padding: 6rem 2rem;
             text-align: center;
             min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-        .marquee {
+        .marquee-booking {
             font-family: var(--font-heading);
             font-size: 3rem;
             color: var(--accent-teal);
             background: var(--bg-dark);
-            padding: 1rem 0;
+            padding: 1.5rem 0;
             overflow: hidden;
             white-space: nowrap;
-            margin-bottom: 3rem;
         }
-        .marquee span {
+        .marquee-booking span {
             display: inline-block;
             padding-left: 100%;
             animation: marquee 20s linear infinite;
         }
-        @keyframes marquee {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
         .booking-form-container {
             max-width: 800px;
+            width: 100%;
             margin: 0 auto;
             background: white;
-            padding: 2rem;
+            padding: 3rem;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+        }
+        .booking-form-container h2 {
+            font-family: var(--font-heading);
+            font-size: 3rem;
+            margin-bottom: 1rem;
         }
         iframe {
             width: 100%;
             height: 800px;
             border: none;
+            margin-top: 2rem;
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">
-        <a href="../index.html">
-            <img src="../images/seahorse_icon_2.png" alt="Seahorse Comedy Icon">
-        </a>
-    </div>
     <nav>
         <a href="../about/index.html">About</a>
         <a href="../barbary/index.html">Up in Jokes</a>
+    </nav>
+    <div class="header-logo-center">
+        <a href="../index.html">
+            <img src="../images/seahorse_icon_center.png" alt="Seahorse Comedy Icon">
+        </a>
+    </div>
+    <nav style="justify-content: flex-end;">
         <a href="../unwined/index.html">Sip Happens!</a>
         <a href="index.html">Booking</a>
     </nav>
 </header>
 
 <main>
-    <div class="marquee">
+    <div class="marquee-booking">
         <span>WANNA GET BOOKED? WANNA GET BOOKED? WANNA GET BOOKED? WANNA GET BOOKED?</span>
     </div>
 
     <section class="booking-hero">
         <div class="booking-form-container">
             <h2>GET IN TOUCH</h2>
-            <p>Please fill out the interest form below (opening in a new window for security), or email us at seahorsecomedysf@gmail.com</p>
+            <p style="font-size: 1.2rem;">Please fill out the interest form below or email us at
+                <strong>seahorsecomedysf@gmail.com</strong></p>
             <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSe6G1qbU52QLyzhKsCrH9PPRx9v4_O3caqy3HkV4Crm_b6TfA/viewform?embedded=true">Loading…</iframe>
         </div>
     </section>
@@ -81,9 +89,9 @@
 <footer>
     <img src="../images/logo_main.png" alt="Seahorse Comedy Logo">
     <div class="social-links">
-        <a href="https://www.instagram.com/seahorsecomedy/">Instagram</a>
-        <a href="https://www.facebook.com/profile.php?id=100087659251176">Facebook</a>
-        <a href="https://www.youtube.com/@seahorsecomedy">YouTube</a>
+        <a href="https://www.instagram.com/seahorsecomedy/" target="_blank">Instagram</a>
+        <a href="https://www.facebook.com/profile.php?id=100087659251176" target="_blank">Facebook</a>
+        <a href="https://www.youtube.com/@seahorsecomedy" target="_blank">YouTube</a>
     </div>
     <p>© Seahorse Comedy. Website by Dotdaaz Digital.</p>
 </footer>

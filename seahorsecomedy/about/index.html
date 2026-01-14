@@ -6,82 +6,99 @@
     <title>About - Seahorse Comedy</title>
     <link rel="stylesheet" href="../style.css">
     <style>
-        .about-content {
-            padding: 4rem 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-            text-align: center;
+        .about-section {
+            display: grid;
+            grid-template-columns: repeat(24, 1fr);
+            background-color: #891E19; /* Red background */
+            color: white;
+            min-height: 100vh;
+            align-items: center;
+            padding: 4rem 2vw;
+            gap: 20px;
         }
-        .about-content h1 {
+        .about-image {
+            grid-column: 2 / span 9;
+        }
+        .about-image img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .about-text {
+            grid-column: 12 / span 12;
+            text-align: left;
+        }
+        .about-text h1 {
             font-family: var(--font-heading);
-            font-size: 3.5rem;
+            font-size: 4rem;
             margin-bottom: 2rem;
+            color: var(--accent-teal);
         }
-        .about-content p {
-            font-size: 1.2rem;
+        .about-text p {
+            font-size: 1.3rem;
             line-height: 1.6;
             margin-bottom: 2rem;
         }
-        .flyer {
-            max-width: 600px;
-            width: 100%;
-            margin: 2rem 0;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-        .schedule-box {
-            background-color: var(--bg-dark);
-            color: white;
-            padding: 2rem;
-            border-radius: 12px;
-            margin-top: 3rem;
-        }
-        .schedule-box h3 {
-            color: var(--accent-teal);
-            margin-bottom: 1rem;
+        @media (max-width: 900px) {
+            .about-section {
+                grid-template-columns: 1fr;
+                padding: 4rem 1rem;
+            }
+            .about-image, .about-text {
+                grid-column: 1 / -1;
+            }
+            .about-text h1 {
+                font-size: 2.5rem;
+            }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">
+    <nav>
+        <a href="../about/index.html">About</a>
+        <a href="../barbary/index.html">Up in Jokes</a>
+    </nav>
+    <div class="header-logo-center">
         <a href="../index.html">
-            <img src="../images/seahorse_icon_2.png" alt="Seahorse Comedy Icon">
+            <img src="../images/seahorse_icon_center.png" alt="Seahorse Comedy Icon">
         </a>
     </div>
-    <nav>
-        <a href="index.html">About</a>
-        <a href="../barbary/index.html">Up in Jokes</a>
+    <nav style="justify-content: flex-end;">
         <a href="../unwined/index.html">Sip Happens!</a>
         <a href="../booking/index.html">Booking</a>
     </nav>
 </header>
 
-<main class="about-content">
-    <h1>AHOY THERE!</h1>
-    <p>Welcome to Seahorse Comedy, bringing top-tier comedy to chill environments since 2022.</p>
-    
-    <img src="../images/flyers/about_flyer.png" alt="Events Schedule Flyer" class="flyer">
-
-    <div class="schedule-box">
-        <h3>When & Where:</h3>
-        <p>🐚 <strong>Barbary Coast Dispensary Lounge</strong> — Tuesdays at 6:30 p.m.</p>
-        <p>🍷 <strong>Unwine’d</strong> — Every Third Wednesday at 8 p.m.</p>
-    </div>
-
-    <div style="margin-top: 4rem;">
-        <h3>F.A.Q.</h3>
-        <p>Slide into our Instagram inbox for any questions!</p>
-    </div>
+<main>
+    <section class="about-section">
+        <div class="about-image">
+            <img src="../images/flyers/about_flyer.png" alt="Seahorse Comedy Events">
+        </div>
+        <div class="about-text">
+            <h1>AHOY THERE!</h1>
+            <p>Seahorse Comedy was founded in 2022 by a group of comedians who wanted to bring high-quality stand-up to the most
+                unique environments in San Francisco.</p>
+            <p>From the lush lounge of the Barbary Coast Dispensary to the intimate atmosphere of Unwine’d in West Portal, we
+                specialize in "Elevated Comedy" that pairs world-class talent with exceptional local vibes.</p>
+            <p>Our shows have featured talent seen on Netflix, HBO, Comedy Central, and beyond. We are committed to fostering a
+                diverse and hilarious community of artists and fans.</p>
+            <div style="margin-top: 3rem;">
+                <h3 style="color: var(--accent-teal);">WEEKLY SHOWS:</h3>
+                <p>🐚 <strong>Tuesdays @ 6:30 PM</strong> - Barbary Coast</p>
+                <p>🍷 <strong>3rd Wednesdays @ 8:00 PM</strong> - Unwine’d SF</p>
+            </div>
+        </div>
+    </section>
 </main>
 
 <footer>
     <img src="../images/logo_main.png" alt="Seahorse Comedy Logo">
     <div class="social-links">
-        <a href="https://www.instagram.com/seahorsecomedy/">Instagram</a>
-        <a href="https://www.facebook.com/profile.php?id=100087659251176">Facebook</a>
-        <a href="https://www.youtube.com/@seahorsecomedy">YouTube</a>
+        <a href="https://www.instagram.com/seahorsecomedy/" target="_blank">Instagram</a>
+        <a href="https://www.facebook.com/profile.php?id=100087659251176" target="_blank">Facebook</a>
+        <a href="https://www.youtube.com/@seahorsecomedy" target="_blank">YouTube</a>
     </div>
     <p>© Seahorse Comedy. Website by Dotdaaz Digital.</p>
 </footer>

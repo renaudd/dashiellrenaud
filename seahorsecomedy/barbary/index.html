@@ -13,6 +13,11 @@
             padding: 6rem 2rem;
             text-align: center;
             color: white;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         .barbary-hero img {
             max-width: 500px;
@@ -29,15 +34,17 @@
             font-family: var(--font-heading);
             font-size: 1.2rem;
             margin-top: 2rem;
+            transition: transform 0.2s;
         }
         .reserve-btn:hover {
+            transform: scale(1.05);
             background-color: white;
             color: var(--bg-dark);
         }
         .info-section {
             padding: 4rem 2rem;
             text-align: center;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
         }
         iframe {
@@ -53,14 +60,16 @@
 <body>
 
 <header>
-    <div class="logo">
-        <a href="../index.html">
-            <img src="../images/seahorse_icon_2.png" alt="Seahorse Comedy Icon">
-        </a>
-    </div>
     <nav>
         <a href="../about/index.html">About</a>
         <a href="index.html">Up in Jokes</a>
+    </nav>
+    <div class="header-logo-center">
+        <a href="../index.html">
+            <img src="../images/seahorse_icon_center.png" alt="Seahorse Comedy Icon">
+        </a>
+    </div>
+    <nav style="justify-content: flex-end;">
         <a href="../unwined/index.html">Sip Happens!</a>
         <a href="../booking/index.html">Booking</a>
     </nav>
@@ -69,14 +78,13 @@
 <main>
     <section class="barbary-hero">
         <img src="../images/barbary_banner.png" alt="Up in Jokes Banner">
-        <h1>UP IN JOKES</h1>
-        <p>COMEDY THAT'S LIT, LITERALLY.</p>
-        <a href="https://www.opentable.com/booking/experiences-availability?rid=1344037&restref=1344037&experienceId=238384" class="reserve-btn">Reserve a Table</a>
+        <a href="https://www.opentable.com/booking/experiences-availability?rid=1344037&restref=1344037&experienceId=238384"
+            target="_blank" class="reserve-btn">RESERVE A TABLE</a>
     </section>
 
     <section class="info-section">
-        <h2>Tuesdays @ 6:30 PM</h2>
-        <p>Join us in the Barbary Coast Dispensary Lounge for a night of elevated comedy.</p>
+        <h2 style="font-family: var(--font-heading); font-size: 2.5rem;">TUESDAYS @ 6:30 PM</h2>
+        <p style="font-size: 1.2rem;">Join us in the Barbary Coast Dispensary Lounge for a night of elevated comedy.</p>
         
         <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSrXn4X_G8vkfM7KrqR4dT4RfQm1RfE-MogCL4s2EjFQSByoVWIEPPmlmcOyRVzHNNbefe_A1YT2DIi/pubhtml?widget=true&amp;headers=false"></iframe>
     </section>
@@ -85,9 +93,9 @@
 <footer>
     <img src="../images/logo_main.png" alt="Seahorse Comedy Logo">
     <div class="social-links">
-        <a href="https://www.instagram.com/seahorsecomedy/">Instagram</a>
-        <a href="https://www.facebook.com/profile.php?id=100087659251176">Facebook</a>
-        <a href="https://www.youtube.com/@seahorsecomedy">YouTube</a>
+        <a href="https://www.instagram.com/seahorsecomedy/" target="_blank">Instagram</a>
+        <a href="https://www.facebook.com/profile.php?id=100087659251176" target="_blank">Facebook</a>
+        <a href="https://www.youtube.com/@seahorsecomedy" target="_blank">YouTube</a>
     </div>
     <p>© Seahorse Comedy. Website by Dotdaaz Digital.</p>
 </footer>

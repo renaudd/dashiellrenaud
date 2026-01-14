@@ -10,56 +10,65 @@
             background-image: url('../images/unwined_bg.png');
             background-size: cover;
             background-position: center;
-            padding: 6rem 2rem;
+            padding: 8rem 2rem;
             text-align: center;
             color: white;
         }
         .unwined-hero h1 {
             font-family: var(--font-heading);
-            font-size: 3.5rem;
+            font-size: 4rem;
             margin-bottom: 2rem;
+            line-height: 1;
         }
         .rsvp-btn {
             display: inline-block;
             background-color: #d1410c; /* Eventbrite orange */
             color: white;
-            padding: 1rem 2rem;
+            padding: 1.2rem 2.5rem;
             text-decoration: none;
             border-radius: 4px;
             font-weight: bold;
+            font-family: var(--font-heading);
             margin-top: 2rem;
+            transition: opacity 0.2s;
+        }
+        .rsvp-btn:hover {
+            opacity: 0.9;
         }
         .unwined-info {
             background-image: url('../images/unwined_bg_2.png');
             background-size: cover;
-            padding: 4rem 2rem;
+            padding: 6rem 2rem;
             text-align: center;
         }
         .logo-sip {
-            max-width: 200px;
+            max-width: 250px;
             margin-bottom: 2rem;
         }
         iframe {
             width: 100%;
             height: 500px;
             border: none;
-            margin-top: 2rem;
+            margin-top: 3rem;
             border-radius: 12px;
             background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">
-        <a href="../index.html">
-            <img src="../images/seahorse_icon_2.png" alt="Seahorse Comedy Icon">
-        </a>
-    </div>
     <nav>
         <a href="../about/index.html">About</a>
         <a href="../barbary/index.html">Up in Jokes</a>
+    </nav>
+    <div class="header-logo-center">
+        <a href="../index.html">
+            <img src="../images/seahorse_icon_center.png" alt="Seahorse Comedy Icon">
+        </a>
+    </div>
+    <nav style="justify-content: flex-end;">
         <a href="index.html">Sip Happens!</a>
         <a href="../booking/index.html">Booking</a>
     </nav>
@@ -68,14 +77,16 @@
 <main>
     <section class="unwined-hero">
         <h1>SIP HAPPENS!</h1>
-        <p>Every 3rd Wednesday @ Unwine’d SF</p>
-        <a href="https://www.eventbrite.com/e/unwined-wednesdays-tickets-989722736347" class="rsvp-btn">RSVP ON EVENTBRITE</a>
+        <p style="font-size: 1.5rem; font-weight: 500;">Every 3rd Wednesday @ Unwine’d SF</p>
+        <a href="https://www.eventbrite.com/e/unwined-wednesdays-tickets-989722736347" target="_blank" class="rsvp-btn">RSVP ON
+            EVENTBRITE</a>
     </section>
 
     <section class="unwined-info">
         <img src="../images/sip_happens_logo.png" alt="Sip Happens Logo" class="logo-sip">
-        <h2>SIP. LAUGH. REPEAT.</h2>
-        <p>A monthly showcase of the best comedians in the Bay Area, paired with great wine.</p>
+        <h2 style="font-family: var(--font-heading); font-size: 3rem; margin-bottom: 1rem;">SIP. LAUGH. REPEAT.</h2>
+        <p style="font-size: 1.2rem; max-width: 800px; margin: 0 auto;">A monthly showcase of the best comedians in the Bay
+            Area, paired with great wine and an intimate atmosphere.</p>
         
         <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSrXn4X_G8vkfM7KrqR4dT4RfQm1RfE-MogCL4s2EjFQSByoVWIEPPmlmcOyRVzHNNbefe_A1YT2DIi/pubhtml?widget=true&amp;headers=false"></iframe>
     </section>
@@ -84,9 +95,9 @@
 <footer>
     <img src="../images/logo_main.png" alt="Seahorse Comedy Logo">
     <div class="social-links">
-        <a href="https://www.instagram.com/seahorsecomedy/">Instagram</a>
-        <a href="https://www.facebook.com/profile.php?id=100087659251176">Facebook</a>
-        <a href="https://www.youtube.com/@seahorsecomedy">YouTube</a>
+        <a href="https://www.instagram.com/seahorsecomedy/" target="_blank">Instagram</a>
+        <a href="https://www.facebook.com/profile.php?id=100087659251176" target="_blank">Facebook</a>
+        <a href="https://www.youtube.com/@seahorsecomedy" target="_blank">YouTube</a>
     </div>
     <p>© Seahorse Comedy. Website by Dotdaaz Digital.</p>
 </footer>
