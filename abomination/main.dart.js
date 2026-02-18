@@ -47969,13 +47969,13 @@ s.push(new A.bW("lot_building_1","Empty Lot",B.aU,!0,"Space for an external buil
 s=a2.k4
 p=a2.ok
 a3=a2.p3
-o=A.Y(["strength",40,"endurance",50,"adaptability",50,"dexterity",45,"intelligence",Math.max(20,100-a3),"perception",50,"judgment",50,"temperament",50,"leadership",30,"courage",60,"hygiene",70,"beauty",50,"walkSpeed",35],r,q)
+o=A.Y(["strength",10,"endurance",20,"adaptability",30,"dexterity",40,"intelligence",50,"perception",40,"judgment",20,"temperament",10,"leadership",30,"courage",30,"hygiene",40,"beauty",20,"walkSpeed",35],r,q)
 n=t.V2
 m=A.b([new A.cc(B.ik,100,100,B.aq,!0),new A.cc(B.il,100,100,B.aq,!0),new A.cc(B.lg,100,100,B.aq,!0),new A.cc(B.lh,100,100,B.aq,!0),new A.cc(B.li,100,100,B.aq,!0),new A.cc(B.lj,100,100,B.aq,!0)],n)
 l=A.aJr()
 k=t.t1
 j=A.ajV(g,a3,new A.D5(B.jg,B.j2,B.lt,B.qd,B.IO,B.i),c,a,"",m,0,g,e,0,g,A.aJp(),0,B.nB,B.z2,100,B.R,B.R,"Male",B.nL,"Unknown",0,"player",B.nf,B.v,!0,!0,B.B,g,0,0,B.R,1,s+" "+p,"Swiss",g,A.Y(["butler",new A.fa(3.5,1.5,2,1.2)],r,k),a0,B.yR,"Master",100,l,B.kd,"Human",o,B.bK,g,B.R7,g,0)
-o=A.Y(["strength",35,"endurance",45,"adaptability",40,"dexterity",35,"intelligence",50,"perception",40,"judgment",55,"temperament",60,"leadership",50,"courage",50,"hygiene",60,"beauty",30,"walkSpeed",25],r,q)
+o=A.Y(["strength",40,"endurance",50,"adaptability",30,"dexterity",10,"intelligence",10,"perception",20,"judgment",30,"temperament",50,"leadership",30,"courage",40,"hygiene",50,"beauty",10,"walkSpeed",25],r,q)
 l=A.b([new A.oN("loyal","Loyal",a1),new A.oN("hardworking","Hardworking",a1)],t.Qo)
 n=A.b([new A.cc(B.ik,100,100,B.aq,!0),new A.cc(B.il,100,100,B.aq,!0),new A.cc(B.lg,100,100,B.aq,!0),new A.cc(B.lh,100,100,B.aq,!0),new A.cc(B.li,100,100,B.aq,!0),new A.cc(B.lj,100,100,B.aq,!0),new A.cc(B.pm,100,100,B.aq,!0),new A.cc(B.pn,100,100,B.aq,!0),new A.cc(B.po,100,100,B.aq,!0),new A.cc(B.pp,100,100,B.aq,!0)],n)
 p=A.aJr()
