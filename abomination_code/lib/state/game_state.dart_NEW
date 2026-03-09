@@ -1,0 +1,148 @@
+import 'package:flutter/foundation.dart';
+import 'dart:math' as math;
+import 'dart:math' show Random, min;
+import 'package:uuid/uuid.dart';
+import '../models/crop.dart';
+import '../models/game_item.dart';
+import '../models/body_part.dart';
+import '../models/game_date.dart';
+import '../models/npc.dart';
+import '../models/npc_intent.dart';
+import '../models/room.dart';
+import '../models/schedule.dart';
+import '../services/task_service.dart';
+import '../services/task_result_generator.dart';
+import '../services/npc_generator.dart';
+import '../services/market_service.dart';
+import '../services/construction_service.dart';
+import '../services/kitchen_service.dart';
+import '../models/diet.dart';
+import '../models/dish.dart';
+
+import '../models/experiment.dart';
+import '../services/experimentation_service.dart';
+import '../models/chicken.dart';
+import '../models/fox.dart';
+import '../models/objective.dart';
+import '../models/discovery.dart';
+import '../models/relationship.dart';
+import '../services/social_service.dart';
+import '../models/responsibility.dart';
+
+enum GameSpeed { paused, slow, normal, fast, superFast }
+enum DeathCause { disease, trainCrash, murderSuicide, misunderstanding }
+enum LifeObjective { women, money, fame, science }
+enum GilesTrait { sage, endsMeet, silent, shuffle }
+
+class GameState extends ChangeNotifier {
+  GameState() {
+    _initializeResponsibilityDefaults();
+    _initializeObjectives();
+    _initializeManor();
+    _initializeStartingCharacters();
+  }
+
+  void _initializeResponsibilityDefaults() {
+    for (var cat in ResponsibilityCategory.values) {
+      final tasks = TaskCategoryMapping.getTasksForCategory(cat);
+      _categoryPriorities[cat] = tasks;
+      _categoryDividers[cat] = (tasks.length / 2).floor();
+    }
+  }
+
+  GameDate _currentDate = GameDate.initial();
+  GameSpeed _speed = GameSpeed.paused;
+
+  final List<NPC> _npcs = [];
+  final List<NPC> _availableHamletNpcs = [];
+  final List<Room> _rooms = [];
+  final Map<String, int> _resources = {
+    'funds': 100,
+    'wood': 10,
+    'meat': 5,
+    'cabbage': 5,
+    'eggs': 0,
+    'meals': 2,
+  };
+  final List<GameItem> _inventory = [];
+
+  final TaskService _taskService = TaskService();
+  final MarketService _marketService = MarketService();
+  String? _butlerRoomId;
+  final List<ConstructionProject> _activeConstruction = [];
+  final List<Experiment> _activeExperiments = [];
+  String? _lastAnnouncement;
+  final List<String> _announcementHistory = [];
+  final List<Objective> _objectives = [];
+  final List<String> _unlockedDiscoveries = [];
+  final List<String> _performedExperiments = [];
+  String? _pendingNavigationTarget;
+  final List<Dish> _pantry = [];
+  final List<String> _cookingQueue = [];
+  int _unreadObjectiveCount = 0;
+
+  final List<Chicken> _chickens = [];
+  FoxPopulation _estateFoxes = FoxPopulation.initial();
+  final List<Crop> _crops = [];
+  int _uncollectedEggs = 0;
+
+  final Map<ResponsibilityCategory, List<TaskType>> _categoryPriorities = {};
+  final Map<ResponsibilityCategory, int> _categoryDividers = {};
+
+  // Player state
+  String _playerFirstName = "The";
+  String _playerLastName = "Master";
+  String _estateName = "Manor";
+  DeathCause? _deathCause;
+  int _playerAge = 30;
+  GilesTrait _gilesTrait = GilesTrait.silent;
+  LifeObjective _mainObjective = LifeObjective.science;
+
+  // Getters
+  List<NPC> get npcs => List.unmodifiable(_npcs);
+  List<NPC> get availableHamletNpcs => List.unmodifiable(_availableHamletNpcs);
+  List<Room> get rooms => List.unmodifiable(_rooms);
+  Map<String, int> get resources => Map.unmodifiable(_resources);
+  List<GameItem> get inventory => List.unmodifiable(_inventory);
+  Map<ResponsibilityCategory, List<TaskType>> get categoryPriorities => Map.unmodifiable(_categoryPriorities);
+  Map<ResponsibilityCategory, int> get categoryDividers => Map.unmodifiable(_categoryDividers);
+  GameDate get currentDate => _currentDate;
+  GameSpeed get speed => _speed;
+  String? get lastAnnouncement => _lastAnnouncement;
+  List<String> get announcementHistory => List.unmodifiable(_announcementHistory);
+  List<Objective> get objectives => List.unmodifiable(_objectives);
+  int get unreadObjectiveCount => _unreadObjectiveCount;
+  List<Dish> get pantry => List.unmodifiable(_pantry);
+  List<String> get cookingQueue => List.unmodifiable(_cookingQueue);
+  List<ConstructionProject> get activeConstruction => List.unmodifiable(_activeConstruction);
+  List<Experiment> get activeExperiments => List.unmodifiable(_activeExperiments);
+
+  void updateCategoryPriority(ResponsibilityCategory category, List<TaskType> tasks) {
+    _categoryPriorities[category] = tasks;
+    notifyListeners();
+  }
+
+  void updateCategoryDivider(ResponsibilityCategory category, int divider) {
+    _categoryDividers[category] = divider;
+    notifyListeners();
+  }
+
+  void updateNpc(NPC updatedNpc) {
+    final index = _npcs.indexWhere((n) => n.id == updatedNpc.id);
+    if (index != -1) {
+      _npcs[index] = updatedNpc;
+      notifyListeners();
+    }
+  }
+
+  void setSpeed(GameSpeed newSpeed) {
+    _speed = newSpeed;
+    notifyListeners();
+  }
+
+  void markObjectivesRead() {
+    _unreadObjectiveCount = 0;
+    notifyListeners();
+  }
+
+  // Implementation follows from original file structure...
