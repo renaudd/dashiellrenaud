@@ -94,7 +94,7 @@ class ManorRenderer extends StatelessWidget {
                       onAcceptWithDetails: (details) {
                         final npc = details.data;
                         final state = context.read<GameState>();
-                        state.assignNpcToTask(
+                        state.tryScheduleNpcTask(
                           npc.id,
                           room.defaultAction,
                           room.id,

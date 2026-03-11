@@ -37,6 +37,8 @@ class CharacterBlobRenderer extends StatelessWidget {
                 npc.specimenType == 'Bat' ||
                 npc.specimenType == 'FlyingRat')
               _buildAnimal(npc.specimenType, size)
+            else if (npc.specimenType == 'Hound')
+              _buildHound(size)
             else ...[
               // Shadow
               Positioned(
@@ -50,9 +52,9 @@ class CharacterBlobRenderer extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 2,
-                        spreadRadius: 1,
+                        color: _getAuraColor(npc).withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        spreadRadius: 2,
                       ),
                     ],
                   ),
@@ -80,8 +82,8 @@ class CharacterBlobRenderer extends StatelessWidget {
                   children: [
                     // Skin
                     Container(
-                      width: size * 0.4,
-                      height: size * 0.4,
+                      width: size * (npc.role == 'Bruiser' ? 0.45 : 0.4),
+                      height: size * (npc.role == 'Sharpshooter' ? 0.45 : 0.4),
                       decoration: BoxDecoration(
                         color: appearance.bodyColor,
                         shape: BoxShape.circle,
@@ -165,6 +167,136 @@ class CharacterBlobRenderer extends StatelessWidget {
         );
       }),
     );
+  }
+
+  Widget _buildHound(double size) {
+    return _BobbingAnimation(
+      isWalking: isWalking,
+      isIdle: isIdle,
+      delayFactor: 0.1,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Tail
+          Positioned(
+            right: 0,
+            bottom: size * 0.4,
+            child: Transform.rotate(
+              angle: 0.5,
+              child: Container(
+                width: size * 0.4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: npc.appearance.bodyColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+          // Body
+          Container(
+            width: size * 0.8,
+            height: size * 0.45,
+            decoration: BoxDecoration(
+              color: npc.appearance.bodyColor,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(size * 0.1),
+                topRight: Radius.circular(size * 0.3),
+                bottomLeft: Radius.circular(size * 0.2),
+                bottomRight: Radius.circular(size * 0.2),
+              ),
+            ),
+          ),
+          // Neck/Chest
+          Positioned(
+            left: size * 0.1,
+            top: size * 0.1,
+            child: Container(
+              width: size * 0.3,
+              height: size * 0.4,
+              decoration: BoxDecoration(
+                color: npc.appearance.bodyColor,
+                borderRadius: BorderRadius.circular(size * 0.1),
+              ),
+            ),
+          ),
+          // Head
+          Positioned(
+            left: -size * 0.05,
+            top: 0,
+            child: Container(
+              width: size * 0.35,
+              height: size * 0.35,
+              decoration: BoxDecoration(
+                color: npc.appearance.bodyColor,
+                borderRadius: BorderRadius.circular(size * 0.1),
+              ),
+            ),
+          ),
+          // Snout
+          Positioned(
+            left: -size * 0.2,
+            top: size * 0.1,
+            child: Container(
+              width: size * 0.3,
+              height: size * 0.15,
+              decoration: BoxDecoration(
+                color: npc.appearance.bodyColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          // Ears
+          Positioned(
+            left: size * 0.15,
+            top: -size * 0.1,
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 10,
+                  color: npc.appearance.bodyColor,
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  width: 4,
+                  height: 10,
+                  color: npc.appearance.bodyColor,
+                ),
+              ],
+            ),
+          ),
+          // Glowing Eyes
+          Positioned(
+            left: 0,
+            top: size * 0.1,
+            child: Container(
+              width: 3,
+              height: 3,
+              decoration: const BoxDecoration(
+                color: Colors.redAccent,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getAuraColor(NPC npc) {
+    for (final ability in npc.abilities) {
+      if (ability.id.contains('freeze')) return Colors.cyanAccent;
+      if (ability.id.contains('plague') || ability.id.contains('poison')) {
+        return Colors.lightGreenAccent;
+      }
+      if (ability.id.contains('steal') || ability.id.contains('vampire')) {
+        return Colors.purpleAccent;
+      }
+      if (ability.id.contains('horn')) return Colors.blueAccent;
+      if (ability.id.contains('execute')) return Colors.redAccent;
+    }
+    return Colors.black;
   }
 
   Widget _buildAnimal(String type, double size) {

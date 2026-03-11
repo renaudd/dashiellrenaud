@@ -7,6 +7,13 @@ import '../models/diet.dart';
 import '../models/body_part.dart';
 
 class CombatUnitFactory {
+  static int _idCounter = 0;
+
+  static String _generateId(String prefix) {
+    _idCounter++;
+    return '${prefix}_${DateTime.now().microsecondsSinceEpoch}_$_idCounter';
+  }
+
   static NPC createAlphonse() {
     return NPC(
       id: 'alphonse',
@@ -25,7 +32,7 @@ class CombatUnitFactory {
         health: 300,
         maxHealth: 300,
         speed: 1.0,
-        movement: 0.8,
+        movement: 0.64,
         distance: 7.5, // Ranged (was 5.0)
         defense: 0,
         accuracy: 0.85,
@@ -55,12 +62,13 @@ class CombatUnitFactory {
         health: 450, // Sturdy
         maxHealth: 450,
         speed: 1.5, // Slow attack
-        movement: 0.8,
+        movement: 0.4,
         distance: 1.8,
         defense: 5,
         accuracy: 0.85,
         cost: 6, // Elite cost
         radius: 3.5,
+        damageFormula: "40-50",
       ),
       abilities: [
         const Ability(
@@ -78,7 +86,7 @@ class CombatUnitFactory {
 
   static NPC createRatsUnit() {
     return NPC(
-      id: 'rats_unit_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('rats_unit'),
       name: 'Rats (x4)',
       role: 'Swarm',
       age: 1,
@@ -93,13 +101,15 @@ class CombatUnitFactory {
         health: 25, // Fragile swarm
         maxHealth: 25,
         speed: 0.6, // Fast bites
-        movement: 1.4, // Very fast
+        movement: 1.12, // Very fast
         distance: 0.5,
         defense: 0,
         accuracy: 0.7,
         cost: 3,
         radius: 1.2,
+        isFlying: true,
         swarmSize: 4,
+        damageFormula: "10-15",
       ),
       abilities: [
         const Ability(
@@ -121,7 +131,7 @@ class CombatUnitFactory {
 
   static NPC createWingedRat() {
     return NPC(
-      id: 'winged_rat_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('winged_rat'),
       name: 'Winged Rat',
       role: 'Flyer',
       age: 1,
@@ -140,13 +150,14 @@ class CombatUnitFactory {
         health: 45, // Glass flyer
         maxHealth: 45,
         speed: 0.8,
-        movement: 1.2,
+        movement: 0.96,
         distance: 0.8,
         defense: 0,
         accuracy: 0.8,
         cost: 2,
         radius: 1.8,
         isFlying: true,
+        damageFormula: "12-18",
       ),
       abilities: [
         const Ability(
@@ -162,7 +173,7 @@ class CombatUnitFactory {
 
   static NPC createGoon() {
     return NPC(
-      id: 'goon_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('goon'),
       name: 'Goon',
       role: 'Thug',
       age: 30,
@@ -181,11 +192,12 @@ class CombatUnitFactory {
         health: 220,
         maxHealth: 220,
         speed: 1.2,
-        movement: 0.7,
+        movement: 0.56,
         distance: 0.6,
         defense: 2,
         accuracy: 0.8,
         cost: 3, // Increased cost for durability
+        damageFormula: "18-26",
       ),
       abilities: [
         const Ability(
@@ -201,7 +213,7 @@ class CombatUnitFactory {
 
   static NPC createSniper() {
     return NPC(
-      id: 'sniper_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('sniper'),
       name: 'Sniper',
       role: 'Sharpshooter',
       age: 28,
@@ -220,11 +232,12 @@ class CombatUnitFactory {
         health: 140,
         maxHealth: 140,
         speed: 2.8, // Very slow fire rate
-        movement: 0.4,
+        movement: 0.32,
         distance: 12.0, // Significant range
         defense: 0,
         accuracy: 0.9,
         cost: 5, // High value target
+        damageFormula: "32-44",
       ),
       abilities: [
         const Ability(
@@ -241,7 +254,7 @@ class CombatUnitFactory {
 
   static NPC createBully() {
     return NPC(
-      id: 'bully_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('bully'),
       name: 'Bully',
       role: 'Bruiser',
       age: 22,
@@ -259,12 +272,13 @@ class CombatUnitFactory {
         health: 350,
         maxHealth: 350,
         speed: 1.6,
-        movement: 0.4,
+        movement: 0.32,
         distance: 1.8,
         defense: 8,
         accuracy: 0.7,
         cost: 6, // Heavy tank
         radius: 4.5,
+        damageFormula: "20-30",
       ),
       abilities: [
         const Ability(
@@ -287,7 +301,7 @@ class CombatUnitFactory {
 
   static NPC createBatsUnit() {
     return NPC(
-      id: 'bats_unit_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('bats_unit'),
       name: 'Bats (x3)',
       role: 'Swarm',
       age: 1,
@@ -302,7 +316,7 @@ class CombatUnitFactory {
         health: 30,
         maxHealth: 30,
         speed: 0.8,
-        movement: 1.0,
+        movement: 0.8,
         distance: 0.125, // Near zero but slightly above (was 0.1)
         defense: 0,
         accuracy: 0.9,
@@ -310,13 +324,15 @@ class CombatUnitFactory {
         radius: 1.5,
         isFlying: true,
         swarmSize: 3,
+        damageFormula: "18-22",
       ),
       abilities: [
         const Ability(
           id: 'freeze_line',
           name: 'Special: Freeze Line',
           type: AbilityType.special,
-          description: 'Freeze all enemies in a line for 2.5s.',
+          description:
+              'Freeze enemies in a rectangle toward furthest foe for 4s.',
           chargeTime: 8.0,
           effectData: {'freeze_duration': 2.5, 'shape': 'line'},
         ),
@@ -326,7 +342,7 @@ class CombatUnitFactory {
 
   static NPC createMilitia() {
     return NPC(
-      id: 'militia_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('militia'),
       name: 'Militia',
       role: 'Soldier',
       age: 24,
@@ -344,12 +360,13 @@ class CombatUnitFactory {
         health: 120,
         maxHealth: 120,
         speed: 1.0,
-        movement: 0.6,
+        movement: 0.48,
         distance: 1.25, // Increased reach (was 1.0)
         defense: 5,
         accuracy: 0.85,
         cost: 3,
         radius: 1.8,
+        damageFormula: "10-14",
       ),
       abilities: [
         const Ability(
@@ -373,7 +390,7 @@ class CombatUnitFactory {
 
   static NPC createBanditCaptain() {
     return NPC(
-      id: 'captain_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('captain'),
       name: 'Bandit Captain',
       role: 'Leader',
       age: 42,
@@ -392,7 +409,7 @@ class CombatUnitFactory {
         health: 800, // True Boss/Leader stats
         maxHealth: 800,
         speed: 1.4,
-        movement: 0.45,
+        movement: 0.36,
         distance: 2.0,
         defense: 12,
         accuracy: 0.95,
@@ -421,7 +438,7 @@ class CombatUnitFactory {
 
   static NPC createPeasant() {
     return NPC(
-      id: 'peasant_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('peasant'),
       name: 'Peasant',
       role: 'Laborer',
       age: 19,
@@ -439,7 +456,7 @@ class CombatUnitFactory {
         health: 140,
         maxHealth: 140,
         speed: 1.0,
-        movement: 1.1, // Fast commoner
+        movement: 0.88, // Fast commoner
         distance: 1.8,
         defense: 0,
         accuracy: 0.8,
@@ -460,7 +477,7 @@ class CombatUnitFactory {
 
   static NPC createStitchedHorror() {
     return NPC(
-      id: 'stitched_horror_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('stitched_horror'),
       name: 'Stitched Horror',
       role: 'Tank',
       age: 0,
@@ -478,7 +495,7 @@ class CombatUnitFactory {
         health: 600, // Massive Tank
         maxHealth: 600,
         speed: 2.0, // Slow
-        movement: 0.35,
+        movement: 0.28,
         distance: 2.2,
         defense: 20,
         accuracy: 0.8,
@@ -509,7 +526,7 @@ class CombatUnitFactory {
 
   static NPC createGalvanizedCorpse() {
     return NPC(
-      id: 'galvanized_corpse_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('galvanized_corpse'),
       name: 'Galvanized Corpse',
       role: 'Glass Cannon',
       age: 0,
@@ -527,7 +544,7 @@ class CombatUnitFactory {
         health: 80,
         maxHealth: 80,
         speed: 0.8,
-        movement: 1.1,
+        movement: 0.88,
         distance: 1.875, // (was 1.5)
         defense: 0,
         accuracy: 0.9,
@@ -540,7 +557,7 @@ class CombatUnitFactory {
           name: 'Unstable Arc',
           type: AbilityType.special,
           description:
-              'Releases a bolt of lightning dealing 60 damage to a target and 30 to nearby enemies.',
+              'Strikes the nearest enemy with lightning (150 dmg) which then arcs to nearby foes (80 dmg).',
           chargeTime: 10.0,
           effectData: {
             'damage': 150.0,
@@ -554,7 +571,7 @@ class CombatUnitFactory {
 
   static NPC createChemicalSlinger() {
     return NPC(
-      id: 'chemical_slinger_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('chemical_slinger'),
       name: 'Chemical Slinger',
       role: 'Artillery',
       age: 32,
@@ -572,7 +589,7 @@ class CombatUnitFactory {
         health: 120,
         maxHealth: 120,
         speed: 2.2,
-        movement: 0.6,
+        movement: 0.48,
         distance: 9.0, // Ranged (was 6.0)
         defense: 2,
         accuracy: 0.7,
@@ -594,7 +611,7 @@ class CombatUnitFactory {
 
   static NPC createShadowCreeper() {
     return NPC(
-      id: 'shadow_creeper_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('shadow_creeper'),
       name: 'Shadow Creeper',
       role: 'Assassin',
       age: 0,
@@ -612,7 +629,7 @@ class CombatUnitFactory {
         health: 60,
         maxHealth: 60,
         speed: 0.6,
-        movement: 1.5,
+        movement: 1.2,
         distance: 2.25, // Stealthy reach (was 1.8)
         defense: 0,
         accuracy: 0.85,
@@ -633,7 +650,7 @@ class CombatUnitFactory {
 
   static NPC createGravedigger() {
     return NPC(
-      id: 'gravedigger_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('gravedigger'),
       name: 'Gravedigger',
       role: 'Brawler',
       age: 45,
@@ -651,7 +668,7 @@ class CombatUnitFactory {
         health: 240,
         maxHealth: 240,
         speed: 1.5,
-        movement: 0.7,
+        movement: 0.56,
         distance: 1.875, // Shovel reach (was 1.5)
         defense: 8,
         accuracy: 0.8,
@@ -673,7 +690,7 @@ class CombatUnitFactory {
 
   static NPC createPlagueMonk() {
     return NPC(
-      id: 'plague_monk_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('plague_monk'),
       name: 'Plague Monk',
       role: 'Support',
       age: 50,
@@ -691,7 +708,7 @@ class CombatUnitFactory {
         health: 150,
         maxHealth: 150,
         speed: 1.8,
-        movement: 0.9,
+        movement: 0.72,
         distance: 2.5, // Ceremonial staff reach (was 2.0)
         defense: 5,
         accuracy: 0.75,
@@ -713,7 +730,7 @@ class CombatUnitFactory {
 
   static NPC createInquisitor() {
     return NPC(
-      id: 'inquisitor_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('inquisitor'),
       name: 'Inquisitor',
       role: 'Marksman',
       age: 38,
@@ -731,7 +748,7 @@ class CombatUnitFactory {
         health: 140,
         maxHealth: 140,
         speed: 2.0,
-        movement: 0.7,
+        movement: 0.56,
         distance: 10.5, // Long range (was 7.0)
         defense: 5,
         accuracy: 0.95,
@@ -757,7 +774,7 @@ class CombatUnitFactory {
 
   static NPC createIronMaiden() {
     return NPC(
-      id: 'iron_maiden_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('iron_maiden'),
       name: 'Iron Maiden',
       role: 'Juggernaut',
       age: 0,
@@ -775,7 +792,7 @@ class CombatUnitFactory {
         health: 400,
         maxHealth: 400,
         speed: 2.5,
-        movement: 0.2,
+        movement: 0.16,
         distance: 1.75, // Spiked reach (was 1.4)
         defense: 25,
         accuracy: 0.7,
@@ -797,7 +814,7 @@ class CombatUnitFactory {
 
   static NPC createFleshHound() {
     return NPC(
-      id: 'flesh_hound_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('flesh_hound'),
       name: 'Flesh Hound',
       role: 'Chaser',
       age: 0,
@@ -815,12 +832,13 @@ class CombatUnitFactory {
         health: 180, // Glass-ier chaser
         maxHealth: 180,
         speed: 0.6, // Very fast attacks
-        movement: 1.8, // Elite speed
+        movement: 1.44, // Elite speed
         distance: 1.5,
         defense: 0,
         accuracy: 0.85,
         cost: 4,
         radius: 1.4,
+        damageFormula: "22-28",
       ),
       abilities: [
         const Ability(
@@ -838,7 +856,7 @@ class CombatUnitFactory {
 
   static NPC createAlchemicalGolem() {
     return NPC(
-      id: 'alchemical_golem_${DateTime.now().microsecondsSinceEpoch}',
+      id: _generateId('alchemical_golem'),
       name: 'Alchemical Golem',
       role: 'Elite Tank',
       age: 0,
@@ -856,11 +874,12 @@ class CombatUnitFactory {
         health: 500,
         maxHealth: 500,
         speed: 1.8,
-        movement: 0.3,
+        movement: 0.24,
         distance: 4.5,
         defense: 15,
         accuracy: 0.9,
         cost: 8, // Elite Tank
+        damageFormula: "15-25",
         radius: 5.0,
       ),
       abilities: [

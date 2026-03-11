@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:collection/collection.dart';
 import '../../services/combat_manager.dart';
 import '../../models/npc.dart';
 import '../../services/combat_unit_service.dart';
@@ -96,7 +97,7 @@ class _CombatScreenState extends State<CombatScreen>
           children: [
             const _BattlefieldViewport(),
             const _CombatOverlay(),
-            const _CombatLogPanel(),
+            const _SplitLogOverlay(),
             Positioned(bottom: 0, left: 0, right: 0, child: _CombatBottomBar()),
             if (_combatManager.isVictory || _combatManager.isDefeat)
               Positioned.fill(child: Container(color: Colors.black54)),
@@ -405,10 +406,20 @@ class _BattlefieldViewport extends StatelessWidget {
                   ),
                 ),
 
-                // Units (Y-sorted for 3D depth)
+                // 2c. Ability Target Highlight
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _AbilityHighlightPainter(
+                      manager: manager,
+                      projection: projection,
+                    ),
+                  ),
+                ),
+
+                // Units & Special Buttons
                 ...(() {
+                  // 1. Units (Y-sorted for 3D depth)
                   final sorted = List<Combatant>.from(manager.combatants);
-                  // Ensure all are inside world Y [0, 1] for projection safety
                   for (var c in sorted) {
                     c.y = c.y.clamp(0.0, CombatManager.fieldWidth);
                     c.x = c.x.clamp(
@@ -417,12 +428,37 @@ class _BattlefieldViewport extends StatelessWidget {
                     );
                   }
                   sorted.sort((a, b) => a.y.compareTo(b.y));
-                  return sorted.map(
+
+                  final combatantBodies = sorted.map(
                     (c) => _CombatantSprite(
                       combatant: c,
                       screenPos: projection.project(c.x, c.y),
+                      showSpecialOnly: false,
                     ),
                   );
+
+                  // 2. Special Buttons (Rendered on top of all units)
+                  final specialUnits = manager.combatants
+                      .where(
+                        (c) =>
+                            c.npc.specialCharge >= 1.0 &&
+                            c.side == CombatSide.player &&
+                            !c.isDead,
+                      )
+                      .toList();
+
+                  // Sort special buttons by Y as well so they respect depth among themselves
+                  specialUnits.sort((a, b) => a.y.compareTo(b.y));
+
+                  final specialButtons = specialUnits.map(
+                    (c) => _CombatantSprite(
+                      combatant: c,
+                      screenPos: projection.project(c.x, c.y),
+                      showSpecialOnly: true,
+                    ),
+                  );
+
+                  return [...combatantBodies, ...specialButtons];
                 })(),
 
                 // Projectiles
@@ -487,8 +523,13 @@ class _BattlefieldViewport extends StatelessWidget {
 class _CombatantSprite extends StatelessWidget {
   final Combatant combatant;
   final Offset screenPos;
+  final bool showSpecialOnly;
 
-  const _CombatantSprite({required this.combatant, required this.screenPos});
+  const _CombatantSprite({
+    required this.combatant,
+    required this.screenPos,
+    this.showSpecialOnly = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -516,7 +557,7 @@ class _CombatantSprite extends StatelessWidget {
               children: [
                 // Base Ring (Shadow)
                 // Centered at screenPos.dy (which is at local Y=104)
-                if (!combatant.isDead)
+                if (!showSpecialOnly && !combatant.isDead)
                   Positioned(
                     top: 98, // 104 - 6 (half ring height)
                     child: Container(
@@ -547,53 +588,54 @@ class _CombatantSprite extends StatelessWidget {
 
                 // Main Body (Character + Health)
                 // Bottom edge should touch screenPos.dy (local Y=104)
-                Positioned(
-                  bottom:
-                      16, // 120 - 104 = 16 pixels from bottom is the ground plane
-                  child: GestureDetector(
-                    onTap: () {
-                      if (combatant.side == CombatSide.enemy) {
-                        context.read<CombatManager>().setPlayerTarget(
-                          combatant.npc.id,
-                        );
-                      }
-                    },
-                    behavior: HitTestBehavior.opaque,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Health Bar
-                        Container(
-                          width: 50,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          child: FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
-                            widthFactor: healthPercent,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(2),
+                if (!showSpecialOnly)
+                  Positioned(
+                    bottom:
+                        16, // 120 - 104 = 16 pixels from bottom is the ground plane
+                    child: GestureDetector(
+                      onTap: () {
+                        if (combatant.side == CombatSide.enemy) {
+                          context.read<CombatManager>().setPlayerTarget(
+                            combatant.npc.id,
+                          );
+                        }
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Health Bar
+                          Container(
+                            width: 50,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: FractionallySizedBox(
+                              alignment: Alignment.centerLeft,
+                              widthFactor: healthPercent,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        CharacterBlobRenderer(
-                          npc: combatant.npc,
-                          size: 40,
-                          isWalking: combatant.attackCooldown <= 0,
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          CharacterBlobRenderer(
+                            npc: combatant.npc,
+                            size: 40,
+                            isWalking: combatant.attackCooldown <= 0,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
                 // Floating Messages
-                if (combatant.floatingMessages.isNotEmpty)
+                if (!showSpecialOnly && combatant.floatingMessages.isNotEmpty)
                   Positioned(
                     top: 0, // Top of the 120 box
                     left: -50,
@@ -618,7 +660,8 @@ class _CombatantSprite extends StatelessWidget {
                   ),
 
                 // Special Ready Button (centered on unit but at bottom)
-                if (combatant.npc.specialCharge >= 1.0 &&
+                if (showSpecialOnly &&
+                    combatant.npc.specialCharge >= 1.0 &&
                     combatant.side == CombatSide.player)
                   Consumer<CombatManager>(
                     builder: (context, manager, child) {
@@ -641,55 +684,64 @@ class _CombatantSprite extends StatelessWidget {
                             color: const Color(0xFF2C2F24),
                             border: Border.all(color: Colors.yellow[800]!),
                           ),
-                          child: GestureDetector(
-                            onTap: canUse
-                                ? () {
-                                    manager.executeSpecial(combatant.npc.id);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '${combatant.npc.name} used ${special.name}!',
-                                          style: GoogleFonts.oldStandardTt(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        duration: const Duration(seconds: 1),
-                                        backgroundColor: Colors.yellow.shade800,
-                                      ),
-                                    );
-                                  }
-                                : null,
-                            child: AnimatedOpacity(
-                              duration: const Duration(milliseconds: 200),
-                              opacity: canUse ? 1.0 : 0.4,
-                              child: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: canUse
-                                      ? Colors.yellow[800]
-                                      : Colors.grey[800],
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.black,
-                                    width: 2,
-                                  ),
-                                  boxShadow: canUse
-                                      ? [
-                                          BoxShadow(
-                                            color: Colors.yellow.withValues(
-                                              alpha: 0.5,
+                          child: MouseRegion(
+                            onEnter: (_) =>
+                                manager.setHoveredAbility(combatant.npc.id),
+                            onExit: (_) => manager.setHoveredAbility(null),
+                            child: GestureDetector(
+                              onTap: canUse
+                                  ? () {
+                                      manager.setHoveredAbility(null);
+                                      manager.executeSpecial(combatant.npc.id);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            '${combatant.npc.name} used ${special.name}!',
+                                            style: GoogleFonts.oldStandardTt(
+                                              color: Colors.white,
                                             ),
-                                            blurRadius: 10,
-                                            spreadRadius: 2,
                                           ),
-                                        ]
-                                      : [],
-                                ),
-                                child: const Icon(
-                                  Icons.flash_on,
-                                  color: Colors.white,
-                                  size: 24,
+                                          duration: const Duration(seconds: 1),
+                                          backgroundColor:
+                                              Colors.yellow.shade800,
+                                        ),
+                                      );
+                                    }
+                                  : null,
+                              child: AnimatedOpacity(
+                                duration: const Duration(milliseconds: 200),
+                                opacity: canUse ? 1.0 : 0.4,
+                                child: Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: canUse
+                                        ? Colors.yellow[800]
+                                        : Colors.grey[800],
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.black,
+                                      width: 2,
+                                    ),
+                                    boxShadow: canUse
+                                        ? [
+                                            BoxShadow(
+                                              color: Colors.yellow.withValues(
+                                                alpha: 0.5,
+                                              ),
+                                              blurRadius: 10,
+                                              spreadRadius: 2,
+                                            ),
+                                          ]
+                                        : [],
+                                  ),
+                                  child: const Icon(
+                                    Icons.flash_on,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
                                 ),
                               ),
                             ),
@@ -750,63 +802,71 @@ class _CombatOverlay extends StatelessWidget {
   }
 }
 
-class _CombatLogPanel extends StatelessWidget {
-  const _CombatLogPanel();
+class _SplitLogOverlay extends StatelessWidget {
+  const _SplitLogOverlay();
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: 100,
-      right: 20,
-      bottom: 140,
-      width: 250,
+      top: 20,
+      left: 0,
+      right: 0,
       child: Consumer<CombatManager>(
         builder: (context, manager, child) {
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerRight,
-                end: Alignment.centerLeft,
-                colors: [
-                  Colors.black.withValues(alpha: 0.6),
-                  Colors.black.withValues(alpha: 0.0),
-                ],
-              ),
-            ),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(8),
-              reverse: false,
-              itemCount: manager.logs.length,
-              itemBuilder: (context, index) {
-                final entry = manager.logs[index];
-                final color = entry.side == CombatSide.player
-                    ? Colors.cyanAccent.withValues(alpha: 0.8)
-                    : entry.side == CombatSide.enemy
-                    ? Colors.orangeAccent.withValues(alpha: 0.8)
-                    : Colors.white70;
+          final playerLogs = manager.logs
+              .where((l) => l.side == CombatSide.player)
+              .take(5)
+              .toList();
+          final enemyLogs = manager.logs
+              .where((l) => l.side == CombatSide.enemy)
+              .take(5)
+              .toList();
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Text(
-                    entry.message,
-                    style: GoogleFonts.oldStandardTt(
-                      color: color,
-                      fontSize: 12,
-                      height: 1.2,
-                      shadows: [
-                        const Shadow(
-                          color: Colors.black,
-                          blurRadius: 2,
-                          offset: Offset(1, 1),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Player Logs (Left)
+              SizedBox(
+                width: 250,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: playerLogs
+                      .map((l) => _buildLogText(l.message, Colors.cyanAccent))
+                      .toList(),
+                ),
+              ),
+              const SizedBox(width: 40),
+              // Enemy Logs (Right)
+              SizedBox(
+                width: 250,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: enemyLogs
+                      .map((l) => _buildLogText(l.message, Colors.orangeAccent))
+                      .toList(),
+                ),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLogText(String message, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Text(
+        message.toUpperCase(),
+        style: GoogleFonts.oldStandardTt(
+          color: color.withValues(alpha: 0.8),
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          shadows: [const Shadow(color: Colors.black, blurRadius: 2)],
+        ),
+        textAlign: TextAlign.center,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
@@ -1012,24 +1072,26 @@ class _UnitCardState extends State<_UnitCard> {
                           0.0,
                           CombatManager.fieldWidth,
                         );
-                        manager.spawnUnit(
+                        final success = manager.spawnUnit(
                           widget.npc,
                           CombatSide.player,
                           x: dropX,
                           y: clampedY,
                         );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '${widget.npc.name} deployed!',
-                              style: GoogleFonts.oldStandardTt(
-                                color: Colors.white,
+                        if (success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${widget.npc.name} deployed!',
+                                style: GoogleFonts.oldStandardTt(
+                                  color: Colors.white,
+                                ),
                               ),
+                              duration: const Duration(seconds: 1),
+                              backgroundColor: Colors.blue.shade800,
                             ),
-                            duration: const Duration(seconds: 1),
-                            backgroundColor: Colors.blue.shade800,
-                          ),
-                        );
+                          );
+                        }
                       }
                     }
                   },
@@ -1048,42 +1110,48 @@ class _UnitCardState extends State<_UnitCard> {
                                   widget.npc.name.toUpperCase(),
                                   style: GoogleFonts.oldStandardTt(
                                     color: const Color(0xFF2E1A0A), // Dark Ink
-                                    fontSize: 10,
+                                    fontSize: 9,
                                     fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
+                                    letterSpacing: 0.2,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const Spacer(),
-                                Row(
-                                  children: [
-                                    _buildSmallStat(
-                                      'A',
-                                      widget.npc.combatStats?.attack.toInt() ??
-                                          0,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    _buildSmallStat(
-                                      'H',
-                                      widget.npc.combatStats?.maxHealth
-                                              .toInt() ??
-                                          0,
-                                    ),
-                                  ],
-                                ),
                                 Text(
                                   'COST: $cost',
                                   style: GoogleFonts.oldStandardTt(
                                     color: canAfford
                                         ? const Color(0xFF388E3C)
                                         : const Color(0xFFD32F2F),
-                                    fontSize: 11,
+                                    fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
                             ),
+                          ),
+                        ),
+                        // Damage & Health (Center-Left)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              _buildCardStat(
+                                'D',
+                                widget.npc.combatStats?.damageFormula ??
+                                    '${(widget.npc.combatStats!.attack * 1.5).toInt()}',
+                                Colors.deepOrange.shade800,
+                              ),
+                              const SizedBox(height: 2),
+                              _buildCardStat(
+                                'H',
+                                '${widget.npc.combatStats?.maxHealth.toInt() ?? 0}',
+                                Colors.green.shade900,
+                              ),
+                            ],
                           ),
                         ),
                         // Character Image (Right)
@@ -1175,10 +1243,35 @@ class _UnitCardState extends State<_UnitCard> {
     );
   }
 
-  Widget _buildSmallStat(String label, int value) {
-    return Text(
-      '$label:$value',
-      style: GoogleFonts.oldStandardTt(color: Colors.white60, fontSize: 8),
+  Widget _buildCardStat(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$label:',
+            style: GoogleFonts.oldStandardTt(
+              color: color,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(width: 2),
+          Text(
+            value,
+            style: GoogleFonts.oldStandardTt(
+              color: color,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1487,4 +1580,44 @@ class _SwissCountrysidePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _SwissCountrysidePainter oldDelegate) =>
       oldDelegate.fieldScroll != fieldScroll;
+}
+
+class _AbilityHighlightPainter extends CustomPainter {
+  final CombatManager manager;
+  final _CombatProjection projection;
+
+  _AbilityHighlightPainter({required this.manager, required this.projection});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (manager.highlightedTargetIds.isEmpty) return;
+
+    final paint = Paint()
+      ..color = Colors.yellowAccent.withValues(alpha: 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
+
+    final glowPaint = Paint()
+      ..color = Colors.yellowAccent.withValues(alpha: 0.2)
+      ..style = PaintingStyle.fill;
+
+    for (final id in manager.highlightedTargetIds) {
+      final c = manager.combatants.firstWhereOrNull((c) => c.npc.id == id);
+      if (c == null || c.isDead) continue;
+
+      final pos = projection.project(c.x, c.y);
+      final radius =
+          (c.npc.combatStats?.radius ?? 1.5) *
+          8.0; // Scale radius for visual highlight
+
+      canvas.drawCircle(pos, radius, glowPaint);
+      canvas.drawCircle(pos, radius, paint);
+
+      // Draw a subtle line connecting targets if applicable (e.g. Arc)
+      // (Skipping for now to keep it clean)
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _AbilityHighlightPainter oldDelegate) => true;
 }

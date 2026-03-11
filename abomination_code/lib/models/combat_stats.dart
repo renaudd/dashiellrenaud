@@ -16,6 +16,7 @@ class CombatStats {
   final bool isFlying;
   final int swarmSize; // 0 if single unit, >0 for swarms
   final double radius; // Physics radius for collision
+  final String? damageFormula; // e.g. "4d6+2"
 
   const CombatStats({
     required this.attack,
@@ -30,6 +31,7 @@ class CombatStats {
     this.isFlying = false,
     this.swarmSize = 0,
     this.radius = 1.5,
+    this.damageFormula,
   });
 
   CombatStats copyWith({
@@ -45,6 +47,7 @@ class CombatStats {
     bool? isFlying,
     int? swarmSize,
     double? radius,
+    String? damageFormula,
   }) {
     return CombatStats(
       attack: attack ?? this.attack,
@@ -59,6 +62,7 @@ class CombatStats {
       isFlying: isFlying ?? this.isFlying,
       swarmSize: swarmSize ?? this.swarmSize,
       radius: radius ?? this.radius,
+      damageFormula: damageFormula ?? this.damageFormula,
     );
   }
 
@@ -75,6 +79,7 @@ class CombatStats {
     'isFlying': isFlying,
     'swarmSize': swarmSize,
     'radius': radius,
+    'damageFormula': damageFormula,
   };
 
   factory CombatStats.fromJson(Map<String, dynamic> json) => CombatStats(
@@ -90,6 +95,7 @@ class CombatStats {
     isFlying: json['isFlying'] as bool? ?? false,
     swarmSize: json['swarmSize'] as int? ?? 0,
     radius: (json['radius'] as num? ?? 1.5).toDouble(),
+    damageFormula: json['damageFormula'] as String?,
   );
 }
 

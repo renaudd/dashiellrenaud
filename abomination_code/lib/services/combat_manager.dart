@@ -29,6 +29,10 @@ class Combatant {
   double attackCooldown = 0.0;
   double freezeTimer = 0.0;
   String? targetId;
+  String?
+  specialActionId; // For ongoing special state (e.g. Giles moving to execute)
+  String?
+  specialTargetId; // The ID of the NPC being targeted by specialActionId
   bool isDead = false;
   final List<FloatingMessage> floatingMessages = [];
 
@@ -105,6 +109,10 @@ class CombatManager extends ChangeNotifier {
   final List<NPC> _killedEnemies = [];
   final Map<String, int> _accumulatedLoot = {'funds': 0, 'meat': 0};
 
+  final List<String> _highlightedTargetIds = [];
+  List<String> get highlightedTargetIds =>
+      List.unmodifiable(_highlightedTargetIds);
+
   List<Combatant> get combatants => List.unmodifiable(_combatants);
   List<Projectile> get projectiles => List.unmodifiable(_projectiles);
   List<CombatLogEntry> get logs => List.unmodifiable(_logs);
@@ -150,17 +158,28 @@ class CombatManager extends ChangeNotifier {
 
   void drawCard() {
     if (_hand.length < maxHandSize && _deck.isNotEmpty) {
-      final npc = _deck.removeAt(0);
-      _hand.add(npc);
-      if (_isSimulation) {
-        // In simulation, keep the deck from running dry so the hand stays full
-        _deck.add(
-          npc.copyWith(
-            id: '${npc.id}_refill_${DateTime.now().microsecondsSinceEpoch}',
-          ),
-        );
+      // Find a card that isn't currently alive on the field
+      final aliveIds = _combatants
+          .where((c) => !c.isDead)
+          .map((c) => c.npc.id)
+          .toSet();
+
+      NPC? toDraw;
+      int drawIndex = -1;
+
+      for (int i = 0; i < _deck.length; i++) {
+        if (!aliveIds.contains(_deck[i].id)) {
+          toDraw = _deck[i];
+          drawIndex = i;
+          break;
+        }
       }
-      notifyListeners();
+
+      if (toDraw != null) {
+        _deck.removeAt(drawIndex);
+        _hand.add(toDraw);
+        notifyListeners();
+      }
     }
   }
 
@@ -189,11 +208,11 @@ class CombatManager extends ChangeNotifier {
     _aiActionPoints = 6.0;
   }
 
-  void spawnUnit(NPC npc, CombatSide side, {double? x, double? y}) {
+  bool spawnUnit(NPC npc, CombatSide side, {double? x, double? y}) {
     final stats = npc.combatStats;
-    if (stats == null) return;
+    if (stats == null) return false;
 
-    if (side == CombatSide.player && _actionPoints < stats.cost) return;
+    if (side == CombatSide.player && _actionPoints < stats.cost) return false;
 
     if (side == CombatSide.player) {
       _actionPoints -= stats.cost;
@@ -228,6 +247,7 @@ class CombatManager extends ChangeNotifier {
     }
 
     notifyListeners();
+    return true;
   }
 
   void _aiDrawCard() {
@@ -311,6 +331,7 @@ class CombatManager extends ChangeNotifier {
     // 4. Cleanup dead units
     _combatants.removeWhere((c) {
       if (c.isDead) {
+        _addLog('${c.npc.name} has been vanquished.', side: c.side);
         // Trigger Knell abilities before removal
         for (final ability in c.npc.abilities) {
           if (ability.type == AbilityType.knell) {
@@ -319,7 +340,15 @@ class CombatManager extends ChangeNotifier {
         }
         // Return player units to deck
         if (c.side == CombatSide.player && !c.npc.isPlayer) {
-          _deck.add(c.npc);
+          // Reset unit state before recycling
+          final resetNpc = c.npc.copyWith(
+            combatStats: c.npc.combatStats?.copyWith(
+              health: c.npc.combatStats?.maxHealth,
+            ),
+            specialCharge: 0.0,
+            status: NPCStatus.idle,
+          );
+          _deck.add(resetNpc);
         } else if (c.side == CombatSide.enemy) {
           _killedEnemies.add(c.npc);
           // Roll for loot
@@ -373,13 +402,19 @@ class CombatManager extends ChangeNotifier {
     final playerUnits = _combatants.where((c) => c.side == CombatSide.player);
     final enemyUnits = _combatants.where((c) => c.side == CombatSide.enemy);
 
-    if (playerUnits.isEmpty ||
-        !playerUnits.any((c) => c.npc.isPlayer && !c.isDead)) {
+    final playerCharacterDead = !playerUnits.any(
+      (c) => c.npc.isPlayer && !c.isDead,
+    );
+    final enemyCharacterDead = enemyUnits.any(
+      (c) => c.npc.id == 'ai_mirror' && c.isDead,
+    );
+
+    if (playerUnits.isEmpty || playerCharacterDead) {
       _isDefeat = true;
       _isCombatActive = false;
       _projectiles.clear();
-    } else if (enemyUnits.isEmpty) {
-      // Victory immediately if all enemies dead
+    } else if (enemyUnits.isEmpty || enemyCharacterDead) {
+      // Victory immediately if all enemies dead OR enemy leader dead
       _isVictory = true;
       _isCombatActive = false;
       _projectiles.clear();
@@ -418,7 +453,58 @@ class CombatManager extends ChangeNotifier {
       }
     }
 
-    // A. Special Charge
+    // A. Special Action State (Progressive special abilities like Giles' Execute)
+    if (c.specialActionId == 'execute_low_health') {
+      final target = _combatants.firstWhereOrNull(
+        (t) => t.npc.id == c.specialTargetId && !t.isDead,
+      );
+
+      if (target == null) {
+        // Target lost or already dead, clear state
+        c.specialActionId = null;
+        c.specialTargetId = null;
+      } else {
+        // 1. Stun target (Stop them from moving/attacking)
+        target.attackCooldown = max(
+          target.attackCooldown,
+          0.5,
+        ); // Constant stun refresh
+        target.freezeTimer = max(target.freezeTimer, 0.5);
+
+        // 2. Move Giles to target at 2x speed
+        final dx = target.x - c.x;
+        final dy = target.y - c.y;
+        final dist = sqrt(dx * dx + dy * dy);
+
+        if (dist > 1.5) {
+          final moveDist =
+              stats.movement *
+              dt *
+              3.0; // Faster movement for special (was 2.0)
+          c.x += (dx / dist) * moveDist;
+          c.y += (dy / dist) * moveDist;
+          
+          // Re-stun target
+          target.attackCooldown = 0.5;
+          target.freezeTimer = 0.5;
+          return; // Skip normal targeting/movement while in special state
+        } else {
+          // 3. Close enough to EXECUTE
+          final tStats = target.npc.combatStats!;
+          target.npc = target.npc.copyWith(
+            combatStats: tStats.copyWith(health: 0),
+          );
+          target.isDead = true;
+          c.specialActionId = null;
+          c.specialTargetId = null;
+          _addLog('${c.npc.name} executed ${target.npc.name}!', side: c.side);
+          _addFloatingMessage(target, 'EXECUTED', Colors.redAccent);
+          return;
+        }
+      }
+    }
+
+    // A2. Special Charge
     if (c.npc.abilities.any((a) => a.type == AbilityType.special)) {
       final special = c.npc.abilities.firstWhere(
         (a) => a.type == AbilityType.special,
@@ -434,9 +520,10 @@ class CombatManager extends ChangeNotifier {
         .where((other) => other.side != c.side && !other.isDead)
         .toList();
 
-    // Flyer rules: Only ranged/flyers can hit flyers
-    if (stats.distance < 1.5 && !stats.isFlying) {
-      // This is a ground melee unit (reach < 1.5ft)
+    // Flyer targeting rules
+    final bool isRanged = stats.distance >= 3.0; // Standardize ranged threshold
+    if (!stats.isFlying && !isRanged) {
+      // Ground melee units can only hit other ground units
       targets = targets.where((t) => !t.npc.combatStats!.isFlying).toList();
     }
 
@@ -531,8 +618,8 @@ class CombatManager extends ChangeNotifier {
         c.attackCooldown = stats.speed * 1.2; // Faster combat (was 1.2)
       }
 
-      // Auto-fire special ability if charged
-      if (c.npc.specialCharge >= 1.0) {
+      // Auto-fire special ability if charged (AI ONLY)
+      if (c.npc.specialCharge >= 1.0 && c.side == CombatSide.enemy) {
         executeSpecial(c.npc.id);
       }
     }
@@ -572,10 +659,20 @@ class CombatManager extends ChangeNotifier {
     }
 
     // Damage calculation
-    double damage = max(
-      1.0,
-      (stats.attack - targetStats.defense) * 1.5,
-    ); // 1.5x DAMAGE BOOST
+    double damage;
+    if (stats.damageFormula != null && stats.damageFormula!.contains('-')) {
+      final parts = stats.damageFormula!.split('-');
+      final minDmg = double.tryParse(parts[0]) ?? stats.attack;
+      final maxDmg = double.tryParse(parts[1]) ?? stats.attack * 1.5;
+      damage = minDmg + Random().nextDouble() * (maxDmg - minDmg);
+      // Still apply defense as a reduction
+      damage = max(1.0, damage - targetStats.defense);
+    } else {
+      damage = max(
+        1.0,
+        (stats.attack - targetStats.defense) * 1.5,
+      ); // 1.5x DAMAGE BOOST
+    }
 
     // Swarm damage capping
     if (targetStats.swarmSize > 0) {
@@ -660,8 +757,14 @@ class CombatManager extends ChangeNotifier {
       case 'execute_low_health':
         final threshold = (ability.effectData['threshold'] as num).toDouble();
         final targets = _combatants
-            .where((other) => other.side != c.side && !other.isDead)
+            .where(
+              (other) =>
+                  other.side != c.side &&
+                  !other.isDead &&
+                  !other.npc.combatStats!.isFlying,
+            )
             .toList();
+        final stats = c.npc.combatStats!;
         if (targets.isNotEmpty) {
           targets.sort((a, b) {
             final distA = sqrt(pow(a.x - c.x, 2) + pow(a.y - c.y, 2));
@@ -670,19 +773,23 @@ class CombatManager extends ChangeNotifier {
           });
 
           final target = targets.firstWhereOrNull((t) {
-            final dist = sqrt(pow(t.x - c.x, 2) + pow(t.y - c.y, 2));
+            final dx = t.x - c.x;
+            final dy = t.y - c.y;
+            final dist = sqrt(dx * dx + dy * dy);
             final tStats = t.npc.combatStats!;
-            return dist <= 10.0 &&
-                (tStats.health / tStats.maxHealth) < threshold;
+            // Edge-to-edge check
+            return (dist - stats.radius - tStats.radius) <= 12.0 &&
+                (tStats.health / tStats.maxHealth) <= threshold;
           });
 
           if (target != null) {
-            final stats = target.npc.combatStats!;
-            target.npc = target.npc.copyWith(
-              combatStats: stats.copyWith(health: 0),
+            // Set special state for walk-over-and-kill
+            c.specialActionId = 'execute_low_health';
+            c.specialTargetId = target.npc.id;
+            _addLog(
+              '${c.npc.name} is moving to EXECUTE ${target.npc.name}!',
+              side: c.side,
             );
-            target.isDead = true;
-            _addLog('${c.npc.name} executed ${target.npc.name}!', side: c.side);
           }
         }
         break;
@@ -725,24 +832,68 @@ class CombatManager extends ChangeNotifier {
         final targets = _combatants
             .where((other) => other.side != c.side && !other.isDead)
             .toList();
-        // Automatically target furthest enemy as per spec
         if (targets.isNotEmpty) {
           targets.sort(
             (a, b) => (b.x - c.x).abs().compareTo((a.x - c.x).abs()),
           );
           final furthest = targets.first;
-          // Simple line logic: freeze everyone between c and furthest
+          
+          // Freeze logic: Anyone within a 'line' (narrow rectangle) toward furthest
           final minX = min(c.x, furthest.x);
           final maxX = max(c.x, furthest.x);
-          for (final target in targets) {
-            if (target.x >= minX && target.x <= maxX) {
-              // Add freeze status implementation or placeholder
-              // For now, let's just pause them by setting a flag or status
-              _applyFreeze(target, duration);
+          final midY = c.y;
+          const lineThickness = 15.0; // 7.5ft each side
+
+          for (final t in targets) {
+            if (t.x >= minX &&
+                t.x <= maxX &&
+                (t.y - midY).abs() <= lineThickness) {
+              _applyFreeze(t, duration);
               _addLog(
-                '${target.npc.name} was frozen for ${duration.toStringAsFixed(1)}s!',
-                side: target.side,
+                '${t.npc.name} was frozen for ${duration.toStringAsFixed(1)}s!',
+                side: t.side,
               );
+              _addFloatingMessage(t, 'FROZEN', Colors.lightBlueAccent);
+            }
+          }
+        }
+        break;
+
+      case 'corpse_arc':
+        final damage = (ability.effectData['damage'] as num).toDouble();
+        final aoeDamage = (ability.effectData['aoe_damage'] as num).toDouble();
+        final range =
+            (ability.effectData['range'] as num).toDouble() *
+            3.28; // Meters to feet
+
+        final targets = _combatants
+            .where((other) => other.side != c.side && !other.isDead)
+            .toList();
+        if (targets.isNotEmpty) {
+          targets.sort(
+            (a, b) => (a.x - c.x).abs().compareTo((b.x - c.x).abs()),
+          );
+          final primary = targets.first;
+
+          if ((primary.x - c.x).abs() <= range) {
+            // Apply primary damage
+            _applyDamage(c, primary, damage);
+            _addLog(
+              '${c.npc.name} struck ${primary.npc.name} with Lightning Arc!',
+              side: c.side,
+            );
+
+            // Apply AoE to others nearby primary
+            for (final t in targets) {
+              if (t == primary) continue;
+              final distToPrimary = sqrt(
+                pow(t.x - primary.x, 2) + pow(t.y - primary.y, 2),
+              );
+              if (distToPrimary <= 25.0) {
+                // 25ft AoE jump
+                _applyDamage(c, t, aoeDamage);
+                _addFloatingMessage(t, 'ARCED', Colors.yellowAccent);
+              }
             }
           }
         }
@@ -790,14 +941,18 @@ class CombatManager extends ChangeNotifier {
     switch (special.id) {
       case 'execute_low_health':
         final threshold = (special.effectData['threshold'] as num).toDouble();
-        final range = (c.npc.combatStats?.distance ?? 1.0) * 3.28;
+        const range = 12.0; // Melee execution range
         return _combatants.any(
           (other) =>
               other.side != c.side &&
               !other.isDead &&
-              (other.x - c.x).abs() <= range &&
+              !other.npc.combatStats!.isFlying && // Giles cannot execute flyers
+              (sqrt(pow(other.x - c.x, 2) + pow(other.y - c.y, 2)) -
+                      c.npc.combatStats!.radius -
+                      other.npc.combatStats!.radius) <=
+                  range &&
               (other.npc.combatStats!.health /
-                      other.npc.combatStats!.maxHealth) <
+                      other.npc.combatStats!.maxHealth) <=
                   threshold,
         );
       case 'master_command':
@@ -864,6 +1019,115 @@ class CombatManager extends ChangeNotifier {
     final alphonse = _combatants.firstWhere((c) => c.npc.isPlayer);
     alphonse.x = targetX.clamp(_fieldScroll, _fieldScroll + 100.0);
     alphonse.y = targetY.clamp(0.0, fieldWidth);
+    notifyListeners();
+  }
+
+  void _applyDamage(Combatant attacker, Combatant target, double damage) {
+    if (target.isDead) return;
+    final tStats = target.npc.combatStats!;
+    final actualDamage = max(1.0, damage - tStats.defense);
+
+    final newHealth = max(0.0, tStats.health - actualDamage);
+    target.npc = target.npc.copyWith(
+      combatStats: tStats.copyWith(health: newHealth),
+    );
+    _addFloatingMessage(target, '-${actualDamage.toInt()}', Colors.red);
+    if (newHealth <= 0) {
+      target.isDead = true;
+    }
+  }
+
+  void setHoveredAbility(String? combatantId) {
+    _highlightedTargetIds.clear();
+    if (combatantId == null) {
+      notifyListeners();
+      return;
+    }
+
+    final c = _combatants.firstWhereOrNull((c) => c.npc.id == combatantId);
+    if (c == null) {
+      notifyListeners();
+      return;
+    }
+
+    final special = c.npc.abilities.firstWhereOrNull(
+      (a) => a.type == AbilityType.special,
+    );
+    if (special == null) {
+      notifyListeners();
+      return;
+    }
+
+    switch (special.id) {
+      case 'execute_low_health':
+        final targets = _combatants
+            .where(
+              (other) =>
+                  other.side != c.side &&
+                  !other.isDead &&
+                  !other.npc.combatStats!.isFlying,
+            )
+            .toList();
+        targets.sort(
+          (a, b) => sqrt(
+            pow(a.x - c.x, 2) + pow(a.y - c.y, 2),
+          ).compareTo(sqrt(pow(b.x - c.x, 2) + pow(b.y - c.y, 2))),
+        );
+
+        final threshold = (special.effectData['threshold'] as num).toDouble();
+        final target = targets.firstWhereOrNull((t) {
+          final distSq = pow(t.x - c.x, 2) + pow(t.y - c.y, 2);
+          final tStats = t.npc.combatStats!;
+          return (sqrt(distSq) - c.npc.combatStats!.radius - tStats.radius) <=
+                  12.0 &&
+              (tStats.health / tStats.maxHealth) <= threshold;
+        });
+        if (target != null) _highlightedTargetIds.add(target.npc.id);
+        break;
+
+      case 'freeze_line':
+        final enemies = _combatants
+            .where((other) => other.side != c.side && !other.isDead)
+            .toList();
+        if (enemies.isNotEmpty) {
+          enemies.sort(
+            (a, b) => (b.x - c.x).abs().compareTo((a.x - c.x).abs()),
+          );
+          final furthest = enemies.first;
+          final minX = min(c.x, furthest.x);
+          final maxX = max(c.x, furthest.x);
+          final midY = c.y;
+          for (final t in enemies) {
+            if (t.x >= minX && t.x <= maxX && (t.y - midY).abs() <= 15.0) {
+              _highlightedTargetIds.add(t.npc.id);
+            }
+          }
+        }
+        break;
+
+      case 'corpse_arc':
+        final enemies = _combatants
+            .where((other) => other.side != c.side && !other.isDead)
+            .toList();
+        if (enemies.isNotEmpty) {
+          enemies.sort(
+            (a, b) => (a.x - c.x).abs().compareTo((b.x - c.x).abs()),
+          );
+          final primary = enemies.first;
+          final range = (special.effectData['range'] as num).toDouble() * 3.28;
+          if ((primary.x - c.x).abs() <= range) {
+            _highlightedTargetIds.add(primary.npc.id);
+            for (final t in enemies) {
+              if (t == primary) continue;
+              if (sqrt(pow(t.x - primary.x, 2) + pow(t.y - primary.y, 2)) <=
+                  25.0) {
+                _highlightedTargetIds.add(t.npc.id);
+              }
+            }
+          }
+        }
+        break;
+    }
     notifyListeners();
   }
 }
