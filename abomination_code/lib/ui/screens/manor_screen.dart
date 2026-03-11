@@ -586,12 +586,23 @@ class _ManorScreenState extends State<ManorScreen> {
                                 ),
                               ),
                             ),
+                            IconButton(
+                              onPressed: () => state.cancelTask(activeTask.id),
+                              icon: const Icon(
+                                Icons.close,
+                                color: Colors.redAccent,
+                                size: 20,
+                              ),
+                              tooltip: 'CANCEL TASK',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
                           ],
                         ),
                       ),
                     const SizedBox(height: 16),
                     Text(
-                      room.detailedDescription,
+                      room.description,
                       style: GoogleFonts.oldStandardTt(
                         fontSize: 13,
                         color: const Color(0xFFC4B89B).withValues(alpha: 0.8),
@@ -677,38 +688,27 @@ class _ManorScreenState extends State<ManorScreen> {
                     if (room.type == RoomType.field ||
                         room.type == RoomType.garden)
                       _buildFieldStatus(context, state, room),
-                    if (activeTask == null)
-                      ...room.availableTasks.map((taskType) {
-                        // Skip cleaning if already very clean
-                        if (taskType == TaskType.cleanRoom &&
-                            room.dirtiness < 0.05) {
-                          return const SizedBox.shrink();
-                        }
-
-                        bool isAvailable = _isTaskAvailable(
+                    ...room.availableTasks.where((taskType) {
+                      // Only show available tasks. If it's a one-time task and someone is already doing it,
+                      // it will be caught by _isTaskAvailable logic or assignNpcToTask.
+                      // For now, let's keep it simple: always show if available.
+                      return _isTaskAvailable(state, room, taskType);
+                    }).map((taskType) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: _assignmentButton(
+                          context,
                           state,
-                          room,
                           taskType,
-                        );
-
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: _assignmentButton(
+                          () => _handleTaskInteraction(
                             context,
                             state,
+                            room,
                             taskType,
-                            isAvailable
-                                ? () => _handleAgriculturalTask(
-                                    context,
-                                    state,
-                                    room,
-                                    taskType,
-                                  )
-                                : null,
-                            isGreyed: !isAvailable,
                           ),
-                        );
-                      }),
+                        ),
+                      );
+                    }),
                     if (room.isRestored &&
                         (room.type == RoomType.bedroom ||
                             room.type == RoomType.butlerQuarters ||
@@ -776,7 +776,17 @@ class _ManorScreenState extends State<ManorScreen> {
     bool isGreyed = false,
   }) {
     final metadata = TaskService.getMetadata(type);
-    final label = type.displayName.toUpperCase();
+    String label = type.displayName.toUpperCase();
+ 
+    // Dynamic labels for Cook and Research
+    if (type == TaskType.cook && state.cookingQueue.isNotEmpty) {
+      final recipeId = state.cookingQueue.first;
+      label = "COOK ${recipeId.replaceAll('_', ' ')}".toUpperCase();
+    } else if (type == TaskType.research && state.researchQueue.isNotEmpty) {
+      final topic = state.researchQueue.first;
+      label = "RESEARCH ${topic.toUpperCase()}";
+    }
+ 
     final icon = _getTaskIcon(type);
 
     return Container(
@@ -1036,31 +1046,62 @@ class _ManorScreenState extends State<ManorScreen> {
       }
     }
 
+    // Avoid double-assignment for non-repeatable room tasks if already active or queued
+    final isRepeatable = type == TaskType.cook ||
+        type == TaskType.research ||
+        type == TaskType.archiveResearch ||
+        type == TaskType.transcribeNotes;
+
+    if (!isRepeatable) {
+      final isAlreadyActiveOrQueued = state.activeTasks.any(
+        (t) => t.targetId == room.id && t.type == type,
+      );
+      if (isAlreadyActiveOrQueued) return false;
+    }
+
     switch (type) {
+      case TaskType.cleanRoom:
+        return room.dirtiness > 0.1;
+      case TaskType.cleanDish:
+        return (state.resources['dirty_dishes'] ?? 0) > 0;
+      case TaskType.butcherAnimals:
+        return (state.resources['cattle_carcass'] ?? 0) > 0;
+      case TaskType.cook:
+        return state.cookingQueue.isNotEmpty;
+      case TaskType.research:
+        return state.researchQueue.isNotEmpty;
       case TaskType.plantCrops:
         return room.isTilled;
       case TaskType.waterCrops:
       case TaskType.careForCrops:
       case TaskType.harvestCabbage:
       case TaskType.harvestCrops:
-        return state.crops.isNotEmpty;
+        return state.crops.where((c) => c.roomId == room.id).isNotEmpty;
       default:
         return true;
     }
   }
 
-  void _handleAgriculturalTask(
+  void _handleTaskInteraction(
     BuildContext context,
     GameState state,
     Room room,
     TaskType type,
   ) {
-    if (type == TaskType.plantCrops) {
-      _showSeedSelection(context, state, room);
-    } else {
-      _showWorkerSelection(context, state, room, type);
+    switch (type) {
+      case TaskType.plantCrops:
+        _showSeedSelection(context, state, room);
+        break;
+      case TaskType.cook:
+      case TaskType.research:
+        // No sub-selection anymore, just go straight to worker selection
+        _showWorkerSelection(context, state, room, type);
+        break;
+      default:
+        _showWorkerSelection(context, state, room, type);
     }
   }
+
 
   void _showSeedSelection(BuildContext context, GameState state, Room room) {
     final seedResources = state.resources.entries

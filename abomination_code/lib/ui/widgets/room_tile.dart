@@ -264,6 +264,8 @@ class RoomTile extends StatelessWidget {
         return Icons.handyman;
       case RoomType.granary:
         return Icons.storage;
+      case RoomType.operatingRoom:
+        return Icons.medical_services;
     }
   }
 

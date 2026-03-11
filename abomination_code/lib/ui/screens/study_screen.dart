@@ -269,6 +269,13 @@ class StudyScreen extends StatelessWidget {
       child: InkWell(
         onTap: () {
           state.addResearchToQueue(item.id);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${item.name.toUpperCase()} ENQUEUED FOR RESEARCH'),
+              backgroundColor: const Color(0xFFC4B89B),
+              duration: const Duration(seconds: 1),
+            ),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -381,7 +388,18 @@ class StudyScreen extends StatelessWidget {
                 ),
                 OutlinedButton(
                   onPressed: canCraft
-                      ? () => state.addExperimentalRecipeToQueue(recipe.id)
+                      ? () {
+                          state.addExperimentalRecipeToQueue(recipe.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${recipe.name.toUpperCase()} ENQUEUED FOR STUDY',
+                              ),
+                              backgroundColor: const Color(0xFFC4B89B),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        }
                       : null,
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
@@ -588,7 +606,18 @@ class StudyScreen extends StatelessWidget {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: canStart
-                        ? () => state.addScienceActivityToQueue(activity.id)
+                        ? () {
+                            state.addScienceActivityToQueue(activity.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${activity.name.toUpperCase()} COMMENCED IN STUDY QUEUE',
+                                ),
+                                backgroundColor: const Color(0xFFC4B89B),
+                                duration: const Duration(seconds: 1),
+                              ),
+                            );
+                          }
                         : null,
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(

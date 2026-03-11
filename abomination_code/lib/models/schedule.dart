@@ -83,6 +83,22 @@ class ScheduleBlock {
     'manualTargetId': manualTargetId,
   };
 
+  ScheduleBlock copyWith({
+    int? hourIndex,
+    ScheduleActivity? activity,
+    String? preferredRoomId,
+    TaskType? manualTaskType,
+    String? manualTargetId,
+  }) {
+    return ScheduleBlock(
+      hourIndex: hourIndex ?? this.hourIndex,
+      activity: activity ?? this.activity,
+      preferredRoomId: preferredRoomId ?? this.preferredRoomId,
+      manualTaskType: manualTaskType ?? this.manualTaskType,
+      manualTargetId: manualTargetId ?? this.manualTargetId,
+    );
+  }
+
   factory ScheduleBlock.fromJson(Map<String, dynamic> json) => ScheduleBlock(
     hourIndex: json['hourIndex'] ?? json['hour'] as int, // Migration support
     activity: ScheduleActivity.values[json['activity'] as int],
@@ -109,6 +125,15 @@ class NPCSchedule {
 
   ScheduleBlock getBlock(int hourIndex) {
     return blocks.firstWhere((b) => b.hourIndex == hourIndex);
+  }
+
+  NPCSchedule updateBlock(int hourIndex, ScheduleBlock newBlock) {
+    final newBlocks = List<ScheduleBlock>.from(blocks);
+    final idx = newBlocks.indexWhere((b) => b.hourIndex == hourIndex);
+    if (idx != -1) {
+      newBlocks[idx] = newBlock;
+    }
+    return NPCSchedule(blocks: newBlocks);
   }
 
   Map<String, dynamic> toJson() => {

@@ -17,7 +17,36 @@ class TaskResultGenerator {
       case TaskType.prepareMeals:
       case TaskType.refineFood:
       case TaskType.butcherAnimals:
-        // Cooking: hygiene, perception, dexterity, intelligence
+      case TaskType.butcherChicken:
+        if (recipeId == 'butcher_cow') {
+          double weight = 200.0;
+          return TaskResult(
+            message: "The cow has been butchered. A significant amount of beef is ready.",
+            resourcesGained: {
+              'meat_beef': (weight * 0.5).round().clamp(50, 200),
+            },
+            quality: 1.0,
+          );
+        }
+        if (recipeId == 'butcher_rat') {
+          return TaskResult(
+            message: "${worker.name} butchered a rat. It's not much, but it's meat.",
+            resourcesGained: {'meat': 1},
+            quality: 0.5,
+          );
+        }
+        if (type == TaskType.butcherChicken) {
+          double weight = 2.0;
+          return TaskResult(
+            message: "The chicken has been butchered. Fresh poultry meat is ready.",
+            resourcesGained: {
+              'meat_chicken': (weight * 0.8).round().clamp(1, 10),
+            },
+            quality: 1.0,
+          );
+        }
+
+        // Default cooking/butcher quality calculation
         double hygiene = (worker.stats['hygiene'] ?? 30) / 100.0;
         double perception = (worker.stats['perception'] ?? 30) / 100.0;
         double dexterity = (worker.stats['dexterity'] ?? 30) / 100.0;
@@ -31,8 +60,8 @@ class TaskResultGenerator {
             : (cookQuality < 0.3 ? "poorly prepared" : "prepared");
         return TaskResult(
           message:
-              "${worker.name} finished cooking $recipeDisplay. It appears to be $qualityMsg.",
-          quality: cookQuality * 2.0, // Scale to 0-2
+              "${worker.name} finished processing $recipeDisplay. It appears to be $qualityMsg.",
+          quality: cookQuality * 2.0,
         );
       case TaskType.cleanRoom:
       case TaskType.cleanDish:
@@ -164,14 +193,6 @@ class TaskResultGenerator {
         return TaskResult(
           message:
               "${worker.name} kept a watchful eye on the coop through the night.",
-        );
-      case TaskType.butcherChicken:
-        return TaskResult(
-          message:
-              "The deed is done. Fresh poultry meat is ready for the kitchen.",
-          resourcesGained: {
-            'meat': 1,
-          }, 
         );
       case TaskType.greetGuest:
         return TaskResult(

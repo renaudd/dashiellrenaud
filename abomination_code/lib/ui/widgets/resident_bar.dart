@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/npc.dart';
 import '../../models/relationship.dart';
 import '../../state/game_state.dart';
+import '../../services/task_service.dart';
 import 'character_blob_renderer.dart';
 
 class ResidentBar extends StatefulWidget {
@@ -213,6 +214,14 @@ class _ResidentBarState extends State<ResidentBar> {
         ? widget.npc.intentQueue[1]
         : null;
 
+    final state = Provider.of<GameState>(context, listen: false);
+    final activeRoom = activeIntent?.targetRoomId != null
+        ? state.rooms.firstWhere((r) => r.id == activeIntent!.targetRoomId, orElse: () => state.rooms.first).name
+        : null;
+    final nextRoom = nextIntent?.targetRoomId != null
+        ? state.rooms.firstWhere((r) => r.id == nextIntent!.targetRoomId, orElse: () => state.rooms.first).name
+        : null;
+
     final remaining =
         activeIntent?.minutesRemaining ??
         activeIntent?.expectedDurationMin ??
@@ -220,6 +229,9 @@ class _ResidentBarState extends State<ResidentBar> {
     final hours = remaining ~/ 60;
     final mins = remaining % 60;
     final durationText = hours > 0 ? "$hours HR $mins MIN" : "$mins MIN";
+
+    final activeActionText = activeIntent?.action.displayName.toUpperCase() ?? "WAITING AT ENTRY";
+    final activeDisplay = activeRoom != null ? "$activeActionText ($activeRoom)" : activeActionText;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,7 +246,7 @@ class _ResidentBarState extends State<ResidentBar> {
           ),
         ),
         Text(
-          activeIntent?.action.name.toUpperCase() ?? "WAITING AT ENTRY",
+          activeDisplay,
           style: GoogleFonts.playfairDisplay(
             color: inkColor,
             fontSize: 14, // Smaller for density
@@ -244,12 +256,14 @@ class _ResidentBarState extends State<ResidentBar> {
         const SizedBox(height: 12),
         _buildActionLabel(
           "Present Task:",
-          activeIntent?.action.name ?? "Idle",
+          activeIntent?.action.displayName ?? "Idle",
+          activeRoom,
           inkColor,
         ),
         _buildActionLabel(
           "Upcoming Task:",
-          nextIntent?.action.name ?? "Pending",
+          nextIntent?.action.displayName ?? "Pending",
+          nextRoom,
           inkColor,
           isDim: true,
         ),
@@ -260,9 +274,11 @@ class _ResidentBarState extends State<ResidentBar> {
   Widget _buildActionLabel(
     String label,
     String value,
+    String? roomName,
     Color inkColor, {
     bool isDim = false,
   }) {
+    final displayValue = roomName != null ? "$value ($roomName)" : value;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4.0),
       child: Column(
@@ -277,7 +293,7 @@ class _ResidentBarState extends State<ResidentBar> {
             ),
           ),
           Text(
-            value.toUpperCase(),
+            displayValue.toUpperCase(),
             style: GoogleFonts.playfairDisplay(
               color: isDim ? inkColor.withValues(alpha: 0.5) : inkColor,
               fontSize: 10, // Smaller for density

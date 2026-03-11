@@ -112,10 +112,14 @@ class TaskCategoryMapping {
       case TaskType.defendManor:
         return ResponsibilityCategory.labor;
 
+      case TaskType.study:
+      case TaskType.experiment:
+      case TaskType.operation:
       case TaskType.rest:
       case TaskType.eat:
       case TaskType.idle:
       case TaskType.useToilet:
+      case TaskType.wash:
         return null; // Maintenance tasks, not part of responsibility grid
     }
   }

@@ -27,6 +27,8 @@ enum SexualOrientation { straight, gay, lesbian, bisexual, asexual }
 
 enum NPCOrgGroup { A, B, C, D } // Likelihood/Priority groups (A > B > C > D)
 
+
+
 class ChefSkills {
   final int knifeSkills;
   final int fireSkills;
@@ -196,6 +198,8 @@ class NPC {
   final double digestion;
   final int breakingPointMinutes;
   final int mentalBreakingPointMinutes;
+  final double hygiene; // 0.0 to 100.0
+
 
   // Locomotion
   final List<String> movementPath;
@@ -272,6 +276,8 @@ class NPC {
     this.digestion = 0.0,
     this.breakingPointMinutes = 0,
     this.mentalBreakingPointMinutes = 0,
+    this.hygiene = 100.0,
+
     this.movementPath = const [],
     this.journeyInventory = const {},
     this.escortIds = const [],
@@ -345,6 +351,8 @@ class NPC {
     double? digestion,
     int? breakingPointMinutes,
     int? mentalBreakingPointMinutes,
+    double? hygiene,
+
     List<String>? movementPath,
     Map<String, int>? journeyInventory,
     List<String>? escortIds,
@@ -418,6 +426,8 @@ class NPC {
       breakingPointMinutes: breakingPointMinutes ?? this.breakingPointMinutes,
       mentalBreakingPointMinutes:
           mentalBreakingPointMinutes ?? this.mentalBreakingPointMinutes,
+      hygiene: hygiene ?? this.hygiene,
+
       movementPath: movementPath ?? this.movementPath,
       journeyInventory: journeyInventory ?? this.journeyInventory,
       escortIds: escortIds ?? this.escortIds,
@@ -557,6 +567,8 @@ class NPC {
     'digestion': digestion,
     'breakingPointMinutes': breakingPointMinutes,
     'mentalBreakingPointMinutes': mentalBreakingPointMinutes,
+    'hygiene': hygiene,
+
     'movementPath': movementPath,
     'journeyInventory': journeyInventory,
     'escortIds': escortIds,
@@ -628,6 +640,7 @@ class NPC {
     digestion: (json['digestion'] as num?)?.toDouble() ?? 0.0,
     breakingPointMinutes: json['breakingPointMinutes'] as int? ?? 0,
     mentalBreakingPointMinutes: json['mentalBreakingPointMinutes'] as int? ?? 0,
+    hygiene: (json['hygiene'] as num? ?? 100.0).toDouble(),
     movementPath:
         (json['movementPath'] as List<dynamic>?)
             ?.map((e) => e as String)

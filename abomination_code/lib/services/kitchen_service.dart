@@ -119,6 +119,33 @@ class KitchenService {
         minKnifeSkills: 5,
         minFireSkills: 15,
       ),
+      Recipe(
+        id: 'butcher_cow',
+        name: 'Butcher Cow',
+        ingredients: {'cattle_carcass': 1},
+        yield: 1, // Yield is handled as meat resources directly in GameState or TaskResult
+        baseQuality: 1.0,
+        durationMinutes: 120,
+        minKnifeSkills: 30,
+      ),
+      Recipe(
+        id: 'butcher_chicken',
+        name: 'Butcher Chicken',
+        ingredients: {'meat_chicken': 1}, // This matches chicken_coop_screen.dart expectation or GameItem
+        yield: 1,
+        baseQuality: 1.0,
+        durationMinutes: 30,
+        minKnifeSkills: 10,
+      ),
+      Recipe(
+        id: 'butcher_rat',
+        name: 'Butcher Rat',
+        ingredients: {'rat_specimen': 1},
+        yield: 1,
+        baseQuality: 0.5,
+        durationMinutes: 15,
+        minKnifeSkills: 5,
+      ),
     ];
   }
 }

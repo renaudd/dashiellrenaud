@@ -67,8 +67,8 @@ class Chicken {
   final double hunger; // 0-100
   final GameDate lastEggDate;
   final bool isMale;
-  final bool
-  isFertilized; // Only for eggs if we had an Egg model, but currently tracked on hen for simplicity or we might need an Egg object later. Actually, the user said "eggs might be fertilized". I'll add isMale to Chicken and we can check for roosters in the coop.
+  final bool isFertilized;
+  final double weight; // in kilograms
 
   Chicken({
     required this.id,
@@ -79,6 +79,7 @@ class Chicken {
     required this.lastEggDate,
     this.isMale = false,
     this.isFertilized = false,
+    this.weight = 0.5,
   });
 
   bool get isMature => ageMinutes >= breed.growthRate;
@@ -91,6 +92,7 @@ class Chicken {
     GameDate? lastEggDate,
     bool? isMale,
     bool? isFertilized,
+    double? weight,
   }) {
     return Chicken(
       id: id,
@@ -101,6 +103,7 @@ class Chicken {
       lastEggDate: lastEggDate ?? this.lastEggDate,
       isMale: isMale ?? this.isMale,
       isFertilized: isFertilized ?? this.isFertilized,
+      weight: weight ?? this.weight,
     );
   }
 
@@ -113,6 +116,7 @@ class Chicken {
     'lastEggDate': lastEggDate.toJson(),
     'isMale': isMale,
     'isFertilized': isFertilized,
+    'weight': weight,
   };
 
   factory Chicken.fromJson(Map<String, dynamic> json) => Chicken(
@@ -124,16 +128,19 @@ class Chicken {
     lastEggDate: GameDate.fromJson(json['lastEggDate'] as Map<String, dynamic>),
     isMale: json['isMale'] as bool? ?? false,
     isFertilized: json['isFertilized'] as bool? ?? false,
+    weight: (json['weight'] as num? ?? 0.5).toDouble(),
   );
 
   factory Chicken.create(
     ChickenBreedType type,
     GameDate currentDate, {
     bool isMale = false,
+    double weight = 0.5,
   }) => Chicken(
     id: const Uuid().v4(),
     breedType: type,
     lastEggDate: currentDate,
     isMale: isMale,
+    weight: weight,
   );
 }

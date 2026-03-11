@@ -70,11 +70,18 @@ enum TaskType {
   defendManor,
   trainCreature,
   surgicalCombination,
+  wash,
+  study,
+  experiment,
+  operation,
 }
+
 
 extension TaskTypeExtensions on TaskType {
   String get displayName {
     switch (this) {
+      case TaskType.wash:
+        return 'Wash';
       case TaskType.cleanRoom:
         return 'Clean Room';
       case TaskType.collectEggs:
@@ -211,6 +218,12 @@ extension TaskTypeExtensions on TaskType {
         return 'Train Creature';
       case TaskType.surgicalCombination:
         return 'Surgical Combination';
+      case TaskType.study:
+        return 'Study';
+      case TaskType.experiment:
+        return 'Experiment';
+      case TaskType.operation:
+        return 'Operation';
     }
   }
 }
@@ -290,26 +303,17 @@ class TaskService {
           ],
         );
       case TaskType.research:
-        return const TaskMetadata(
-          explanation:
-              "General Research: Synthesize insights from your collection. Advances a random scientific discipline by 12-15 points.",
-          typicalDuration: "4-8 Hours",
-          relevantAttributes: ['intelligence', 'judgment', 'perception'],
-          possibleOutcomes: [
-            "Random scientific advancement",
-            "Research notes",
-            "Scientific breakthroughs",
-          ],
-        );
+      case TaskType.study:
       case TaskType.archiveResearch:
         return const TaskMetadata(
           explanation:
-              "Archival Research: Move all carried research notes and studies into the local room's catalog for permanent reference.",
-          typicalDuration: "1-2 Hours",
-          relevantAttributes: ['dexterity', 'judgment', 'perception'],
+              "Synthesize insights from your collection. Advances a scientific discipline or deepens understanding.",
+          typicalDuration: "4-8 Hours",
+          relevantAttributes: ['intelligence', 'judgment', 'perception'],
           possibleOutcomes: [
-            "Organized knowledge",
-            "Increased research efficiency",
+            "Increased Knowledge points",
+            "Science level advances",
+            "Mental exhaustion",
           ],
         );
       case TaskType.transcribeNotes:
@@ -324,12 +328,16 @@ class TaskService {
           ],
         );
       case TaskType.observeExperiment:
+      case TaskType.experiment:
         return const TaskMetadata(
-          explanation:
-              "Longitudinal Observation: Carefully monitor an ongoing experiment to record its progression and note unexpected variables.",
-          typicalDuration: "2-4 Hours",
-          relevantAttributes: ['perception', 'intelligence', 'temperament'],
-          possibleOutcomes: ["Experimental data", "Incremental breakthroughs"],
+          explanation: "Advanced scientific procedures to understand and manipulate biology.",
+          typicalDuration: "4-12 Hours",
+          relevantAttributes: ['precision', 'judgment', 'intelligence'],
+          possibleOutcomes: [
+            "Biological insights",
+            "High quality specimens",
+            "Ethical decay",
+          ],
         );
       case TaskType.cook:
       case TaskType.prepareMeals:
@@ -352,16 +360,19 @@ class TaskService {
         );
       case TaskType.dissect:
       case TaskType.vivisection:
+      case TaskType.surgicalOperation:
+      case TaskType.operation:
+      case TaskType.surgery:
+      case TaskType.surgicalCombination:
         return const TaskMetadata(
-          explanation:
-              "Anatomizing a subject to understand its internal biology, often at great moral cost.",
-          typicalDuration: "3-5 Hours",
-          relevantAttributes: ['dexterity', 'intelligence', 'perception'],
+          explanation: "Complex medical or life-science procedures involving anatomical manipulation.",
+          typicalDuration: "4-12 Hours",
+          relevantAttributes: ['precision', 'judgment', 'intelligence'],
           possibleOutcomes: [
             "Anatomical data",
             "Biological specimens",
-            "Scientific depth",
-            "Moral corruption",
+            "Surgical skill",
+            "Ethical decay",
           ],
         );
       case TaskType.clinicalTrial:
@@ -404,23 +415,6 @@ class TaskService {
             "Manor upgrades",
             "New apparatus",
             "Industrial progress",
-          ],
-        );
-      case TaskType.surgery:
-      case TaskType.surgicalOperation:
-        return const TaskMetadata(
-          explanation: "Performing complex medical or life-science procedures.",
-          typicalDuration: "2-6 Hours",
-          relevantAttributes: [
-            'dexterity',
-            'judgment',
-            'intelligence',
-            'endurance',
-          ],
-          possibleOutcomes: [
-            "Surgical success",
-            "Physiological change",
-            "Risk of death",
           ],
         );
       case TaskType.hunt:
@@ -489,6 +483,14 @@ class TaskService {
           relevantAttributes: ['strength', 'endurance', 'intelligence'],
           possibleOutcomes: ["Functional Granary", "Food security"],
           requirements: {'funds': 10, 'wood': 15, 'timber': 10},
+        );
+      case TaskType.useToilet:
+      case TaskType.wash:
+        return const TaskMetadata(
+          explanation: "Personal maintenance and hygiene.",
+          typicalDuration: "15-30 Minutes",
+          relevantAttributes: ['hygiene'],
+          possibleOutcomes: ["Improved hygiene", "Mental clarity"],
         );
       // Fallback for others
       default:
@@ -711,6 +713,8 @@ class TaskService {
         return "Cleaning a dirty dish";
       case TaskType.useToilet:
         return "Using the toilet";
+      case TaskType.wash:
+        return "Washing up";
       case TaskType.extinguishFire:
         return "Fighting a blaze";
       case TaskType.recombineSpecimen:
@@ -721,6 +725,12 @@ class TaskService {
         return "Training a creature for combat";
       case TaskType.surgicalCombination:
         return "Combining specimens via specialized surgery";
+      case TaskType.study:
+        return "Studying";
+      case TaskType.experiment:
+        return "Experimenting";
+      case TaskType.operation:
+        return "Performing operation";
     }
   }
 }

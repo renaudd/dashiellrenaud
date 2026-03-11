@@ -22,6 +22,7 @@ enum RoomType {
   distillery,
   workshop,
   granary,
+  operatingRoom,
 }
 
 enum Floor { basement, ground, second, attic }
@@ -315,46 +316,56 @@ class Room {
   List<task_service.TaskType> get availableTasks {
     if (!isRestored) return [task_service.TaskType.restoreRoom];
 
-    List<task_service.TaskType> tasks = [task_service.TaskType.cleanRoom];
+    List<task_service.TaskType> tasks = [];
+
+    // Cleaning is only available if room is dirty
+    if (dirtiness > 0.05) {
+      tasks.add(task_service.TaskType.cleanRoom);
+    }
 
     switch (type) {
       case RoomType.kitchen:
-        tasks.addAll([
-          task_service.TaskType.cook,
-          task_service.TaskType.refineFood,
-          task_service.TaskType.butcherAnimals,
-          task_service.TaskType.cleanDish,
-        ]);
+        // Cook is the primary activity
+        tasks.add(task_service.TaskType.cook);
+
+        // Butcher Animal contextual: if carcasses are present
+        if (inventory.any((item) => item.id.contains('carcass'))) {
+          tasks.add(task_service.TaskType.butcherAnimals);
+        }
+
+        // Clean Dish contextual: if dirty dishes are present
+        if (inventory.any((item) => item.id == 'dirty_dish')) {
+          tasks.add(task_service.TaskType.cleanDish);
+        }
         break;
+
       case RoomType.study:
-        tasks.addAll([
-          task_service.TaskType.research,
-        ]);
+        // Research is the primary activity
+        tasks.add(task_service.TaskType.research);
         break;
+
+      case RoomType.library:
+        // Study is the primary activity (associated with research type for now or specific study type)
+        tasks.add(task_service.TaskType.study);
+        break;
+
       case RoomType.laboratory:
-        tasks.addAll([
-          task_service.TaskType.observeExperiment,
-          task_service.TaskType.dissect,
-          task_service.TaskType.vivisection,
-          task_service.TaskType.surgicalOperation,
-          task_service.TaskType.recombineSpecimen,
-          task_service.TaskType.invention,
-        ]);
+        // Experiment is the primary activity
+        tasks.add(task_service.TaskType.experiment);
         break;
+
+      case RoomType.operatingRoom:
+        // Operation is the primary activity
+        tasks.add(task_service.TaskType.operation);
+        break;
+
       case RoomType.chickenCoop:
         tasks.addAll([
           task_service.TaskType.collectEggs,
           task_service.TaskType.guardCoop,
-          task_service.TaskType.butcherChicken,
         ]);
         break;
-      case RoomType.library:
-        tasks.addAll([
-          task_service.TaskType.archiveResearch,
-          task_service.TaskType.transcribeNotes,
-          task_service.TaskType.research,
-        ]);
-        break;
+
       case RoomType.field:
         tasks.addAll([
           task_service.TaskType.tillSoil,
@@ -365,6 +376,7 @@ class Room {
           task_service.TaskType.harvestCrops,
         ]);
         break;
+
       case RoomType.garden:
         tasks.addAll([
           task_service.TaskType.tillSoil,
@@ -372,22 +384,18 @@ class Room {
           task_service.TaskType.waterCrops,
           task_service.TaskType.careForCrops,
           task_service.TaskType.harvestCrops,
-          task_service.TaskType.research,
           task_service.TaskType.refinePlantFungus,
         ]);
         break;
+
       case RoomType.brewery:
-        tasks.addAll([
-          task_service.TaskType.brew,
-          task_service.TaskType.hauling,
-        ]);
+        tasks.add(task_service.TaskType.brew);
         break;
+
       case RoomType.distillery:
-        tasks.addAll([
-          task_service.TaskType.distill,
-          task_service.TaskType.hauling,
-        ]);
+        tasks.add(task_service.TaskType.distill);
         break;
+
       case RoomType.workshop:
         tasks.addAll([
           task_service.TaskType.processTimber,
@@ -397,25 +405,13 @@ class Room {
         ]);
         break;
       case RoomType.granary:
-        tasks.addAll([
-          task_service.TaskType.harvestGrain,
-          task_service.TaskType.hauling,
-        ]);
+        tasks.add(task_service.TaskType.harvestGrain);
         break;
       case RoomType.bedroom:
       case RoomType.butlerQuarters:
       case RoomType.attic:
       case RoomType.basement:
         tasks.add(task_service.TaskType.rest);
-        break;
-      case RoomType.toilet:
-        tasks.add(task_service.TaskType.useToilet);
-        break;
-      case RoomType.entryway:
-        tasks.addAll([
-          task_service.TaskType.greetGuest,
-          task_service.TaskType.defendManor,
-        ]);
         break;
       case RoomType.diningRoom:
         tasks.add(task_service.TaskType.eat);
@@ -427,6 +423,15 @@ class Room {
           task_service.TaskType.setupWorkshop,
           task_service.TaskType.setupGranary,
         ]);
+        break;
+      case RoomType.entryway:
+        tasks.addAll([
+          task_service.TaskType.greetGuest,
+          task_service.TaskType.defendManor,
+        ]);
+        break;
+      case RoomType.toilet:
+        // Autonomous hygiene behaviors are now handled automatically
         break;
     }
 
