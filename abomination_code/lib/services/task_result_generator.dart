@@ -17,8 +17,7 @@ class TaskResultGenerator {
       case TaskType.prepareMeals:
       case TaskType.refineFood:
       case TaskType.butcherAnimals:
-      case TaskType.butcherChicken:
-        if (recipeId == 'butcher_cow') {
+        if (recipeId == 'butcher_cow' || targetId == 'cattle_carcass') {
           double weight = 200.0;
           return TaskResult(
             message: "The cow has been butchered. A significant amount of beef is ready.",
@@ -28,14 +27,26 @@ class TaskResultGenerator {
             quality: 1.0,
           );
         }
-        if (recipeId == 'butcher_rat') {
+        
+        if (recipeId == 'butcher_rat' || 
+            targetId == 'rat_specimen' || 
+            (targetName?.toLowerCase().contains('rat') ?? false)) {
           return TaskResult(
             message: "${worker.name} butchered a rat. It's not much, but it's meat.",
             resourcesGained: {'meat': 1},
             quality: 0.5,
           );
         }
-        if (type == TaskType.butcherChicken) {
+
+        if (targetId == 'bat_specimen' || (targetName?.toLowerCase().contains('bat') ?? false)) {
+          return TaskResult(
+            message: "${worker.name} butchered a bat. Lean and gamey.",
+            resourcesGained: {'meat': 1},
+            quality: 0.5,
+          );
+        }
+
+        if (targetName?.toLowerCase().contains('chicken') ?? false) {
           double weight = 2.0;
           return TaskResult(
             message: "The chicken has been butchered. Fresh poultry meat is ready.",
@@ -43,6 +54,15 @@ class TaskResultGenerator {
               'meat_chicken': (weight * 0.8).round().clamp(1, 10),
             },
             quality: 1.0,
+          );
+        }
+
+        // Handle generic NPC or resident butchering
+        if (targetId != null && targetId != 'kitchen') {
+           return TaskResult(
+            message: "${worker.name} butchered $targetName. The freezer is a bit fuller, though the soul feels lighter.",
+            resourcesGained: {'meat': 15}, // Human-sized meat yield
+            quality: 0.8,
           );
         }
 

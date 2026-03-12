@@ -23,6 +23,8 @@ enum RoomType {
   workshop,
   granary,
   operatingRoom,
+  pigPen,
+  cattlePasture,
 }
 
 enum Floor { basement, ground, second, attic }
@@ -187,7 +189,7 @@ class Room {
     );
   }
 
-  bool get isTilled => tilledAmount >= 1.0;
+  bool get isTilled => tilledAmount >= 0.5;
   bool get isFertilized => fertilizedAmount >= 1.0;
 
   Room copyWith({
@@ -414,7 +416,9 @@ class Room {
         tasks.add(task_service.TaskType.rest);
         break;
       case RoomType.diningRoom:
-        tasks.add(task_service.TaskType.eat);
+      case RoomType.pigPen:
+      case RoomType.cattlePasture:
+        tasks.add(task_service.TaskType.eat); // Placeholder or specific tasks
         break;
       case RoomType.unused:
         tasks.addAll([

@@ -11,7 +11,6 @@ enum TaskType {
   transcribeNotes,
   observeExperiment,
   guardCoop,
-  butcherChicken,
   archiveResearch,
   greetGuest,
   rest,
@@ -102,8 +101,7 @@ extension TaskTypeExtensions on TaskType {
         return 'Observe Experiment';
       case TaskType.guardCoop:
         return 'Guard Coop';
-      case TaskType.butcherChicken:
-        return 'Butcher Chicken';
+      
       case TaskType.archiveResearch:
         return 'Archive Research';
       case TaskType.greetGuest:
@@ -247,6 +245,7 @@ class GameTask {
   final String npcId;
   final TaskType type;
   final String? targetId; // roomId, etc.
+  final String? targetName;
   final String? recipeId;
   double progressAccumulator = 0.0;
   final int totalMinutes;
@@ -258,6 +257,7 @@ class GameTask {
     required this.npcId,
     required this.type,
     this.targetId,
+    this.targetName,
     this.recipeId,
     required this.minutesRemaining,
     this.totalMinutes = 0,
@@ -607,8 +607,6 @@ class TaskService {
             : "Cooking";
       case TaskType.guardCoop:
         return "Guarding chicken coop";
-      case TaskType.butcherChicken:
-        return "Butchering poultry";
       case TaskType.archiveResearch:
         return "Archiving forbidden lore";
       case TaskType.greetGuest:

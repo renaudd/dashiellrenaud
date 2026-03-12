@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:collection/collection.dart';
 import 'dart:math';
 import 'package:uuid/uuid.dart';
 
@@ -63,7 +64,7 @@ class GameState extends ChangeNotifier {
   final List<NPC> _npcs = [];
   final List<NPC> _availableHamletNpcs = [];
   final List<Room> _rooms = [];
-  final Map<String, int> _resources = {
+  final Map<String, num> _resources = {
     'funds': 100,
     'wood': 10,
     'meat': 5,
@@ -75,6 +76,7 @@ class GameState extends ChangeNotifier {
     'spirits': 0,
     'timber': 0,
     'herbs': 0,
+    'fertilizer': 10,
   };
   final List<GameItem> _inventory = [];
 
@@ -299,6 +301,43 @@ class GameState extends ChangeNotifier {
   }
 
   List<NPC> get npcs => List.unmodifiable(_npcs);
+
+  List<Map<String, dynamic>> get butcheryTargets {
+    final List<Map<String, dynamic>> targets = [];
+
+    // 1. Group identical chickens by breed and maturity
+    final Map<String, List<String>> groupedChickens = {};
+    for (var c in _chickens) {
+      final isMature = c.isMature;
+      final key = "${c.breed.name} Chicken (${isMature ? 'Mature' : 'Young'})";
+      groupedChickens.putIfAbsent(key, () => []).add(c.id);
+    }
+
+    groupedChickens.forEach((name, ids) {
+      if (ids.length > 1) {
+        targets.add({
+          'id': ids.first, 
+          'name': "$name x${ids.length}", 
+          'isGroup': true, 
+          'ids': ids
+        });
+      } else {
+        targets.add({'id': ids.first, 'name': name});
+      }
+    });
+
+    // 2. Specimens from inventory (individual, as they have unique stats)
+    for (var item in _inventory.where((i) => i.category == ItemCategory.specimen)) {
+      targets.add({'id': item.id, 'name': item.name});
+    }
+
+    // 3. NPCs (individual)
+    for (var npc in _npcs.where((n) => !n.isPlayer)) {
+      targets.add({'id': npc.id, 'name': "${npc.name} (${npc.role.toUpperCase()})"});
+    }
+
+    return targets;
+  }
   List<NPC> get availableHamletNpcs => List.unmodifiable(_availableHamletNpcs);
   List<Room> get rooms => List.unmodifiable(_rooms);
   Map<String, int> get resources => Map.unmodifiable(_resources);
@@ -1028,6 +1067,22 @@ class GameState extends ChangeNotifier {
       _processHourlyRelationshipEvolution();
     }
 
+    // History and Byproduct Logic (once per day or hour)
+    if (_currentDate.hour == 23 && _currentDate.minute == 59) {
+      // End of day: update chicken histories
+      for (int i = 0; i < _chickens.length; i++) {
+        final chicken = _chickens[i];
+        final List<int> newHistory = List.from(chicken.eggProductionHistory);
+        newHistory.add(chicken.eggsLaid);
+        _chickens[i] = chicken.copyWith(eggProductionHistory: newHistory);
+      }
+    }
+
+    if (_currentDate.minute == 0) {
+      // Hourly byproduct check
+      _processLivestockByproducts();
+    }
+
     _currentDate = _currentDate.addMinute();
 
     // Identify NPCs that are either not moving or are already at their task's target room
@@ -1144,12 +1199,6 @@ class GameState extends ChangeNotifier {
     _processCrops();
     _processHygiene();
     _processCrises();
-
-    // Auto-plant some starting crops if garden is empty to show the system
-    if (_crops.isEmpty && _currentDate.hour == 8 && _currentDate.minute == 0) {
-      plantCrops(CropType.cabbage, 'vegetable_garden');
-      plantCrops(CropType.cabbage, 'vegetable_garden');
-    }
     _processPredators();
     _processVisitors();
     _processDigestion();
@@ -1288,13 +1337,11 @@ class GameState extends ChangeNotifier {
 
         // scaled by breed rate
         if (minsSinceLastEgg >= (24 * 60 / chicken.breed.eggRate)) {
-          bool isFertilized = hasRooster && Random().nextDouble() < 0.3;
+          bool isFertilized = hasRooster && Random().nextDouble() < 0.4;
 
           if (isFertilized && Random().nextDouble() < 0.1) {
-            // Hatching logic: Instead of an egg, a new chick appears eventually?
-            // Or maybe we add an Egg object. For now let's say it hatches into a chick immediately for simplicity of the prompt "hatching them at certain times of day"
+            // Hatching logic
             if (_currentDate.hour >= 6 && _currentDate.hour <= 9) {
-              // Certain times of day
               _chickens.add(
                 Chicken.create(
                   chicken.breedType,
@@ -1305,14 +1352,31 @@ class GameState extends ChangeNotifier {
               _lastAnnouncement = "A new chick has hatched in the coop!";
             } else {
               _uncollectedEggs++;
+              chicken = chicken.copyWith(eggsLaid: chicken.eggsLaid + 1);
             }
           } else {
             _uncollectedEggs++;
+            chicken = chicken.copyWith(eggsLaid: chicken.eggsLaid + 1);
           }
           chicken = chicken.copyWith(lastEggDate: _currentDate);
         }
       }
       _chickens[i] = chicken;
+    }
+  }
+
+  void _processLivestockByproducts() {
+    // Check for rooms that could produce fertilizer (Pig Pen, Cattle Pasture)
+    bool hasLivestockRoom = _rooms.any((r) => r.isRestored && (r.type == RoomType.pigPen || r.type == RoomType.cattlePasture));
+    
+    // Low chance per hour per room
+    if (hasLivestockRoom && Random().nextDouble() < 0.3) {
+      _resources['fertilizer'] = (_resources['fertilizer'] ?? 0) + 1;
+    }
+    
+    // Even if no specific room yet, chickens produce a tiny bit
+    if (_chickens.isNotEmpty && Random().nextDouble() < 0.1) {
+      _resources['fertilizer'] = (_resources['fertilizer'] ?? 0) + 0.5;
     }
   }
 
@@ -1374,22 +1438,30 @@ class GameState extends ChangeNotifier {
     }
 
     String seedId = 'seeds_${type.name}';
-    if ((_resources[seedId] ?? 0) <= 0) {
-      _lastAnnouncement = "No $seedId available for planting.";
+    double seedConsumption = room.tilledAmount >= 1.0 ? 1.0 : 0.5;
+    if ((_resources[seedId] ?? 0) < seedConsumption) {
+      _lastAnnouncement = "Not enough $seedId available.";
       notifyListeners();
       return false;
     }
+    
+    _resources[seedId] = (_resources[seedId] ?? 0) - seedConsumption;
+    
+    // Yield based on preparation: 0.5 multiplier if partial, plus fertilizer bonus
+    final baseYield = room.tilledAmount >= 1.0 ? 4 : 2;
+    final fertBonus = room.isFertilized ? 2 : 0;
+    final totalYield = (baseYield + fertBonus).toInt();
 
-    _resources[seedId] = _resources[seedId]! - 1;
     _crops.add(
       Crop(
         id: const Uuid().v4(),
         type: type,
         plantedAt: DateTime.now(),
-        isTilled: true,
+        isTilled: room.tilledAmount >= 0.5,
         isWatered: true,
         moistureLevel: 1.0,
         roomId: roomId,
+        yield: totalYield,
       ),
     );
 
@@ -1645,20 +1717,16 @@ class GameState extends ChangeNotifier {
     final breed = ChickenBreed.getByTyped(type);
     if ((_resources['funds'] ?? 0) >= breed.basePrice) {
       _resources['funds'] = _resources['funds']! - breed.basePrice;
-      _chickens.add(Chicken.create(type, _currentDate));
+      _chickens.add(Chicken.create(
+        type,
+        _currentDate,
+        isMale: type == ChickenBreedType.rooster,
+        weight: type == ChickenBreedType.rooster ? 2.5 : 1.5,
+      ));
       notifyListeners();
     }
   }
 
-  void toggleChickenButchery(String id) {
-    final index = _chickens.indexWhere((c) => c.id == id);
-    if (index != -1) {
-      _chickens[index] = _chickens[index].copyWith(
-        isMarkedForButchery: !_chickens[index].isMarkedForButchery,
-      );
-      notifyListeners();
-    }
-  }
 
   void _processConstruction() {
     for (int i = _activeConstruction.length - 1; i >= 0; i--) {
@@ -1735,8 +1803,7 @@ class GameState extends ChangeNotifier {
       Objective(
         id: 'farming_tutorial_1',
         title: 'Break the Earth',
-        description:
-            'The fields have lain fallow for too long. Assign an NPC to till the soil in Field A.',
+        description: 'The fields have lain fallow for too long. Assign an NPC to till the soil in Field A.',
         type: ObjectiveType.tutorial,
         requirements: {
           'tasks_performed': ['tillSoil'],
@@ -1864,12 +1931,11 @@ class GameState extends ChangeNotifier {
           nextObjectives.add(
             Objective(
               id: 'farming_tutorial_2',
-              title: 'Sow the Seeds',
-              description:
-                  'The earth is ready. Assign an NPC to plant cabbage seeds in Field A.',
+              title: 'Enrich the Soil',
+              description: 'The earth needs nutrients. Assign an NPC to fertilize Field A.',
               type: ObjectiveType.tutorial,
               requirements: {
-                'tasks_performed': ['plantCrops'],
+                'tasks_performed': ['fertilizeSoil'],
               },
             ),
           );
@@ -1877,9 +1943,20 @@ class GameState extends ChangeNotifier {
           nextObjectives.add(
             Objective(
               id: 'farming_tutorial_3',
+              title: 'Sow the Seeds',
+              description: 'The earth is prepared. Assign an NPC to plant cabbage seeds in Field A.',
+              type: ObjectiveType.tutorial,
+              requirements: {
+                'tasks_performed': ['plantCrops'],
+              },
+            ),
+          );
+        } else if (objective.id == 'farming_tutorial_3') {
+          nextObjectives.add(
+            Objective(
+              id: 'farming_tutorial_4',
               title: 'Care for the Young',
-              description:
-                  'The seeds will wither without water. Ensure the fields are watered.',
+              description: 'The seeds will wither without water. Ensure the fields are watered.',
               type: ObjectiveType.tutorial,
               requirements: {
                 'tasks_performed': ['waterCrops'],
@@ -2268,8 +2345,15 @@ class GameState extends ChangeNotifier {
     final activity = npc.schedule.getActivityForHour(hour);
 
     double dEnergy = 0.0;
-    double dHunger = (1.0 / 60.0); // Hunger increases by 1 per hour
+    double dHunger = (2.5 / 60.0); // Hunger increases by 2.5 per hour (approx 60/day)
     double dSatisf = 0.0;
+
+    // "Thriving" or "Starving" satisfaction logic
+    if (npc.hunger < 20.0) {
+      dSatisf += (5.0 / 60.0); // Bliss from being well-fed
+    } else if (npc.hunger > 80.0) {
+      dSatisf -= (10.0 / 60.0); // Misery from hunger
+    }
 
     // Digestion: Ramp up such that NPCs need to use toilet 2-3 times/day
     // Target: ~480-720 minutes to hit 100.
@@ -2476,6 +2560,29 @@ class GameState extends ChangeNotifier {
         continue;
       }
 
+      // 0. Recovery from Breaking Point
+      if (latestNpc.status == NPCStatus.broken &&
+          latestNpc.breakStartTime != null &&
+          latestNpc.breakDuration != null) {
+        if (_currentDate.totalMinutes >=
+            latestNpc.breakStartTime! + latestNpc.breakDuration!) {
+          // Readjust satisfaction to a safe level (50-70% depending on episode history)
+          final episodeFactor = (latestNpc.mentalEpisodeCount * 5.0).clamp(0.0, 30.0);
+          final newSatisfValue = (70.0 - episodeFactor).clamp(40.0, 80.0);
+          
+          _npcs[i] = latestNpc.copyWith(
+            status: NPCStatus.idle,
+            satisfaction: newSatisfValue,
+            currentThought: "I feel... better now. What was I doing?",
+          );
+          _announcementHistory.insert(
+            0,
+            "[${_currentDate.formattedTime}] RECOVERY: ${latestNpc.name} has recovered from their episode.",
+          );
+          continue; // Skip further processing for this tick
+        }
+      }
+
       // 1. Breaking Point Tracking
       if (latestNpc.digestion >= 100.0) {
         int newBreakingMinutes = latestNpc.breakingPointMinutes + 1;
@@ -2542,23 +2649,55 @@ class GameState extends ChangeNotifier {
 
   void _triggerMentalBreakdownIncident(int npcIndex) {
     var npc = _npcs[npcIndex];
+    final episodeNum = npc.mentalEpisodeCount + 1;
+    
+    // Determine if it's an Anger Episode or a Psychotic Break
+    // First episode is always Anger. Subsequent have increasing psychotic chance.
+    bool isPsychotic = false;
+    if (episodeNum > 1) {
+      final breakChance = (episodeNum - 1) * 0.3; // 30%, 60%, 90%...
+      isPsychotic = Random().nextDouble() < breakChance;
+    }
+
+    int duration;
+    String incidentName;
+    String thought;
+    NPCStatus newStatus = NPCStatus.broken;
+
+    if (!isPsychotic) {
+      incidentName = "Anger Episode";
+      duration = 60; // 1 hour
+      thought = "I'm SO ANGRY! I can't think straight!";
+      // We'll keep status as broken for now as it clears the queue, 
+      // but maybe we use panicked or a custom one if needed.
+    } else {
+      incidentName = "Psychotic Break";
+      // Up to 1 day (1440 mins) in early game (first 60 days)
+      final earlyGameFactor = _currentDate.day <= 60 ? 1.0 : 2.0;
+      duration = (120 + Random().nextInt(1320)).toInt(); // 2h to 24h
+      duration = (duration * earlyGameFactor).toInt();
+      thought = "I CAN'T TAKE IT! THE VOICES! THE GUILT!";
+    }
 
     _lastAnnouncement =
-        "REBREAKPOINT: ${npc.name} has suffered a total mental breakdown!";
+        "INCIDENT: ${npc.name} is having an $incidentName!";
     _announcementHistory.insert(
       0,
-      "[${_currentDate.formattedTime}] INCIDENT: Mental Breakdown for ${npc.name}.",
+      "[${_currentDate.formattedTime}] INCIDENT: $incidentName for ${npc.name}.",
     );
 
     // Character status change
     _npcs[npcIndex] = npc.copyWith(
-      status: NPCStatus.broken,
+      status: newStatus,
       activeTaskId: null,
       targetRoomId: null,
       clearTarget: true,
-      satisfaction: (npc.satisfaction - 20).clamp(0, 100),
+      satisfaction: (npc.satisfaction - 10).clamp(0, 100),
       mentalBreakingPointMinutes: 0,
-      currentThought: "I CAN'T TAKE IT! THE VOICES! THE GUILT!",
+      mentalEpisodeCount: episodeNum,
+      breakStartTime: _currentDate.totalMinutes,
+      breakDuration: duration,
+      currentThought: thought,
     );
 
     // Social effects - others might be frightened
@@ -2903,6 +3042,7 @@ class GameState extends ChangeNotifier {
         action: task.type,
         targetRoomId: task.targetId,
         recipeId: task.recipeId,
+        targetName: task.targetName,
         minutesRemaining: task.minutesRemaining,
         expectedDurationMin: task.minutesRemaining,
       );
@@ -2963,7 +3103,7 @@ class GameState extends ChangeNotifier {
     if (npcIndex == -1) return;
 
     final room = task.targetId != null
-        ? _rooms.firstWhere((r) => r.id == task.targetId)
+        ? _rooms.firstWhereOrNull((r) => r.id == task.targetId)
         : null;
 
     var worker = _npcs[npcIndex];
@@ -3057,6 +3197,23 @@ class GameState extends ChangeNotifier {
         _lastAnnouncement =
             "${worker.name} found no crops ready for harvest.";
       }
+    } else if (task.type == TaskType.butcherAnimals) {
+      if (task.targetId == 'rat_specimen' || task.targetId == 'bat_specimen') {
+        _resources[task.targetId!] = (_resources[task.targetId!] ?? 0) - 1;
+        _lastAnnouncement = "${worker.name} butchered a ${task.targetId == 'rat_specimen' ? 'rat' : 'bat'}.";
+      } else if (task.targetId != null) {
+        // Remove from inventory if it's an item
+        final itemIndex = _inventory.indexWhere((i) => i.id == task.targetId);
+        if (itemIndex != -1) {
+          final itemName = _inventory[itemIndex].name;
+          _inventory.removeAt(itemIndex);
+          _lastAnnouncement = "${worker.name} has finished butchering $itemName.";
+        }
+
+        _chickens.removeWhere((c) => c.id == task.targetId);
+        _npcs.removeWhere((n) => n.id == task.targetId && !n.isPlayer);
+        _lastAnnouncement = "${worker.name} has finished the butchery.";
+      }
     } else if (task.type == TaskType.tillSoil) {
       if (task.targetId != null) tillSoil(task.targetId!);
     } else if (task.type == TaskType.plantCrops) {
@@ -3149,7 +3306,7 @@ class GameState extends ChangeNotifier {
       final key = entry.key;
       final value = entry.value;
       _resources[key] =
-          (_resources[key] ?? 0) + (value * yieldMultiplier).toInt();
+          (_resources[key] ?? 0) + (value * yieldMultiplier);
     }
 
     // 4. Process Specialized Task Types
@@ -3204,8 +3361,8 @@ class GameState extends ChangeNotifier {
 
             // 2. Take from resources
             if (stillNeeded > 0 && (_resources[key] ?? 0) > 0) {
-              int toTake = min(_resources[key]!, stillNeeded);
-              _resources[key] = _resources[key]! - toTake;
+              int toTake = min((_resources[key] ?? 0).toInt(), stillNeeded);
+              _resources[key] = (_resources[key] ?? 0) - toTake;
               workerInv.add(
                 GameItem.create(
                   name: key.toUpperCase(),
@@ -3258,7 +3415,7 @@ class GameState extends ChangeNotifier {
 
         int availableInRoom = 0;
         int availableInWorker = 0;
-        int availableInResources = _resources[ing] ?? 0;
+        int availableInResources = (_resources[ing] ?? 0).toInt();
 
         if (ing == 'meat') {
           // Special case for generic meat
@@ -3286,7 +3443,7 @@ class GameState extends ChangeNotifier {
               .fold(0, (sum, i) => sum + i.quantity);
         }
 
-        if (availableInRoom + availableInWorker + availableInResources <
+        if (availableInRoom + availableInWorker + (availableInResources).toInt() <
             count) {
           hasAll = false;
         }
@@ -3695,10 +3852,19 @@ class GameState extends ChangeNotifier {
             0,
             "[${_currentDate.formattedTime}] ${worker.name} finished restoring the ${r.name}.",
           );
-          
+
+          if (r.id == 'chicken_coop') {
+            for (int i = 0; i < 3; i++) {
+              _chickens.add(
+                Chicken.create(ChickenBreedType.houdan, _currentDate, isMale: false),
+              );
+            }
+            _lastAnnouncement =
+                "${worker.name} finished restoring the coop, and 3 Houdan chickens have been settled in!";
+          }
+
           // Chance to find creatures
           _checkForCreatures(worker, r);
-          
           _checkObjectives();
         } else if (task.type == TaskType.cleanRoom) {
           _rooms[roomIndex] = r.copyWith(dirtiness: 0.0);
@@ -3732,12 +3898,27 @@ class GameState extends ChangeNotifier {
       }
 
       if (creatureId != null) {
-        _resources[creatureId] = (_resources[creatureId] ?? 0) + 1;
-        _lastAnnouncement =
-            "${worker.name} discovered $creatureName and captured it!";
+        final isMale = random.nextBool();
+        final ageWks = random.nextInt(20) + 1; // 1-20 weeks
+        final weightG = random.nextInt(300) + 50; // 50-350g
+        
+        final displayName = "${creatureId == 'rat_specimen' ? 'Brown Rat' : 'Leathery Bat'} (${isMale ? 'Male' : 'Female'}, $ageWks wks, ${weightG}g)";
+        
+        _inventory.add(GameItem.create(
+          name: displayName,
+          type: creatureId,
+          category: ItemCategory.specimen,
+          metadata: {
+            'gender': isMale ? 'Male' : 'Female',
+            'ageWeeks': ageWks,
+            'weightGrams': weightG,
+          },
+        ));
+
+        _lastAnnouncement = "${worker.name} discovered $creatureName and captured it!";
         _announcementHistory.insert(
           0,
-          "[${_currentDate.formattedTime}] DISCOVERY: Captured $creatureId in the ${r.name}.",
+          "[${_currentDate.formattedTime}] DISCOVERY: Captured a specimen in the ${r.name}.",
         );
       }
     }
@@ -3897,6 +4078,8 @@ class GameState extends ChangeNotifier {
     // Kitchen Special Logic: Enforce queue-only
     TaskType assignedType = type;
     String? assignedRecipeId = recipeId;
+    String? assignedTargetId = targetId;
+    String? assignedTargetName;
     int duration = 0;
 
     if (targetId == 'study') {
@@ -3980,9 +4163,19 @@ class GameState extends ChangeNotifier {
     } else if (targetId == 'kitchen') {
       if (type == TaskType.cook) {
         if (_cookingQueue.isNotEmpty) {
-          assignedType = TaskType.cook;
-          assignedRecipeId = _cookingQueue.first;
+          final orderStr = _cookingQueue.first;
           _cookingQueue.removeAt(0);
+          
+          if (orderStr.startsWith('butcher:')) {
+            final parts = orderStr.split(':');
+            assignedType = TaskType.butcherAnimals;
+            assignedRecipeId = parts[1];
+            assignedTargetId = parts[2];
+            assignedTargetName = parts[3];
+          } else {
+            assignedType = TaskType.cook;
+            assignedRecipeId = orderStr;
+          }
         } else {
           // No queue! Does it need cleaning?
           final kitchen = _rooms.firstWhere((r) => r.id == 'kitchen');
@@ -4014,12 +4207,23 @@ class GameState extends ChangeNotifier {
       }
     }
 
+    // Agricultural reduction: half labor if partial field
+    if ((assignedType == TaskType.plantCrops ||
+            assignedType == TaskType.harvestCrops) &&
+        assignedTargetId != null) {
+      final room = _rooms.firstWhere((r) => r.id == assignedTargetId);
+      if (room.tilledAmount < 1.0) {
+        duration = (duration * 0.5).round();
+      }
+    }
+
     final intentId = DateTime.now().millisecondsSinceEpoch.toString();
     final task = GameTask(
       id: intentId,
       npcId: npc.id,
       type: assignedType,
-      targetId: targetId,
+      targetId: assignedTargetId,
+      targetName: assignedTargetName,
       recipeId: assignedRecipeId,
       minutesRemaining: duration,
     );
@@ -4670,8 +4874,12 @@ class GameState extends ChangeNotifier {
     }
   }
 
-  void addToCookingQueue(String recipeId) {
-    _cookingQueue.add(recipeId);
+  void addToCookingQueue(String recipeId, {String? targetId, String? targetName}) {
+    if (targetId != null) {
+      _cookingQueue.add("butcher:$recipeId:$targetId:$targetName");
+    } else {
+      _cookingQueue.add(recipeId);
+    }
     notifyListeners();
   }
 
@@ -5502,7 +5710,7 @@ class GameState extends ChangeNotifier {
         avail += worker.inventory
             .where((i) => matches(i.type))
             .fold<int>(0, (sum, i) => sum + i.quantity);
-        avail += (_resources[key] ?? 0);
+        avail += (_resources[key] ?? 0).toInt();
 
         if (avail < entry.value) {
           hasAll = false;

@@ -1,7 +1,7 @@
 import 'package:uuid/uuid.dart';
 import 'game_date.dart';
 
-enum ChickenBreedType { houdan, dorking, scotsDumpie }
+enum ChickenBreedType { houdan, dorking, scotsDumpie, rooster }
 
 class ChickenBreed {
   final ChickenBreedType type;
@@ -29,7 +29,7 @@ class ChickenBreed {
       description:
           'French heritage breed known for excellent egg production and dual-purpose utility.',
       eggRate: 1.2, // Approx 8-9 eggs a week
-      growthRate: 4800, // 80 hours to maturity
+      growthRate: 151200, // 15 weeks to maturity
       meatYield: 2,
       basePrice: 15,
     ),
@@ -39,7 +39,7 @@ class ChickenBreed {
       description:
           'Ancient breed prized for its large size and superior meat quality.',
       eggRate: 0.8,
-      growthRate: 6000, // 100 hours
+      growthRate: 151200, // 15 weeks
       meatYield: 4,
       basePrice: 20,
     ),
@@ -49,9 +49,19 @@ class ChickenBreed {
       description:
           'Hardy, short-legged breed from Scotland. Excellent foragers and mothers.',
       eggRate: 1.0,
-      growthRate: 3600, // 60 hours
+      growthRate: 151200, // 15 weeks
       meatYield: 1,
       basePrice: 12,
+    ),
+    ChickenBreed(
+      type: ChickenBreedType.rooster,
+      name: 'Rooster',
+      description:
+          'Necessary for fertilizing eggs and expanding the flock.',
+      eggRate: 0.0,
+      growthRate: 151200,
+      meatYield: 2,
+      basePrice: 25,
     ),
   ];
 
@@ -63,23 +73,25 @@ class Chicken {
   final String id;
   final ChickenBreedType breedType;
   final double ageMinutes;
-  final bool isMarkedForButchery;
   final double hunger; // 0-100
   final GameDate lastEggDate;
   final bool isMale;
   final bool isFertilized;
   final double weight; // in kilograms
+  final int eggsLaid;
+  final List<int> eggProductionHistory; // Daily counts
 
   Chicken({
     required this.id,
     required this.breedType,
     this.ageMinutes = 0,
-    this.isMarkedForButchery = false,
     this.hunger = 0,
     required this.lastEggDate,
     this.isMale = false,
     this.isFertilized = false,
     this.weight = 0.5,
+    this.eggsLaid = 0,
+    this.eggProductionHistory = const [],
   });
 
   bool get isMature => ageMinutes >= breed.growthRate;
@@ -87,23 +99,25 @@ class Chicken {
 
   Chicken copyWith({
     double? ageMinutes,
-    bool? isMarkedForButchery,
     double? hunger,
     GameDate? lastEggDate,
     bool? isMale,
     bool? isFertilized,
     double? weight,
+    int? eggsLaid,
+    List<int>? eggProductionHistory,
   }) {
     return Chicken(
       id: id,
       breedType: breedType,
       ageMinutes: ageMinutes ?? this.ageMinutes,
-      isMarkedForButchery: isMarkedForButchery ?? this.isMarkedForButchery,
       hunger: hunger ?? this.hunger,
       lastEggDate: lastEggDate ?? this.lastEggDate,
       isMale: isMale ?? this.isMale,
       isFertilized: isFertilized ?? this.isFertilized,
       weight: weight ?? this.weight,
+      eggsLaid: eggsLaid ?? this.eggsLaid,
+      eggProductionHistory: eggProductionHistory ?? this.eggProductionHistory,
     );
   }
 
@@ -111,24 +125,26 @@ class Chicken {
     'id': id,
     'breedType': breedType.index,
     'ageMinutes': ageMinutes,
-    'isMarkedForButchery': isMarkedForButchery,
     'hunger': hunger,
     'lastEggDate': lastEggDate.toJson(),
     'isMale': isMale,
     'isFertilized': isFertilized,
     'weight': weight,
+    'eggsLaid': eggsLaid,
+    'eggProductionHistory': eggProductionHistory,
   };
 
   factory Chicken.fromJson(Map<String, dynamic> json) => Chicken(
     id: json['id'] as String,
     breedType: ChickenBreedType.values[json['breedType'] as int],
     ageMinutes: (json['ageMinutes'] as num).toDouble(),
-    isMarkedForButchery: json['isMarkedForButchery'] as bool,
     hunger: (json['hunger'] as num).toDouble(),
     lastEggDate: GameDate.fromJson(json['lastEggDate'] as Map<String, dynamic>),
     isMale: json['isMale'] as bool? ?? false,
     isFertilized: json['isFertilized'] as bool? ?? false,
     weight: (json['weight'] as num? ?? 0.5).toDouble(),
+    eggsLaid: json['eggsLaid'] as int? ?? 0,
+    eggProductionHistory: List<int>.from(json['eggProductionHistory'] ?? []),
   );
 
   factory Chicken.create(

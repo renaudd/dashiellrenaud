@@ -198,6 +198,9 @@ class NPC {
   final double digestion;
   final int breakingPointMinutes;
   final int mentalBreakingPointMinutes;
+  final int mentalEpisodeCount;
+  final int? breakStartTime;
+  final int? breakDuration;
   final double hygiene; // 0.0 to 100.0
 
 
@@ -276,6 +279,9 @@ class NPC {
     this.digestion = 0.0,
     this.breakingPointMinutes = 0,
     this.mentalBreakingPointMinutes = 0,
+    this.mentalEpisodeCount = 0,
+    this.breakStartTime,
+    this.breakDuration,
     this.hygiene = 100.0,
 
     this.movementPath = const [],
@@ -351,6 +357,9 @@ class NPC {
     double? digestion,
     int? breakingPointMinutes,
     int? mentalBreakingPointMinutes,
+    int? mentalEpisodeCount,
+    int? breakStartTime,
+    int? breakDuration,
     double? hygiene,
 
     List<String>? movementPath,
@@ -426,6 +435,9 @@ class NPC {
       breakingPointMinutes: breakingPointMinutes ?? this.breakingPointMinutes,
       mentalBreakingPointMinutes:
           mentalBreakingPointMinutes ?? this.mentalBreakingPointMinutes,
+      mentalEpisodeCount: mentalEpisodeCount ?? this.mentalEpisodeCount,
+      breakStartTime: breakStartTime ?? this.breakStartTime,
+      breakDuration: breakDuration ?? this.breakDuration,
       hygiene: hygiene ?? this.hygiene,
 
       movementPath: movementPath ?? this.movementPath,
@@ -567,6 +579,9 @@ class NPC {
     'digestion': digestion,
     'breakingPointMinutes': breakingPointMinutes,
     'mentalBreakingPointMinutes': mentalBreakingPointMinutes,
+    'mentalEpisodeCount': mentalEpisodeCount,
+    'breakStartTime': breakStartTime,
+    'breakDuration': breakDuration,
     'hygiene': hygiene,
 
     'movementPath': movementPath,
@@ -640,6 +655,9 @@ class NPC {
     digestion: (json['digestion'] as num?)?.toDouble() ?? 0.0,
     breakingPointMinutes: json['breakingPointMinutes'] as int? ?? 0,
     mentalBreakingPointMinutes: json['mentalBreakingPointMinutes'] as int? ?? 0,
+    mentalEpisodeCount: json['mentalEpisodeCount'] as int? ?? 0,
+    breakStartTime: json['breakStartTime'] as int?,
+    breakDuration: json['breakDuration'] as int?,
     hygiene: (json['hygiene'] as num? ?? 100.0).toDouble(),
     movementPath:
         (json['movementPath'] as List<dynamic>?)

@@ -86,7 +86,7 @@ class CombatManager extends ChangeNotifier {
   final List<CombatLogEntry> _logs = [];
   double _actionPoints = 6.0; // Start with 6
   static const double maxAP = 10.0;
-  static const double apPerSecond = 0.4; // Increased by 50% (was 0.15)
+  static const double apPerSecond = 0.3; // Reduced by 25% (was 0.4)
   static const double fieldWidth = 85.0;
   static const double fieldLength = 200.0;
 
@@ -301,10 +301,10 @@ class CombatManager extends ChangeNotifier {
     }
 
     if (_isScrolling) {
-      _fieldScroll += alphonse.npc.combatStats!.movement * dt * 5.0;
+      _fieldScroll += alphonse.npc.combatStats!.movement * dt * 3.75;
       // Shift Alphonse forward with scroll if they aren't moving manually
       if (alphonse.moveDirX == 0) {
-        alphonse.x += alphonse.npc.combatStats!.movement * dt * 5.0;
+        alphonse.x += alphonse.npc.combatStats!.movement * dt * 3.75;
       }
     }
 
@@ -480,7 +480,7 @@ class CombatManager extends ChangeNotifier {
           final moveDist =
               stats.movement *
               dt *
-              3.0; // Faster movement for special (was 2.0)
+              2.25; // Slower movement (was 3.0)
           c.x += (dx / dist) * moveDist;
           c.y += (dy / dist) * moveDist;
           
@@ -532,13 +532,13 @@ class CombatManager extends ChangeNotifier {
       if (c.npc.id == 'alphonse' || c.npc.id == 'ai_mirror') {
         // Goalies stay at their posts (only move in Y if player controlled, but stationary otherwise)
         if (c.npc.isPlayer) {
-          c.y += c.moveDirY * stats.movement * dt * 1.5;
+          c.y += c.moveDirY * stats.movement * dt * 1.125;
         }
       } else if (c.npc.isPlayer) {
-        c.x += c.moveDirX * stats.movement * dt * 1.5; // SLOWED (was 5.0)
-        c.y += c.moveDirY * stats.movement * dt * 1.5;
+        c.x += c.moveDirX * stats.movement * dt * 1.125;
+        c.y += c.moveDirY * stats.movement * dt * 1.125;
       } else {
-        final moveSpeed = stats.movement * dt * 1.5; // SLOWED (was 5.0)
+        final moveSpeed = stats.movement * dt * 1.125;
         if (c.side == CombatSide.player) {
           c.x += moveSpeed;
         } else {
@@ -609,8 +609,8 @@ class CombatManager extends ChangeNotifier {
       final dy = target.y - c.y;
       final len = sqrt(dx * dx + dy * dy);
       c.x +=
-          (dx / len) * stats.movement * dt * 8.0; // Increased by 50% (was 4.0)
-      c.y += (dy / len) * stats.movement * dt * 8.0;
+          (dx / len) * stats.movement * dt * 6.0;
+      c.y += (dy / len) * stats.movement * dt * 6.0;
     } else {
       // Within range, attack if ready
       if (c.attackCooldown <= 0) {

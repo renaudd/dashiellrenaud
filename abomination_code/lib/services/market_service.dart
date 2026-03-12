@@ -8,6 +8,8 @@ class MarketService {
     'ale': 15,
     'spirits': 45,
     'timber': 25,
+    'rooster': 50,
+    'fertilizer': 10,
   };
 
   static const Map<String, int> _baseSellPrices = {
@@ -19,6 +21,8 @@ class MarketService {
     'ale': 10,
     'spirits': 30,
     'timber': 15,
+    'rooster': 30,
+    'fertilizer': 6,
   };
 
   int getBuyPrice(String resource) => _baseBuyPrices[resource] ?? 999;

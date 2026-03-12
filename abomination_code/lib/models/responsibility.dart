@@ -92,7 +92,7 @@ class TaskCategoryMapping {
 
       case TaskType.hunt:
       case TaskType.guardCoop:
-      case TaskType.butcherChicken:
+      
       case TaskType.greetGuest:
       case TaskType.setupBrewery:
       case TaskType.setupDistillery:

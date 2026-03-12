@@ -266,6 +266,10 @@ class RoomTile extends StatelessWidget {
         return Icons.storage;
       case RoomType.operatingRoom:
         return Icons.medical_services;
+      case RoomType.pigPen:
+        return Icons.pets;
+      case RoomType.cattlePasture:
+        return Icons.agriculture;
     }
   }
 
@@ -291,6 +295,10 @@ class RoomTile extends StatelessWidget {
         return const Color(0xFF1E1A17); // Sawdust/Wood
       case RoomType.granary:
         return const Color(0xFF1C1A14); // Grain/Straw
+      case RoomType.pigPen:
+        return const Color(0xFF1D1A16); // Mud/Wood
+      case RoomType.cattlePasture:
+        return const Color(0xFF161C15); // Grass
       default:
         return const Color(0xFF1A1D21);
     }

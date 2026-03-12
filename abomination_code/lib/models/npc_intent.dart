@@ -16,6 +16,7 @@ class NPCIntent {
   final TaskType action;
   final String? targetRoomId;
   final String? recipeId;
+  final String? targetName;
   final int? startTimeMin; // Optional: Wait until this game minute
   final int expectedDurationMin;
   final int? minutesRemaining;
@@ -26,6 +27,7 @@ class NPCIntent {
     required this.action,
     this.targetRoomId,
     this.recipeId,
+    this.targetName,
     this.startTimeMin,
     this.expectedDurationMin = 240,
     this.minutesRemaining,
@@ -37,6 +39,7 @@ class NPCIntent {
     TaskType? action,
     String? targetRoomId,
     String? recipeId,
+    String? targetName,
     int? startTimeMin,
     int? expectedDurationMin,
     int? minutesRemaining,
@@ -47,6 +50,7 @@ class NPCIntent {
       action: action ?? this.action,
       targetRoomId: targetRoomId ?? this.targetRoomId,
       recipeId: recipeId ?? this.recipeId,
+      targetName: targetName ?? this.targetName,
       startTimeMin: startTimeMin ?? this.startTimeMin,
       expectedDurationMin: expectedDurationMin ?? this.expectedDurationMin,
       minutesRemaining: minutesRemaining ?? this.minutesRemaining,
@@ -59,6 +63,7 @@ class NPCIntent {
     'action': action.index,
     'targetRoomId': targetRoomId,
     'recipeId': recipeId,
+    'targetName': targetName,
     'startTimeMin': startTimeMin,
     'expectedDurationMin': expectedDurationMin,
     'minutesRemaining': minutesRemaining,
@@ -70,6 +75,7 @@ class NPCIntent {
     action: TaskType.values[json['action']],
     targetRoomId: json['targetRoomId'],
     recipeId: json['recipeId'],
+    targetName: json['targetName'],
     startTimeMin: json['startTimeMin'],
     expectedDurationMin: json['expectedDurationMin'] ?? 240,
     minutesRemaining: json['minutesRemaining'],

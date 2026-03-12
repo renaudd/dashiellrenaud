@@ -243,7 +243,9 @@ class KitchenScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              "A standard culinary preparation requiring focus and hygiene.",
+              recipe.id == 'butcher_generic'
+                  ? "Select a creature or resident to yield meat and resources."
+                  : "A standard culinary preparation requiring focus and hygiene.",
               style: GoogleFonts.oldStandardTt(
                 color: const Color(0xFFC4B89B).withValues(alpha: 0.7),
                 fontSize: 11,
@@ -312,7 +314,13 @@ class KitchenScreen extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: canCraft
-                    ? () => state.addToCookingQueue(recipe.id)
+                    ? () {
+                        if (recipe.id == 'butcher_generic') {
+                          _showButcherTargetDialog(context, state);
+                        } else {
+                          state.addToCookingQueue(recipe.id);
+                        }
+                      }
                     : null,
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
@@ -355,10 +363,18 @@ class KitchenScreen extends StatelessWidget {
       children: state.cookingQueue.asMap().entries.map((entry) {
         final index = entry.key;
         final recipeId = entry.value;
-        final recipe = recipes.firstWhere(
-          (r) => r.id == recipeId,
-          orElse: () => recipes.first,
-        );
+        String displayName;
+
+        if (recipeId.startsWith('butcher:')) {
+          final parts = recipeId.split(':');
+          displayName = "BUTCHER: ${parts[3].toUpperCase()}";
+        } else {
+          final recipe = recipes.firstWhere(
+            (r) => r.id == recipeId,
+            orElse: () => recipes.first,
+          );
+          displayName = recipe.name.toUpperCase();
+        }
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 8.0),
@@ -366,7 +382,7 @@ class KitchenScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '${index + 1}. ${recipe.name.toUpperCase()}',
+                  '${index + 1}. $displayName',
                   style: GoogleFonts.oldStandardTt(
                     color: const Color(0xFFC4B89B),
                     fontSize: 12,
@@ -383,6 +399,77 @@ class KitchenScreen extends StatelessWidget {
           ),
         );
       }).toList(),
+    );
+  }
+
+  void _showButcherTargetDialog(BuildContext context, GameState state) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final targets = state.butcheryTargets;
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1612),
+          title: Text(
+            'SELECT BUTCHERY TARGET',
+            style: GoogleFonts.playfairDisplay(
+              color: const Color(0xFFE5D5B0),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              letterSpacing: 2,
+            ),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: targets.isEmpty
+                ? Text(
+                    'NO VIABLE TARGETS FOUND.',
+                    style: GoogleFonts.oldStandardTt(color: Colors.white24),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: targets.length,
+                    itemBuilder: (context, index) {
+                      final target = targets[index];
+                      return ListTile(
+                        title: Text(
+                          target['name']!.toUpperCase(),
+                          style: GoogleFonts.oldStandardTt(
+                            color: const Color(0xFFC4B89B),
+                            fontSize: 13,
+                          ),
+                        ),
+                        onTap: () {
+                          state.addToCookingQueue(
+                            'butcher_generic',
+                            targetId: target['id'],
+                            targetName: target['name'],
+                          );
+                          Navigator.pop(context);
+                        },
+                        trailing: const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 12,
+                          color: Color(0xFFE5D5B0),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'ABANDON',
+                style: GoogleFonts.playfairDisplay(
+                  color: Colors.red.withValues(alpha: 0.7),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

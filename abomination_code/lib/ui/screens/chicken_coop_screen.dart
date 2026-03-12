@@ -28,6 +28,7 @@ class ChickenCoopScreen extends StatelessWidget {
           return Column(
             children: [
               _buildFoxThreatBanner(state),
+              _buildEggProductionSection(state),
               _buildPurchaseSection(context, state),
               const Divider(color: Colors.white10, height: 1),
               Expanded(child: _buildChickenList(context, state)),
@@ -152,6 +153,127 @@ class ChickenCoopScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildEggProductionSection(GameState state) {
+    final uncollected = (state.resources['eggs_uncollected'] ?? 0).toInt();
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.2),
+        border: const Border(bottom: BorderSide(color: Colors.white10)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "EGG PRODUCTION",
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: const Color(0xFFC4B89B),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.1),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  "$uncollected UNCOLLECTED",
+                  style: GoogleFonts.outfit(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amberAccent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (state.chickens.where((c) => !c.isMale).isEmpty)
+            Center(
+              child: Text(
+                "No hens present for production.",
+                style: GoogleFonts.oldStandardTt(
+                  color: Colors.white10,
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            )
+          else
+            Column(
+              children: state.chickens.where((c) => !c.isMale).map((hen) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 80,
+                        child: Text(
+                          hen.breed.name.toUpperCase(),
+                          style: GoogleFonts.outfit(
+                            fontSize: 10,
+                            color: Colors.white60,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: _buildProductionSparkline(hen.eggProductionHistory),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "${hen.eggsLaid} TODAY",
+                        style: GoogleFonts.oldStandardTt(
+                          fontSize: 10,
+                          color: Colors.amberAccent.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductionSparkline(List<int> history) {
+    // Show last 7 days as bars
+    final displayHistory = history.length > 7 
+        ? history.sublist(history.length - 7) 
+        : history;
+    
+    return SizedBox(
+      height: 12,
+      child: Row(
+        children: [
+          ...displayHistory.map((count) {
+            return Container(
+              width: 8,
+              height: count > 0 ? (count * 4.0).clamp(2.0, 12.0) : 1.0,
+              margin: const EdgeInsets.only(right: 2),
+              color: count > 0 ? Colors.amberAccent : Colors.white10,
+            );
+          }),
+          // Fill empty days to represent 7 day window
+          ...List.generate(7 - displayHistory.length, (index) => Container(
+            width: 8,
+            height: 1,
+            margin: const EdgeInsets.only(right: 2),
+            color: Colors.white.withValues(alpha: 0.05),
+          )),
+        ],
+      ),
+    );
+  }
+
   Widget _breedStat(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -193,9 +315,7 @@ class ChickenCoopScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             border: Border.all(color: Colors.white10),
-            color: chicken.isMarkedForButchery
-                ? Colors.red.withValues(alpha: 0.05)
-                : Colors.black12,
+            color: Colors.black12,
           ),
           child: Row(
             children: [
@@ -223,24 +343,6 @@ class ChickenCoopScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    "MARK FOR BUTCHERY",
-                    style: GoogleFonts.oldStandardTt(
-                      fontSize: 9,
-                      color: Colors.white24,
-                    ),
-                  ),
-                  Switch(
-                    value: chicken.isMarkedForButchery,
-                    onChanged: (val) => state.toggleChickenButchery(chicken.id),
-                    activeThumbColor: Colors.redAccent,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ],
               ),
             ],
           ),
