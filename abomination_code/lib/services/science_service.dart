@@ -4,7 +4,7 @@ class ScienceActivity {
   final String id;
   final String name;
   final TaskType type;
-  final Map<String, int> ingredients;
+  final Map<String, num> ingredients;
   final int baseDurationMinutes;
   final String discipline;
   final double moralCost; // 0.0 to 1.0 (Guilt increase)

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:abomination/state/game_state.dart';
 import 'package:abomination/services/task_service.dart';
+import 'package:abomination/models/npc_intent.dart';
 import 'package:abomination/models/game_item.dart';
 
 void main() {
@@ -40,6 +41,7 @@ void main() {
       final cookTask = GameTask(
         id: 'cook_stew',
         npcId: gameState.npcs.first.id,
+        priority: IntentPriority.normal,
         type: TaskType.cook,
         targetId: 'kitchen',
         recipeId: 'protein_mistery_stew',
@@ -75,6 +77,7 @@ void main() {
       final dissectTask = GameTask(
         id: 'dissect_rat',
         npcId: gameState.npcs.first.id,
+        priority: IntentPriority.normal,
         type: TaskType.dissect,
         targetId: 'study',
         recipeId: 'small_dissection',
@@ -110,6 +113,7 @@ void main() {
       final vivisectionTask = GameTask(
         id: 'vivisect_rat',
         npcId: worker.id,
+        priority: IntentPriority.normal,
         type: TaskType.vivisection,
         targetId: 'study',
         recipeId: 'small_vivisection',

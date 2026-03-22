@@ -63,6 +63,7 @@ class ScheduleBlock {
   final String? preferredRoomId;
   final TaskType? manualTaskType;
   final String? manualTargetId;
+  final String? manualRecipeId;
 
   ScheduleBlock({
     required this.hourIndex,
@@ -70,6 +71,7 @@ class ScheduleBlock {
     this.preferredRoomId,
     this.manualTaskType,
     this.manualTargetId,
+    this.manualRecipeId,
   });
 
   int get hourOfDay => hourIndex % 24;
@@ -81,6 +83,7 @@ class ScheduleBlock {
     'preferredRoomId': preferredRoomId,
     'manualTaskType': manualTaskType?.index,
     'manualTargetId': manualTargetId,
+    'manualRecipeId': manualRecipeId,
   };
 
   ScheduleBlock copyWith({
@@ -89,6 +92,7 @@ class ScheduleBlock {
     String? preferredRoomId,
     TaskType? manualTaskType,
     String? manualTargetId,
+    String? manualRecipeId,
   }) {
     return ScheduleBlock(
       hourIndex: hourIndex ?? this.hourIndex,
@@ -96,6 +100,7 @@ class ScheduleBlock {
       preferredRoomId: preferredRoomId ?? this.preferredRoomId,
       manualTaskType: manualTaskType ?? this.manualTaskType,
       manualTargetId: manualTargetId ?? this.manualTargetId,
+      manualRecipeId: manualRecipeId ?? this.manualRecipeId,
     );
   }
 
@@ -107,6 +112,7 @@ class ScheduleBlock {
         ? TaskType.values[json['manualTaskType'] as int]
         : null,
     manualTargetId: json['manualTargetId'] as String?,
+    manualRecipeId: json['manualRecipeId'] as String?,
   );
 }
 

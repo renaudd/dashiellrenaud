@@ -23,6 +23,8 @@ class Dish {
   final DateTime cookedAt;
   final int shelfLifeHours;
   final double illnessRisk; // 0.0 to 1.0
+  final double weight; // in kilograms
+  final int value; // base value in funds
 
   Dish({
     required this.id,
@@ -32,6 +34,8 @@ class Dish {
     required this.cookedAt,
     this.shelfLifeHours = 48,
     this.illnessRisk = 0.0,
+    this.weight = 0.5,
+    this.value = 5,
   });
 
   bool isSpoiled(DateTime currentTime) {
@@ -53,6 +57,8 @@ class Dish {
     'cookedAt': cookedAt.toIso8601String(),
     'shelfLifeHours': shelfLifeHours,
     'illnessRisk': illnessRisk,
+    'weight': weight,
+    'value': value,
   };
 
   factory Dish.fromJson(Map<String, dynamic> json) => Dish(
@@ -62,6 +68,8 @@ class Dish {
     quality: DishQuality.values[json['quality']],
     cookedAt: DateTime.parse(json['cookedAt']),
     shelfLifeHours: json['shelfLifeHours'],
-    illnessRisk: json['illnessRisk'],
+    illnessRisk: (json['illnessRisk'] as num?)?.toDouble() ?? 0.0,
+    weight: (json['weight'] as num?)?.toDouble() ?? 0.5,
+    value: json['value'] as int? ?? 5,
   );
 }

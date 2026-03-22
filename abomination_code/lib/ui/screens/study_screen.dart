@@ -437,7 +437,7 @@ class StudyScreen extends StatelessWidget {
       children: activities.map<Widget>((activity) {
         bool canStart = true;
         activity.ingredients.forEach((ing, count) {
-          int available =
+          num available =
               state.inventory
                   .where((i) {
                     if (ing == 'meat') {
@@ -449,6 +449,9 @@ class StudyScreen extends StatelessWidget {
                           i.type == 'bat' ||
                           i.type == 'chicken' ||
                           i.category == ItemCategory.specimen;
+                    }
+                    if (ing == 'unreviewed_document') {
+                      return i.type == 'unreviewed_document' || i.category == ItemCategory.knowledge;
                     }
                     return i.type == ing;
                   })
@@ -533,7 +536,7 @@ class StudyScreen extends StatelessWidget {
                             ) {
                               final ing = e.key;
                               final count = e.value;
-                              int available =
+                              num available =
                                   state.inventory
                                       .where((i) {
                                         if (ing == 'meat') {
@@ -557,10 +560,10 @@ class StudyScreen extends StatelessWidget {
                                             (state.resources['bat'] ?? 0) +
                                             (state.resources['chicken'] ?? 0)
                                       : (state.resources[ing] ?? 0));
-                              final hasEnough = available >= count;
+                              final hasEnough = available.round() >= count.round();
 
                               return Text(
-                                '${_getPrettyTypeName(e.key)}: ${e.value}',
+                                '${_getPrettyTypeName(e.key)}: ${e.value.round()}',
                                 style: GoogleFonts.oldStandardTt(
                                   color: hasEnough
                                       ? const Color(0xFFC4B89B)
@@ -606,18 +609,7 @@ class StudyScreen extends StatelessWidget {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: canStart
-                        ? () {
-                            state.addScienceActivityToQueue(activity.id);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '${activity.name.toUpperCase()} COMMENCED IN STUDY QUEUE',
-                                ),
-                                backgroundColor: const Color(0xFFC4B89B),
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
-                          }
+                        ? () => _showScienceActivityTargetDialog(context, state, activity)
                         : null,
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
@@ -651,6 +643,147 @@ class StudyScreen extends StatelessWidget {
     );
   }
 
+  void _showScienceActivityTargetDialog(
+    BuildContext context,
+    GameState state,
+    ScienceActivity activity,
+  ) {
+    // Identify specimen requirements
+    final specimenRequirements = activity.ingredients.entries.where((e) => e.key == 'rat_specimen' || e.key == 'captive_human').toList();
+
+    if (specimenRequirements.isEmpty) {
+      state.addScienceActivityToQueue(activity.id);
+      return;
+    }
+
+    final reqType = specimenRequirements.first.key;
+    final reqCount = specimenRequirements.first.value;
+    final available = state.getAvailableSpecimenTargets(reqType);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final List<String> selectedIds = [];
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1A1612),
+              title: Text(
+                'SELECT SUBJECTS (${selectedIds.length}/$reqCount)',
+                style: GoogleFonts.playfairDisplay(
+                  color: const Color(0xFFE5D5B0),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+              content: SizedBox(
+                width: 300,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'REQUIRED: $reqCount ${reqType.replaceAll('_', ' ').toUpperCase()}',
+                      style: GoogleFonts.oldStandardTt(
+                        color: Colors.white54,
+                        fontSize: 10,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: available.length,
+                        itemBuilder: (context, index) {
+                          final target = available[index];
+                          final isSelected = selectedIds.contains(target['id']);
+                          return CheckboxListTile(
+                            title: Text(
+                              target['name'].toUpperCase(),
+                              style: GoogleFonts.oldStandardTt(
+                                color: const Color(0xFFC4B89B),
+                                fontSize: 12,
+                              ),
+                            ),
+                            subtitle: Text(
+                              target['type'].toUpperCase(),
+                              style: GoogleFonts.oldStandardTt(
+                                color: Colors.white24,
+                                fontSize: 9,
+                              ),
+                            ),
+                            value: isSelected,
+                            onChanged: (val) {
+                              setDialogState(() {
+                                if (val == true) {
+                                  if (selectedIds.length < reqCount) {
+                                    selectedIds.add(target['id']);
+                                  }
+                                } else {
+                                  selectedIds.remove(target['id']);
+                                }
+                              });
+                            },
+                            activeColor: const Color(0xFFC4B89B),
+                            checkColor: Colors.black,
+                            side: const BorderSide(color: Colors.white24),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'ABANDON',
+                    style: GoogleFonts.playfairDisplay(
+                      color: Colors.white24,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: selectedIds.length == reqCount
+                      ? () {
+                          state.addScienceActivityToQueue(
+                            activity.id,
+                            reservedEntityIds: selectedIds,
+                          );
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${activity.name.toUpperCase()} COMMENCED IN STUDY QUEUE',
+                              ),
+                              backgroundColor: const Color(0xFFC4B89B),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        }
+                      : null,
+                  child: Text(
+                    'PROCEED',
+                    style: GoogleFonts.playfairDisplay(
+                      color: selectedIds.length == reqCount
+                          ? const Color(0xFFC4B89B)
+                          : Colors.white10,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildResearchQueue(BuildContext context, GameState state) {
     if (state.researchQueue.isEmpty) {
       return Container(
@@ -675,13 +808,11 @@ class StudyScreen extends StatelessWidget {
     return Column(
       children: state.researchQueue.map((queueId) {
         final index = state.researchQueue.indexOf(queueId);
-        final isActivity = queueId.startsWith('activity:');
-        final isRecipe = queueId.startsWith('recipe:');
-        final activityId = isActivity
-            ? queueId.replaceFirst('activity:', '')
-            : isRecipe
-            ? queueId.replaceFirst('recipe:', '')
-            : null;
+        final parts = queueId.split(':');
+        final category = parts[0];
+        final activityId = parts.length > 1 ? parts[1] : null;
+        final isActivity = category == 'activity';
+        final isRecipe = category == 'recipe';
 
         final activity = isActivity
             ? ScienceService.getActivityById(activityId!)
@@ -733,7 +864,7 @@ class StudyScreen extends StatelessWidget {
               (activity?.name ??
                       recipe?.name ??
                       (item != null ? _getPrettyItemName(item) : null) ??
-                      'UNKNOWN')
+                      (isActivity ? "RESEARCH PROJECT: $activityId" : 'UNKNOWN'))
                   .toUpperCase(),
               style: GoogleFonts.playfairDisplay(
                 color: const Color(0xFFE5D5B0),
@@ -741,16 +872,30 @@ class StudyScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            subtitle: Text(
-              assignedNpc != null
-                  ? 'ASSIGNED: ${assignedNpc.name.toUpperCase()}'
-                  : 'PENDING ASSIGNMENT',
-              style: GoogleFonts.oldStandardTt(
-                color: assignedNpc != null
-                    ? const Color(0xFFC4B89B).withValues(alpha: 0.6)
-                    : Colors.white24,
-                fontSize: 9,
-              ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  assignedNpc != null
+                      ? 'ASSIGNED: ${assignedNpc.name.toUpperCase()}'
+                      : 'PENDING ASSIGNMENT',
+                  style: GoogleFonts.oldStandardTt(
+                    color: assignedNpc != null
+                        ? const Color(0xFFC4B89B).withValues(alpha: 0.6)
+                        : Colors.white24,
+                    fontSize: 9,
+                  ),
+                ),
+                if (parts.length > 2) 
+                  Text(
+                    'SUBJECTS: ${parts.sublist(2).join(", ").toUpperCase()}',
+                    style: GoogleFonts.oldStandardTt(
+                      color: const Color(0xFFC4B89B).withValues(alpha: 0.4),
+                      fontSize: 8,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+              ],
             ),
             trailing: IconButton(
               icon: const Icon(Icons.close, color: Colors.white24, size: 14),

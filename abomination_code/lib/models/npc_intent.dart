@@ -1,13 +1,16 @@
 import '../services/task_service.dart';
 
 enum IntentPriority {
-  leisure, // Free time / Background
-  normal, // Scheduled routine/work
-  assignment, // Player manual drop
-  desire, // Desperate wants (interpersonal, etc)
-  urgent, // 4-star responsibilities
-  vital, // 5-star responsibilities / Scheduled needs
-  panic, // Breaking Point (extreme hunger/exhaustion) / Emergency
+  idle,       // 0: Default fallback
+  leisure,    // 1: Lowest priority activities
+  low,        // 2: Scheduled autonomous behavior
+  normal,     // 3: Player-assigned tasks (Normal Priority)
+  assignment, // 4: Specifically assigned tasks (High priority manual)
+  high,       // 5: Critical physiological thresholds (High Priority)
+  urgent,     // 6: Approaching crisis (4 stars)
+  vital,      // 7: Serious crisis (5 stars)
+  emergency,  // 8: Crisis response (Emergency Tasks)
+  panic,      // 9: Immediate mortal danger (Fire, Escape)
 }
 
 class NPCIntent {
@@ -20,6 +23,8 @@ class NPCIntent {
   final int? startTimeMin; // Optional: Wait until this game minute
   final int expectedDurationMin;
   final int? minutesRemaining;
+  final bool isManual;
+  final int stallCoolingMin; // New: minutes to wait if unperformable
 
   NPCIntent({
     required this.id,
@@ -31,6 +36,8 @@ class NPCIntent {
     this.startTimeMin,
     this.expectedDurationMin = 240,
     this.minutesRemaining,
+    this.isManual = false,
+    this.stallCoolingMin = 0,
   });
 
   NPCIntent copyWith({
@@ -43,6 +50,8 @@ class NPCIntent {
     int? startTimeMin,
     int? expectedDurationMin,
     int? minutesRemaining,
+    bool? isManual,
+    int? stallCoolingMin,
   }) {
     return NPCIntent(
       id: id ?? this.id,
@@ -54,6 +63,8 @@ class NPCIntent {
       startTimeMin: startTimeMin ?? this.startTimeMin,
       expectedDurationMin: expectedDurationMin ?? this.expectedDurationMin,
       minutesRemaining: minutesRemaining ?? this.minutesRemaining,
+      isManual: isManual ?? this.isManual,
+      stallCoolingMin: stallCoolingMin ?? this.stallCoolingMin,
     );
   }
 
@@ -67,6 +78,8 @@ class NPCIntent {
     'startTimeMin': startTimeMin,
     'expectedDurationMin': expectedDurationMin,
     'minutesRemaining': minutesRemaining,
+    'isManual': isManual,
+    'stallCoolingMin': stallCoolingMin,
   };
 
   factory NPCIntent.fromJson(Map<String, dynamic> json) => NPCIntent(
@@ -79,5 +92,7 @@ class NPCIntent {
     startTimeMin: json['startTimeMin'],
     expectedDurationMin: json['expectedDurationMin'] ?? 240,
     minutesRemaining: json['minutesRemaining'],
+    isManual: json['isManual'] ?? false,
+    stallCoolingMin: json['stallCoolingMin'] ?? 0,
   );
 }

@@ -22,6 +22,7 @@ import '../models/objective.dart';
 import '../models/relationship.dart';
 import '../models/status_effect.dart';
 import '../models/diet.dart';
+import '../models/combat_stats.dart';
 
 import '../services/task_service.dart';
 import '../services/social_service.dart';
@@ -66,7 +67,7 @@ class GameState extends ChangeNotifier {
   final List<Room> _rooms = [];
   final Map<String, num> _resources = {
     'funds': 100,
-    'wood': 10,
+    'wood': 100,
     'meat': 5,
     'cabbage': 5,
     'eggs': 0,
@@ -98,9 +99,9 @@ class GameState extends ChangeNotifier {
   int _unreadObjectiveCount = 0;
   bool _pendingCombatEncounter = false;
   int _lastEncounterMinute = -10; // Allow first encounter immediately
+  final Map<String, int> _taskStagnationCounters = {};
 
   final List<Chicken> _chickens = [];
-  FoxPopulation _estateFoxes = FoxPopulation.initial();
   final List<Crop> _crops = [];
   int _uncollectedEggs = 0;
   ButlerDisposition _butlerDisposition = ButlerDisposition.neutral;
@@ -110,6 +111,34 @@ class GameState extends ChangeNotifier {
   bool get isGameOver => _isGameOver;
   String? get gameOverReason => _gameOverReason;
   final List<ManorCrisis> _crises = [];
+  final Map<String, double> _researchPoints = {};
+
+  void _handleNpcDeath(int index) {
+    if (index < 0 || index >= _npcs.length) return;
+    final deadNpc = _npcs[index];
+    
+    // Create Corpse Item
+    final corpse = GameItem.create(
+      name: "Corpse of ${deadNpc.name}",
+      type: "corpse_${deadNpc.specimenType.toLowerCase()}",
+      category: ItemCategory.corpse,
+      weight: deadNpc.stats['weightGrams']?.toDouble() ?? 70.0,
+      metadata: {
+        'npc_data': deadNpc.toJson(),
+        'specimenType': deadNpc.specimenType,
+        'deathDate': _currentDate.formattedDate,
+      },
+    );
+
+    _inventory.add(corpse);
+    _npcs.removeAt(index);
+    
+    _announcementHistory.insert(
+      0,
+      "[${_currentDate.formattedTime}] DEATH: ${deadNpc.name} has perished. A corpse remains.",
+    );
+    notifyListeners();
+  }
 
   final Map<ResponsibilityCategory, List<TaskType>> _categoryPriorities = {};
   final Map<ResponsibilityCategory, int> _categoryDividers = {};
@@ -146,7 +175,6 @@ class GameState extends ChangeNotifier {
     'researchQueue': _researchQueue,
     'unreadObjectiveCount': _unreadObjectiveCount,
     'chickens': _chickens.map((c) => c.toJson()).toList(),
-    'estateFoxes': _estateFoxes.toJson(),
     'crops': _crops.map((c) => c.toJson()).toList(),
     'uncollectedEggs': _uncollectedEggs,
     'butlerDisposition': _butlerDisposition.index,
@@ -165,6 +193,7 @@ class GameState extends ChangeNotifier {
     'playerAge': _playerAge,
     'gilesTrait': _gilesTrait.index,
     'mainObjective': _mainObjective.index,
+    'researchPoints': _researchPoints,
   };
 
   void loadFromJson(Map<String, dynamic> json) {
@@ -187,7 +216,7 @@ class GameState extends ChangeNotifier {
     );
 
     _resources.clear();
-    _resources.addAll(Map<String, int>.from(json['resources']));
+    _resources.addAll(Map<String, num>.from(json['resources']));
 
     _inventory.clear();
     _inventory.addAll(
@@ -241,11 +270,12 @@ class GameState extends ChangeNotifier {
       (json['pantry'] as List).map((d) => Dish.fromJson(d)).toList(),
     );
 
-    _cookingQueue.clear();
-    _cookingQueue.addAll(List<String>.from(json['cookingQueue']));
-
     _researchQueue.clear();
     _researchQueue.addAll(List<String>.from(json['researchQueue']));
+
+    _researchPoints.clear();
+    final resPoints = json['researchPoints'] as Map<String, dynamic>? ?? {};
+    resPoints.forEach((k, v) => _researchPoints[k] = (v as num).toDouble());
 
     _unreadObjectiveCount = json['unreadObjectiveCount'] as int? ?? 0;
 
@@ -253,8 +283,6 @@ class GameState extends ChangeNotifier {
     _chickens.addAll(
       (json['chickens'] as List).map((c) => Chicken.fromJson(c)).toList(),
     );
-
-    _estateFoxes = FoxPopulation.fromJson(json['estateFoxes']);
 
     _crops.clear();
     _crops.addAll(
@@ -299,48 +327,101 @@ class GameState extends ChangeNotifier {
 
     notifyListeners();
   }
+  List<Map<String, dynamic>> getAvailableSpecimenTargets(String type) {
+    final List<Map<String, dynamic>> targets = [];
 
+    // Items
+    for (var item in _inventory.where(
+      (i) =>
+          i.category == ItemCategory.specimen &&
+          i.type == type &&
+          !i.isReserved,
+    )) {
+      targets.add({'id': item.id, 'name': item.name, 'type': 'item'});
+    }
+
+    // NPCs
+    final npcType = type == 'captive_human'
+        ? 'Human'
+        : (type == 'rat_specimen' ? 'Rat' : type);
+    for (var npc in _npcs.where(
+      (n) => n.specimenType == npcType && !n.isPlayer && !n.isReserved,
+    )) {
+      targets.add({'id': npc.id, 'name': npc.name, 'type': 'npc'});
+    }
+
+    return targets;
+  }
   List<NPC> get npcs => List.unmodifiable(_npcs);
 
   List<Map<String, dynamic>> get butcheryTargets {
     final List<Map<String, dynamic>> targets = [];
 
-    // 1. Group identical chickens by breed and maturity
-    final Map<String, List<String>> groupedChickens = {};
-    for (var c in _chickens) {
-      final isMature = c.isMature;
-      final key = "${c.breed.name} Chicken (${isMature ? 'Mature' : 'Young'})";
-      groupedChickens.putIfAbsent(key, () => []).add(c.id);
+    // 1. Chickens (Individual)
+    for (var c in _chickens.where((c) => !c.isReserved)) {
+      targets.add({
+        'id': c.id,
+        'name': "${c.breed.name} Chicken (${c.isMature ? 'Mature' : 'Young'}) #${c.id.substring(0, 4)}",
+      });
     }
 
-    groupedChickens.forEach((name, ids) {
-      if (ids.length > 1) {
-        targets.add({
-          'id': ids.first, 
-          'name': "$name x${ids.length}", 
-          'isGroup': true, 
-          'ids': ids
-        });
-      } else {
-        targets.add({'id': ids.first, 'name': name});
-      }
-    });
-
     // 2. Specimens from inventory (individual, as they have unique stats)
-    for (var item in _inventory.where((i) => i.category == ItemCategory.specimen)) {
+    for (var item in _inventory.where(
+      (i) => i.category == ItemCategory.specimen && !i.isReserved,
+    )) {
       targets.add({'id': item.id, 'name': item.name});
     }
 
-    // 3. NPCs (individual)
-    for (var npc in _npcs.where((n) => !n.isPlayer)) {
-      targets.add({'id': npc.id, 'name': "${npc.name} (${npc.role.toUpperCase()})"});
+    // 3. NPCs (Resident or specialized creatures)
+    for (var npc in _npcs.where((n) => 
+      !n.isPlayer && 
+      (n.isResident || n.status == NPCStatus.zombie) &&
+      !n.isReserved
+    )) {
+      targets.add({'id': npc.id, 'name': npc.name});
     }
 
     return targets;
   }
+
+  /// Dynamically derives the task queue for a room from all NPCs' intent queues.
+  List<EnqueuedTask> getRoomTaskQueue(String roomId) {
+    final List<EnqueuedTask> queue = [];
+    for (var npc in _npcs) {
+      final activeTask = _taskService.activeTasks.firstWhereOrNull((t) => t.npcId == npc.id);
+
+      // Include enqueued intents
+      for (var intent in npc.intentQueue) {
+        // Skip the intent if it's currently the active task being performed
+        if (activeTask != null && intent.id == activeTask.intentId) continue;
+        
+        if (intent.targetRoomId == roomId) {
+          queue.add(EnqueuedTask(
+            npcId: npc.id,
+            intentId: intent.id,
+            description: "${intent.action.displayName} (${npc.name})",
+          ));
+        }
+      }
+    }
+    return queue;
+  }
   List<NPC> get availableHamletNpcs => List.unmodifiable(_availableHamletNpcs);
   List<Room> get rooms => List.unmodifiable(_rooms);
-  Map<String, int> get resources => Map.unmodifiable(_resources);
+  Map<String, num> get resources => Map.unmodifiable(_resources);
+
+  static bool isIndivisibleResource(String key) {
+    return const [
+      'funds',
+      'eggs',
+      'meals',
+      'wood',
+      'meat',
+      'cabbage',
+      'timber',
+      'fertilizer',
+    ].contains(key);
+  }
   List<GameItem> get inventory => List.unmodifiable(_inventory);
   Map<ResponsibilityCategory, List<TaskType>> get categoryPriorities =>
       Map.unmodifiable(_categoryPriorities);
@@ -375,7 +456,6 @@ class GameState extends ChangeNotifier {
   String get estateName => _estateName;
   GilesTrait get gilesTrait => _gilesTrait;
   List<Chicken> get chickens => List.unmodifiable(_chickens);
-  FoxPopulation get estateFoxes => _estateFoxes;
   DeathCause? get deathCause => _deathCause;
   List<String> get cookingQueue => List.unmodifiable(_cookingQueue);
   List<String> get researchQueue => List.unmodifiable(_researchQueue);
@@ -404,7 +484,7 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _consumeScienceIngredients(Map<String, int> ingredients) {
+  void _consumeScienceIngredients(Map<String, num> ingredients) {
     ingredients.forEach((ing, count) {
       // Handle resources (sugar, coffee, etc)
       if (_resources.containsKey(ing)) {
@@ -453,21 +533,98 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addResearchToQueue(String itemId) {
-    if (!_researchQueue.contains(itemId)) {
-      _researchQueue.add(itemId);
-      final item = _inventory.firstWhere((i) => i.id == itemId);
+  void setReservation(String id, bool reserved) {
+    // Check NPCs
+    final npcIdx = _npcs.indexWhere((n) => n.id == id);
+    if (npcIdx != -1) {
+      _npcs[npcIdx] = _npcs[npcIdx].copyWith(isReserved: reserved);
+      notifyListeners();
+      return;
+    }
+
+    // Check Chickens
+    final chickenIdx = _chickens.indexWhere((c) => c.id == id);
+    if (chickenIdx != -1) {
+      _chickens[chickenIdx] = _chickens[chickenIdx].copyWith(
+        isReserved: reserved,
+      );
+      notifyListeners();
+      return;
+    }
+
+    // Check Inventory Items
+    final itemIdx = _inventory.indexWhere((i) => i.id == id);
+    if (itemIdx != -1) {
+      final meta = Map<String, dynamic>.from(_inventory[itemIdx].metadata);
+      meta['isReserved'] = reserved;
+      _inventory[itemIdx] = _inventory[itemIdx].copyWith(metadata: meta);
+      notifyListeners();
+      return;
+    }
+  }
+
+  void addToCookingQueue(
+    String recipeId, {
+    String? targetId,
+    String? targetName,
+  }) {
+    String entry = recipeId;
+    if (targetId != null) {
+      entry = '$recipeId:$targetId:$targetName';
+      setReservation(targetId, true);
+    }
+    _cookingQueue.add(entry);
+    notifyListeners();
+  }
+
+  void removeFromCookingQueue(int index) {
+    if (index >= 0 && index < _cookingQueue.length) {
+      final entry = _cookingQueue.removeAt(index);
+      if (entry.contains(':')) {
+        final parts = entry.split(':');
+        setReservation(parts[1], false);
+      }
+      notifyListeners();
+    }
+  }
+
+  void addResearchToQueue(String itemId, {List<String>? reservedEntityIds}) {
+    String entry = itemId;
+    if (reservedEntityIds != null && reservedEntityIds.isNotEmpty) {
+      entry = '$itemId:${reservedEntityIds.join(",")}';
+      for (var id in reservedEntityIds) {
+        setReservation(id, true);
+      }
+    } else if (_inventory.any((i) => i.id == itemId)) {
+      // Auto-reserve if it's a specific item from inventory
+      setReservation(itemId, true);
+    }
+
+    if (!_researchQueue.contains(entry)) {
+      _researchQueue.add(entry);
+      final item = _inventory.firstWhereOrNull((i) => i.id == itemId);
       _announcementHistory.insert(
         0,
-        "[${_currentDate.formattedTime}] Enqueued ${item.name.toUpperCase()} for research.",
+        "[${_currentDate.formattedTime}] Enqueued ${item?.name.toUpperCase() ?? itemId.toUpperCase()} for research.",
       );
       notifyListeners();
     }
   }
 
-  void addScienceActivityToQueue(String activityId) {
-    if (!_researchQueue.contains('activity:$activityId')) {
-      _researchQueue.add('activity:$activityId');
+  void addScienceActivityToQueue(
+    String activityId, {
+    List<String>? reservedEntityIds,
+  }) {
+    String entry = 'activity:$activityId';
+    if (reservedEntityIds != null && reservedEntityIds.isNotEmpty) {
+      entry = '$entry:${reservedEntityIds.join(",")}';
+      for (var id in reservedEntityIds) {
+        setReservation(id, true);
+      }
+    }
+
+    if (!_researchQueue.contains(entry)) {
+      _researchQueue.add(entry);
       final activity = ScienceService.getActivityById(activityId);
       if (activity != null) {
         _announcementHistory.insert(
@@ -479,9 +636,20 @@ class GameState extends ChangeNotifier {
     }
   }
 
-  void addExperimentalRecipeToQueue(String recipeId) {
-    if (!_researchQueue.contains('recipe:$recipeId')) {
-      _researchQueue.add('recipe:$recipeId');
+  void addExperimentalRecipeToQueue(
+    String recipeId, {
+    List<String>? reservedEntityIds,
+  }) {
+    String entry = 'recipe:$recipeId';
+    if (reservedEntityIds != null && reservedEntityIds.isNotEmpty) {
+      entry = '$entry:${reservedEntityIds.join(",")}';
+      for (var id in reservedEntityIds) {
+        setReservation(id, true);
+      }
+    }
+
+    if (!_researchQueue.contains(entry)) {
+      _researchQueue.add(entry);
       final recipes = KitchenService.getAvailableRecipes();
       final recipe = recipes.cast<Recipe?>().firstWhere((r) => r?.id == recipeId, orElse: () => null);
       if (recipe != null) {
@@ -496,17 +664,35 @@ class GameState extends ChangeNotifier {
 
   void removeResearchFromQueue(int index) {
     if (index >= 0 && index < _researchQueue.length) {
-      _researchQueue.removeAt(index);
+      final entry = _researchQueue.removeAt(index);
+      if (entry.contains(':')) {
+        final parts = entry.split(':');
+        // If it starts with 'activity:' or 'recipe:', IDs are in parts[2]
+        if (parts[0] == 'activity' || parts[0] == 'recipe') {
+          if (parts.length > 2) {
+            final ids = parts[2].split(',');
+            for (var id in ids) {
+              setReservation(id, false);
+            }
+          }
+        } else {
+          // Fallback legacy format or other type: Parts[1] is ID
+          setReservation(parts[1], false);
+        }
+      } else {
+        // Simple item ID
+        setReservation(entry, false);
+      }
       notifyListeners();
     }
   }
 
-  void updateResource(String resource, int amount) {
+  void updateResource(String resource, num amount) {
     _resources[resource] = (_resources[resource] ?? 0) + amount;
     notifyListeners();
   }
 
-  void addResources(Map<String, int> resources) {
+  void addResources(Map<String, num> resources) {
     resources.forEach((key, value) {
       _resources[key] = (_resources[key] ?? 0) + value;
     });
@@ -554,7 +740,7 @@ class GameState extends ChangeNotifier {
     }
   }
 
-  void setResource(String id, int amount) {
+  void setResource(String id, num amount) {
     _resources[id] = amount;
     notifyListeners();
   }
@@ -589,6 +775,7 @@ class GameState extends ChangeNotifier {
     _activeConstruction.clear();
     _inventory.clear();
     _resources.clear();
+    _researchPoints.clear();
     _resources.addAll({
       'funds': 100,
       'wood': 10,
@@ -1050,13 +1237,22 @@ class GameState extends ChangeNotifier {
     _npcs.add(player);
     _npcs.add(butler);
 
+    // Initialize 5 individual Foxes
+    for (int i = 0; i < 5; i++) {
+      _npcs.add(FoxGenerator.createFox("fox_${i}_${DateTime.now().millisecondsSinceEpoch}"));
+    }
+
     // Initial Combat Unit Pool - Giles is already added as the butler.
     // If we add more units to the initial deck later, we should filter out duplicates here.
     _butlerRoomId = 'butler_quarters';
   }
+  bool _isTicking = false;
 
   void tick() {
-    if (_speed == GameSpeed.paused) return;
+    if (_isTicking || _speed == GameSpeed.paused) return;
+    _isTicking = true;
+    
+    try {
 
     _processDishes();
     _processSpoilage();
@@ -1098,7 +1294,6 @@ class GameState extends ChangeNotifier {
 
           // Check if NPC is in the correct room for their current active task
           if (n.activeTaskId != null) {
-            // Use findTaskById equivalent or manual search
             GameTask? task;
             for (var t in _taskService.activeTasks) {
               if (t.id == n.activeTaskId) {
@@ -1133,24 +1328,14 @@ class GameState extends ChangeNotifier {
       },
     );
 
-    // Sync active task progress back to intent queues and room physical projects
+    // [FIX] Consolidate Sync: Update NPCs with latest Task Progress FIRST
     for (int i = 0; i < _npcs.length; i++) {
       var npc = _npcs[i];
       if (npc.activeTaskId != null) {
-        GameTask? task;
-        for (var t in _taskService.activeTasks) {
-          if (t.id == npc.activeTaskId) {
-            task = t;
-            break;
-          }
-        }
+        final task = _taskService.activeTasks.firstWhereOrNull((t) => t.id == npc.activeTaskId);
         if (task != null) {
-          final activeTask = task;
-          
           // Sync to NPC Intent
-          final intentIndex = npc.intentQueue.indexWhere(
-            (intent) => intent.id == activeTask.id,
-          );
+          final intentIndex = npc.intentQueue.indexWhere((it) => it.id == task.intentId);
           if (intentIndex != -1) {
             final updatedIntent = npc.intentQueue[intentIndex].copyWith(
               minutesRemaining: task.minutesRemaining,
@@ -1158,29 +1343,61 @@ class GameState extends ChangeNotifier {
             List<NPCIntent> newQueue = List.from(npc.intentQueue);
             newQueue[intentIndex] = updatedIntent;
             _npcs[i] = npc.copyWith(intentQueue: newQueue);
+            npc = _npcs[i]; 
+
+            // STAGNATION TRACKING: If progress (minutesRemaining) hasn't changed, increment counter
+            final String stagnateKey = npc.id;
+            final int lastRemaining = _taskStagnationCounters[stagnateKey] ?? -1;
+            
+            bool isStagnationExempt = npc.movementPath.isNotEmpty || 
+                                     npc.targetRoomId != null ||
+                                     npc.status == NPCStatus.sleeping ||
+                                     npc.status == NPCStatus.fainted ||
+                                     npc.status == NPCStatus.broken;
+
+            if (lastRemaining == task.minutesRemaining) {
+              if (isStagnationExempt) {
+                _taskStagnationCounters["${stagnateKey}_count"] = 0;
+              } else {
+                final currentCount = _taskStagnationCounters["${stagnateKey}_count"] ?? 0;
+                _taskStagnationCounters["${stagnateKey}_count"] = currentCount + 1;
+                
+                if (currentCount > 15) {
+                  // FORCE STALL: NPC has been on this task for 15 mins without progress
+                  debugPrint("NPC_STAGNATION_TIMEOUT: ${npc.name} stuck on ${task.type.name}. Forcing Stall.");
+                  _taskService.removeTask(task.id);
+                  _clearRoomOccupancyForNpc(npc.id);
+                  _npcs[i] = npc.copyWith(activeTaskId: null);
+                  _taskStagnationCounters["${stagnateKey}_count"] = 0;
+                  
+                  // Also stall the intent in the queue so they don't pick it right back up
+                  final newStalledQueue = List<NPCIntent>.from(_npcs[i].intentQueue);
+                  final stallIdx = newStalledQueue.indexWhere((it) => it.id == task.id);
+                  if (stallIdx != -1) {
+                    final stalled = newStalledQueue.removeAt(stallIdx);
+                    newStalledQueue.add(stalled.copyWith(startTimeMin: _currentDate.totalMinutes + 30));
+                    _npcs[i] = _npcs[i].copyWith(intentQueue: newStalledQueue);
+                  }
+                }
+              }
+            } else {
+              _taskStagnationCounters[stagnateKey] = task.minutesRemaining;
+              _taskStagnationCounters["${stagnateKey}_count"] = 0;
+            }
           }
 
           // Sync to Room Physical Project
-          final targetId = activeTask.targetId;
+          final targetId = task.targetId;
           if (targetId != null) {
             final roomIndex = _rooms.indexWhere((r) => r.id == targetId);
             if (roomIndex != -1) {
               final room = _rooms[roomIndex];
               if (room.activeProjects.containsKey(task.id)) {
                 final totalMin = task.totalMinutes > 0 ? task.totalMinutes : 60;
-                final progress =
-                    1.0 - (task.minutesRemaining / totalMin).clamp(0.0, 1.0);
-
-                final Map<String, PhysicalProject> updatedProjects = Map.from(
-                  room.activeProjects,
-                );
-                updatedProjects[task.id] = updatedProjects[task.id]!.copyWith(
-                  progress: progress,
-                );
-
-                _rooms[roomIndex] = room.copyWith(
-                  activeProjects: updatedProjects,
-                );
+                final progress = 1.0 - (task.minutesRemaining / totalMin).clamp(0.0, 1.0);
+                final updatedProjects = Map<String, PhysicalProject>.from(room.activeProjects);
+                updatedProjects[task.id] = updatedProjects[task.id]!.copyWith(progress: progress);
+                _rooms[roomIndex] = room.copyWith(activeProjects: updatedProjects);
               }
             }
           }
@@ -1188,7 +1405,32 @@ class GameState extends ChangeNotifier {
       }
     }
 
-    for (var task in completedTasks) {
+    // [FIX] Physiological auto-completion for Rest/Eat
+    final satiatedTasks = <GameTask>[];
+    for (var npc in _npcs) {
+      if (npc.activeTaskId != null) {
+        final task = _taskService.activeTasks.firstWhereOrNull((t) => t.id == npc.activeTaskId);
+        if (task != null && !task.isCompleted) {
+          bool isSatiated = false;
+          if (task.type == TaskType.rest && npc.energy >= 100.0) isSatiated = true;
+          if (task.type == TaskType.eat && npc.hunger <= 0.0) isSatiated = true;
+
+          if (isSatiated) {
+            task.isCompleted = true;
+            satiatedTasks.add(task);
+          }
+        }
+      }
+    }
+
+    final allCompleted = [...completedTasks, ...satiatedTasks];
+
+    // Clean up satiated tasks from TaskService if they weren't already removed
+    for (var task in satiatedTasks) {
+      _taskService.removeTask(task.id);
+    }
+
+    for (var task in allCompleted) {
       _handleTaskCompletion(task);
     }
 
@@ -1202,10 +1444,37 @@ class GameState extends ChangeNotifier {
     _processPredators();
     _processVisitors();
     _processDigestion();
+    _processAutonomousCooking();
     _checkObjectives();
     _checkDiscoveries();
-
+    _consolidateUndeadUnits();
+    _processFoxGestation();
     notifyListeners();
+    } finally {
+      _isTicking = false;
+    }
+  }
+
+  void _processFoxGestation() {
+    for (int i = 0; i < _npcs.length; i++) {
+        final npc = _npcs[i];
+        if (npc.specimenType.toLowerCase() == 'fox' && (npc.metadata['isPregnant'] == true)) {
+            final startTime = npc.metadata['gestationStartTime'] as int? ?? 0;
+            final elapsed = _currentDate.totalMinutes - startTime;
+            if (elapsed >= 14400) { // 10 days
+                // Birth a fox kit
+                final kit = FoxGenerator.createFox(const Uuid().v4());
+                _npcs.add(kit.copyWith(
+                    name: "${npc.name}'s Kit",
+                    currentThought: "A new arrival in the wild pack.",
+                ));
+                _npcs[i] = npc.copyWith(
+                    metadata: {...npc.metadata, 'isPregnant': false, 'gestationStartTime': null},
+                );
+                _announcementHistory.insert(0, "[${_currentDate.formattedTime}] WILDLIFE: A new fox kit has been born in the estate grounds.");
+            }
+        }
+    }
   }
 
   void _processVisitors() {
@@ -1321,6 +1590,7 @@ class GameState extends ChangeNotifier {
 
   void _processChickens() {
     bool hasRooster = _chickens.any((c) => c.isMale && c.isMature);
+    const int maxChickens = 20;
 
     for (int i = _chickens.length - 1; i >= 0; i--) {
       var chicken = _chickens[i];
@@ -1337,19 +1607,26 @@ class GameState extends ChangeNotifier {
 
         // scaled by breed rate
         if (minsSinceLastEgg >= (24 * 60 / chicken.breed.eggRate)) {
-          bool isFertilized = hasRooster && Random().nextDouble() < 0.4;
+          // Strictly require rooster for fertilization
+          bool isFertilized =
+              hasRooster && Random().nextDouble() < 0.10; // Slightly reduced
 
-          if (isFertilized && Random().nextDouble() < 0.1) {
-            // Hatching logic
+          if (isFertilized &&
+              _chickens.length < maxChickens &&
+              Random().nextDouble() < 0.02) {
+            // Hatching logic (Requires rooster through isFertilized)
             if (_currentDate.hour >= 6 && _currentDate.hour <= 9) {
               _chickens.add(
                 Chicken.create(
                   chicken.breedType,
                   _currentDate,
-                  isMale: Random().nextBool(),
+                  isMale: Random().nextDouble() < 0.2, // 20% rooster chance
                 ),
               );
-              _lastAnnouncement = "A new chick has hatched in the coop!";
+              _announcementHistory.insert(
+                0,
+                "[${_currentDate.formattedTime}] LIFE: A new chick has hatched in the coop!",
+              );
             } else {
               _uncollectedEggs++;
               chicken = chicken.copyWith(eggsLaid: chicken.eggsLaid + 1);
@@ -1358,10 +1635,40 @@ class GameState extends ChangeNotifier {
             _uncollectedEggs++;
             chicken = chicken.copyWith(eggsLaid: chicken.eggsLaid + 1);
           }
-          chicken = chicken.copyWith(lastEggDate: _currentDate);
+          chicken = chicken.copyWith(lastEggDate: _currentDate, isFertilized: false);
         }
       }
       _chickens[i] = chicken;
+    }
+  }
+
+  void _processAutonomousCooking() {
+    // Threshold increased to 10 meals (Resource + Pantry) to avoid redundant cooking
+    final currentMeals = (_resources['meals'] ?? 0) + _pantry.length;
+    if (currentMeals >= 10 || _cookingQueue.length >= 3) return;
+
+    // Try to queue the most basic meal first (Mystery Stew)
+    // Ingredients: 1 meat, 1 potato, 1 salt
+    final hasMeat = (_resources['meat'] ?? 0) >= 1;
+    final hasPotato = (_resources['potato'] ?? 0) >= 1;
+    final hasSalt = (_resources['salt'] ?? 0) >= 1;
+
+    if (hasMeat && hasPotato && hasSalt) {
+      _cookingQueue.add('protein_mistery_stew');
+      return;
+    }
+
+    // Fallback: Bread (1 flour_spelt, 1 salt)
+    final hasFlour = (_resources['flour_spelt'] ?? 0) >= 1;
+    if (hasFlour && hasSalt) {
+      _cookingQueue.add('staple_bread');
+      return;
+    }
+
+    // Fallback: Generic Meat Fry (1 meat, 1 pepper)
+    final hasPepper = (_resources['pepper'] ?? 0) >= 1;
+    if (hasMeat && hasPepper) {
+      _cookingQueue.add('fried_generic_meat');
     }
   }
 
@@ -1376,7 +1683,8 @@ class GameState extends ChangeNotifier {
     
     // Even if no specific room yet, chickens produce a tiny bit
     if (_chickens.isNotEmpty && Random().nextDouble() < 0.1) {
-      _resources['fertilizer'] = (_resources['fertilizer'] ?? 0) + 0.5;
+      _resources['fertilizer'] = ((_resources['fertilizer'] ?? 0) + 0.5)
+          .round();
     }
   }
 
@@ -1430,26 +1738,37 @@ class GameState extends ChangeNotifier {
       return false;
     }
 
-    if (!room.isTilled) {
+    if (room.tilledAmount < 0.5) {
       _lastAnnouncement =
-          "The soil in ${room.name} must be tilled before planting.";
+          "The soil in ${room.name} must be at least 50% tilled before planting.";
+      notifyListeners();
+      return false;
+    }
+
+    if (_crops.any((c) => c.roomId == roomId)) {
+      _lastAnnouncement = "${room.name} already has crops planted.";
       notifyListeners();
       return false;
     }
 
     String seedId = 'seeds_${type.name}';
-    double seedConsumption = room.tilledAmount >= 1.0 ? 1.0 : 0.5;
+    final isFullTilled = room.tilledAmount >= 0.9;
+    double seedConsumption = isFullTilled ? 10.0 : 5.0;
+
     if ((_resources[seedId] ?? 0) < seedConsumption) {
-      _lastAnnouncement = "Not enough $seedId available.";
+      _lastAnnouncement =
+          "Need ${seedConsumption.toInt()} $seedId to plant in ${room.name}.";
       notifyListeners();
       return false;
     }
     
-    _resources[seedId] = (_resources[seedId] ?? 0) - seedConsumption;
+    _resources[seedId] = ((_resources[seedId] ?? 0) - seedConsumption)
+        .round()
+        .toDouble();
     
-    // Yield based on preparation: 0.5 multiplier if partial, plus fertilizer bonus
-    final baseYield = room.tilledAmount >= 1.0 ? 4 : 2;
-    final fertBonus = room.isFertilized ? 2 : 0;
+    // Yield based on preparation: full preparation = 4, partial = 2 (plus fertilizer bonuses)
+    final baseYield = isFullTilled ? 4 : 2;
+    final fertBonus = room.isFertilized ? (isFullTilled ? 2 : 1) : 0;
     final totalYield = (baseYield + fertBonus).toInt();
 
     _crops.add(
@@ -1457,7 +1776,7 @@ class GameState extends ChangeNotifier {
         id: const Uuid().v4(),
         type: type,
         plantedAt: DateTime.now(),
-        isTilled: room.tilledAmount >= 0.5,
+        isTilled: isFullTilled,
         isWatered: true,
         moistureLevel: 1.0,
         roomId: roomId,
@@ -1465,10 +1784,10 @@ class GameState extends ChangeNotifier {
       ),
     );
 
-    // Consume tilled state? Or let it persist for a bit?
-    // Let's reduce tilled amount slightly.
+    // Exhaust tilled state after planting
     _rooms[roomIndex] = room.copyWith(
-      tilledAmount: (room.tilledAmount - 0.2).clamp(0.0, 1.0),
+      tilledAmount: 0.0,
+      fertilizedAmount: 0.0,
     );
 
     _lastAnnouncement = "Planted ${type.name} in ${room.name}.";
@@ -1480,8 +1799,28 @@ class GameState extends ChangeNotifier {
     final index = _rooms.indexWhere((r) => r.id == roomId);
     if (index != -1) {
       final room = _rooms[index];
+      if (room.tilledAmount >= 1.0) {
+        _lastAnnouncement = "The soil in ${room.name} was already tilled.";
+        return;
+      }
+      final newAmount = (room.tilledAmount + 0.5).clamp(0.0, 1.0);
+      bool rewardGranted = false;
+
+      // Award wood for first-time tilling of fields A, B, and C
+      if (!room.hasBeenTilledForReward && newAmount >= 1.0) {
+        if (roomId == 'field_2' || roomId == 'field_3' || roomId == 'field_4') {
+          _resources['wood'] = (_resources['wood'] ?? 0) + 50;
+          rewardGranted = true;
+          _announcementHistory.insert(
+            0,
+            "[${_currentDate.formattedTime}] PROGRESS: Tilling ${room.name} unearths 50 units of usable timber from old stumps and roots!",
+          );
+        }
+      }
+
       _rooms[index] = room.copyWith(
-        tilledAmount: (room.tilledAmount + 0.5).clamp(0.0, 1.0),
+        tilledAmount: newAmount,
+        hasBeenTilledForReward: rewardGranted || room.hasBeenTilledForReward,
       );
       notifyListeners();
     }
@@ -1491,6 +1830,10 @@ class GameState extends ChangeNotifier {
     final index = _rooms.indexWhere((r) => r.id == roomId);
     if (index != -1) {
       final room = _rooms[index];
+      if (room.fertilizedAmount >= 1.0) {
+        _lastAnnouncement = "The soil in ${room.name} was already fertilized.";
+        return;
+      }
       _rooms[index] = room.copyWith(
         fertilizedAmount: (room.fertilizedAmount + 0.5).clamp(0.0, 1.0),
       );
@@ -1520,26 +1863,24 @@ class GameState extends ChangeNotifier {
     final hour = _currentDate.hour;
     if (hour < 22 && hour > 4) return;
 
-    // Once per hour roll for attempt if foxes exist
-    if (_estateFoxes.isWipedOut) {
-      // Reintroduction logic
-      final daysSinceMigration = DateTime.now()
-          .difference(_estateFoxes.lastMigrationDate)
-          .inDays;
-      if (daysSinceMigration > 14) {
-        // 2 weeks
-        _estateFoxes = _estateFoxes.copyWith(
-          currentCount: 3,
-          lastMigrationDate: DateTime.now(),
-        );
-        _lastAnnouncement =
-            "A pack of wild foxes has migrated onto the estate.";
+    final foxCount = _npcs.where((n) => n.specimenType.toLowerCase() == 'fox').length;
+
+    if (foxCount == 0) {
+      // Reintroduction logic: Small chance per minute to migrate back
+      if (Random().nextDouble() < 0.0001) {
+        for (int i = 0; i < 3; i++) {
+          _npcs.add(FoxGenerator.createFox("fox_${_currentDate.totalMinutes}_$i"));
+        }
+        // Silence this for now to avoid cluttering the Chronicle at start
+        // _lastAnnouncement = "A pack of wild foxes has migrated onto the estate.";
       }
       return;
     }
 
-    // Roll for attack (low chance per minute, e.g. 0.05%)
-    if (Random().nextDouble() < 0.0005) {
+    // Fox visits: each fox visits approximately once every 30 days
+    // 1 day = 1440 mins. 30 days = 43200 mins.
+    final prob = foxCount / 43200.0;
+    if (Random().nextDouble() < prob) {
       _triggerFoxRaid();
     }
   }
@@ -1563,28 +1904,38 @@ class GameState extends ChangeNotifier {
       return (isScheduled || hasManualTask) && isEffective;
     }).toList();
 
+    final foxEntry = _npcs.where((n) => n.specimenType.toLowerCase() == 'fox').firstOrNull;
+
     if (guards.isNotEmpty) {
       // Success! Capturing or killing a fox
-      _estateFoxes = _estateFoxes.copyWith(
-        currentCount: _estateFoxes.currentCount - 1,
-      );
-      _lastAnnouncement =
-          "The guard at the coop spotted a fox and drove it off (Population decreased).";
-    } else if (_chickens.isNotEmpty) {
-      // Fox wins
-      _chickens.removeAt(Random().nextInt(_chickens.length));
-      _lastAnnouncement =
-          "Common bandits? No, a fox has raided the coop. One chicken is lost.";
-
-      // Trigger "Intruder" crisis at the chicken coop
-      final intruder = ManorCrisis(
-        type: ManorCrisisType.intruder,
-        roomId: 'chicken_coop',
-        discoveryDate: _currentDate.toDateTime(),
-        severity: 0.2,
-        isDiscovered: true, // It's discovered because the message was sent
-      );
-      _crises.add(intruder);
+      if (foxEntry != null && Random().nextDouble() < 0.5) {
+        final foxIndex = _npcs.indexOf(foxEntry);
+        _handleNpcDeath(foxIndex);
+        _announcementHistory.insert(0, "[${_currentDate.formattedTime}] DEFENSE: A fox was driven off and recovered for parts.");
+      }
+    } else {
+      // Fox wins - Roll for events
+      final roll = Random().nextDouble();
+      
+      if (roll < 0.3 && _uncollectedEggs > 0) {
+        // Steal 1 egg
+        _uncollectedEggs--;
+        // Silence theft - no announcement
+      } else if (roll < 0.1 && _chickens.isNotEmpty) {
+        // Kill 1 chicken
+        _chickens.removeAt(Random().nextInt(_chickens.length));
+        _announcementHistory.insert(0, "[${_currentDate.formattedTime}] WILDLIFE: A fox has raided the coop. One chicken is lost.");
+        
+        // Trigger "Intruder" crisis at the chicken coop
+        final intruder = ManorCrisis(
+          type: ManorCrisisType.intruder,
+          roomId: 'chicken_coop',
+          discoveryDate: _currentDate.toDateTime(),
+          severity: 0.2,
+          isDiscovered: true,
+        );
+        _crises.add(intruder);
+      }
     }
     notifyListeners();
   }
@@ -1614,47 +1965,94 @@ class GameState extends ChangeNotifier {
 
   void _processCrises() {
     // 1. Spontaneous crisis triggers
+    bool newCrisisDetected = false;
 
-    // Kitchen Fire Trigger: Higher chance when cooking or kitchen is dirty
-    if (_crises.where((c) => c.type == ManorCrisisType.fire).isEmpty) {
-      final kitchenIndex = _rooms.indexWhere((r) => r.id == 'kitchen');
-      if (kitchenIndex != -1) {
-        final kitchen = _rooms[kitchenIndex];
-        double fireChance = 0.0001; // Base per minute
-        if (kitchen.dirtiness > 0.5) fireChance *= 2;
+    // Fire Triggers
+    // Any restored room can catch fire, but it's very rare.
+    // Kitchen and Laboratory have higher chances if active.
+    for (int i = 0; i < _rooms.length; i++) {
+      final room = _rooms[i];
+      if (!room.isRestored) continue;
+      if (_crises.any(
+        (c) => c.type == ManorCrisisType.fire && c.roomId == room.id,
+      )) {
+        continue;
+      }
 
-        // Use task service to check if anyone is cooking in kitchen
+      // 1. Spontaneous Fire Chance (Rare: ~once/month per room in aggregate)
+      double fireChance = 0.0000002;
+      // Extremely rare base chance per minute (~once a month total across ~10-15 rooms)
+      
+      if (room.type == RoomType.kitchen) {
+        if (room.dirtiness > 0.5) fireChance *= 2;
         final isCooking = _taskService.activeTasks.any(
-          (t) => t.type == TaskType.cook && t.targetId == 'kitchen',
+          (t) => t.type == TaskType.cook && t.targetId == room.id,
         );
         if (isCooking) fireChance *= 5;
+      } else if (room.type == RoomType.laboratory ||
+          room.type == RoomType.operatingRoom) {
+        final isExperimenting = _taskService.activeTasks.any(
+          (t) =>
+              (t.type == TaskType.experiment ||
+                  t.type == TaskType.dissect ||
+                  t.type == TaskType.vivisection) &&
+              t.targetId == room.id,
+        );
+        if (isExperimenting) fireChance *= 3;
+      }
 
-        if (Random().nextDouble() < fireChance) {
-          final fire = ManorCrisis(
-            type: ManorCrisisType.fire,
-            roomId: 'kitchen',
-            discoveryDate: _currentDate.toDateTime(),
-            severity: 0.1,
-          );
-          _crises.add(fire);
-          _announcementHistory.insert(
-            0,
-            "[${_currentDate.formattedTime}] EMERGENCY: A fire has broken out in the Kitchen!",
-          );
-        }
+      if (Random().nextDouble() < fireChance) {
+        final fire = ManorCrisis(
+          type: ManorCrisisType.fire,
+          roomId: room.id,
+          discoveryDate: _currentDate.toDateTime(),
+          severity: 0.1,
+          isDiscovered:
+              true, // For now, we discover them immediately for gameplay
+        );
+        _crises.add(fire);
+        newCrisisDetected = true;
+        _announcementHistory.insert(
+          0,
+          "[${_currentDate.formattedTime}] EMERGENCY: A fire has broken out in the ${room.name}!",
+        );
       }
     }
 
-    // 2. Crisis Progression
+    // 2. Crisis Progression & Spreading
     for (int i = _crises.length - 1; i >= 0; i--) {
       var crisis = _crises[i];
       double progression = 0.001; // Increase severity by 0.1% per minute
 
-      // Fires grow faster if room is dirty
       if (crisis.type == ManorCrisisType.fire) {
         final roomIndex = _rooms.indexWhere((r) => r.id == crisis.roomId);
         if (roomIndex != -1) {
           progression += _rooms[roomIndex].dirtiness * 0.002;
+        }
+
+        // Fire Spreading logic: If fire is severe, it can jump to a neighbor
+        if (crisis.severity > 0.4 &&
+            Random().nextDouble() < (0.01 * crisis.severity)) {
+          final neighborId = _getRandomAdjacentRoom(crisis.roomId);
+          if (neighborId != null &&
+              !_crises.any(
+                (c) => c.roomId == neighborId && c.type == ManorCrisisType.fire,
+              )) {
+            final neighborFire = ManorCrisis(
+              type: ManorCrisisType.fire,
+              roomId: neighborId,
+              discoveryDate: _currentDate.toDateTime(),
+              severity: 0.05,
+              isDiscovered: true,
+            );
+            _crises.add(neighborFire);
+            newCrisisDetected = true;
+            final neighborRoom = _rooms.firstWhere((r) => r.id == neighborId);
+            _announcementHistory.insert(
+              0,
+              "[${_currentDate.formattedTime}] WARNING: The fire in the manor is spreading to the ${neighborRoom.name}!",
+            );
+          }
         }
       }
 
@@ -1662,21 +2060,31 @@ class GameState extends ChangeNotifier {
         severity: (crisis.severity + progression).clamp(0.0, 1.0),
       );
       _crises[i] = crisis;
+    }
 
-      // Severity Effects
-      if (crisis.severity >= 1.0) {
-        // Crisis maxed out! Potential disaster logic here (destruction, death)
-        if (crisis.type == ManorCrisisType.fire) {
-          final room = _rooms.firstWhere((r) => r.id == crisis.roomId);
-          _announcementHistory.insert(
-            0,
-            "[${_currentDate.formattedTime}] DISASTER: The fire in the ${room.name} has consumed the Manor.",
-          );
-          _triggerGameOver(
-            "THE MANOR HAS BURNED TO THE GROUND IN A TERRIBLE BLAZE.",
-          );
-        }
-      }
+    // Auto-pause whenever a new crisis is detected
+    if (newCrisisDetected) {
+      _speed = GameSpeed.paused;
+      notifyListeners();
+    }
+
+    // 3. Disaster Conditions
+    // A fire is only fatal if it consumes too much of the manor.
+    final totalFireSeverity = _crises
+        .where((c) => c.type == ManorCrisisType.fire)
+        .fold<double>(0, (sum, c) => sum + c.severity);
+
+    final roomsEngulfed = _crises
+        .where((c) => c.type == ManorCrisisType.fire && c.severity >= 1.0)
+        .length;
+
+    if (roomsEngulfed >= 4 || totalFireSeverity >= 3.0) {
+      _triggerGameOver(
+        "THE MANOR HAS BEEN UTTERLY CONSUMED BY AN UNSTOPPABLE CONFLAGRATION.",
+      );
+    } else if (roomsEngulfed >= 1) {
+      // If a room is engulfed, it might damage people or resources, but not end game yet.
+      // For now, we'll just announce it as a major loss.
     }
 
     if (_checkTotalFailure()) {
@@ -1684,6 +2092,16 @@ class GameState extends ChangeNotifier {
         "THE RESIDENTS ARE CAPITULATED. NONE REMAIN TO STOP THE CONSUMING FLAME.",
       );
     }
+  }
+
+  String? _getRandomAdjacentRoom(String roomId) {
+    // Simple logic: pick a random other restored room for now
+    // In a more complex layout, we'd check actual adjacency
+    final otherRooms = _rooms
+        .where((r) => r.id != roomId && r.isRestored && r.isInsideManor)
+        .toList();
+    if (otherRooms.isEmpty) return null;
+    return otherRooms[Random().nextInt(otherRooms.length)].id;
   }
 
   void _triggerGameOver(String reason) {
@@ -1727,12 +2145,144 @@ class GameState extends ChangeNotifier {
     }
   }
 
+  void buildGreenhouse(String roomId) {
+    const costFunds = 200.0;
+    const costWood = 100.0;
+    if ((_resources['funds'] ?? 0) >= costFunds &&
+        (_resources['wood'] ?? 0) >= costWood) {
+      _resources['funds'] = _resources['funds']! - costFunds;
+      _resources['wood'] = _resources['wood']! - costWood;
+
+      final index = _rooms.indexWhere((r) => r.id == roomId);
+      if (index != -1) {
+        _rooms[index] = _rooms[index].copyWith(
+          type: RoomType.greenhouse,
+          name: 'Greenhouse',
+          description:
+              'A glass-walled sanctuary for delicate plants and research.',
+        );
+      }
+      _lastAnnouncement = "Construction of the Greenhouse is complete!";
+      notifyListeners();
+    } else {
+      _lastAnnouncement =
+          "Insufficient resources to build Greenhouse (Need 200 Funds, 100 Wood).";
+      notifyListeners();
+    }
+  }
+
+  void buildTenement(String roomId) {
+    const costFunds = 400.0;
+    const costWood = 200.0;
+    if ((_resources['funds'] ?? 0) >= costFunds &&
+        (_resources['wood'] ?? 0) >= costWood) {
+      _resources['funds'] = _resources['funds']! - costFunds;
+      _resources['wood'] = _resources['wood']! - costWood;
+
+      final index = _rooms.indexWhere((r) => r.id == roomId);
+      if (index != -1) {
+        _rooms[index] = _rooms[index].copyWith(
+          type: RoomType.tenement,
+          name: 'Tenement',
+          description: 'A large housing block for multiple residents.',
+          beds: [
+            Bed(type: BedType.twin, assignedNpcIds: [null]),
+            Bed(type: BedType.twin, assignedNpcIds: [null]),
+            Bed(type: BedType.twin, assignedNpcIds: [null]),
+            Bed(type: BedType.twin, assignedNpcIds: [null]),
+          ],
+        );
+      }
+      _lastAnnouncement = "Construction of the Tenement is complete!";
+      notifyListeners();
+    } else {
+      _lastAnnouncement =
+          "Insufficient resources to build Tenement (Need 400 Funds, 200 Wood).";
+      notifyListeners();
+    }
+  }
+
+  void convertRoomToLaboratory(String roomId) {
+    final index = _rooms.indexWhere((r) => r.id == roomId);
+    if (index == -1) return;
+    final r = _rooms[index];
+
+    // Restriction: Only Attic or Basement
+    if (r.floor != Floor.attic && r.floor != Floor.basement) {
+      _lastAnnouncement =
+          "A Laboratory must be secluded. Only attic or basement rooms are suitable.";
+      notifyListeners();
+      return;
+    }
+
+    const costFunds = 1000.0;
+    const costWood = 50.0;
+    if ((_resources['funds'] ?? 0) >= costFunds &&
+        (_resources['wood'] ?? 0) >= costWood) {
+      _resources['funds'] = _resources['funds']! - costFunds;
+      _resources['wood'] = _resources['wood']! - costWood;
+
+      _rooms[index] = _rooms[index].copyWith(
+        type: RoomType.laboratory,
+        name: 'Laboratory',
+        isRestored: true,
+        description:
+            'A specialized room for scientific research and experimentation.',
+      );
+      _lastAnnouncement = "Conversion to Laboratory is complete!";
+      _checkObjectives();
+      notifyListeners();
+    } else {
+      _lastAnnouncement =
+          "Insufficient resources for Laboratory conversion (Need 1000 Funds, 50 Wood).";
+      notifyListeners();
+    }
+  }
+
+  void convertUnusedToBedroom(String roomId) {
+    final index = _rooms.indexWhere((r) => r.id == roomId);
+    if (index == -1) return;
+    final r = _rooms[index];
+
+    if (r.type != RoomType.unused || r.floor != Floor.ground) {
+      _lastAnnouncement =
+          "Only the ground floor unused wing can be converted into a bedroom.";
+      notifyListeners();
+      return;
+    }
+
+    const costFunds = 500.0;
+    const costWood = 250.0;
+    if ((_resources['funds'] ?? 0) >= costFunds &&
+        (_resources['wood'] ?? 0) >= costWood) {
+      _resources['funds'] = _resources['funds']! - costFunds;
+      _resources['wood'] = _resources['wood']! - costWood;
+
+      _rooms[index] = _rooms[index].copyWith(
+        type: RoomType.bedroom,
+        name: 'Spare Bedroom',
+        isRestored: true,
+        description: 'A clean and quiet bedroom for guests or residents.',
+        beds: [
+          Bed(type: BedType.queen, assignedNpcIds: [null, null]),
+        ],
+      );
+      _lastAnnouncement = "The unused room has been converted into a Bedroom.";
+      notifyListeners();
+    } else {
+      _lastAnnouncement =
+          "Insufficient resources to convert to Bedroom (Need 500 Funds, 250 Wood).";
+      notifyListeners();
+    }
+  }
+
 
   void _processConstruction() {
+    // Construction progress is now labor-driven (handled in _handleTaskCompletion)
+    // We only check for completion here if a project was somehow marked as done
     for (int i = _activeConstruction.length - 1; i >= 0; i--) {
       final project = _activeConstruction[i];
-      project.minutesRemaining--;
-      if (project.minutesRemaining <= 0) {
+      if (project.progress >= 1.0) {
         _completeConstruction(project);
         _activeConstruction.removeAt(i);
       }
@@ -1778,7 +2328,7 @@ class GameState extends ChangeNotifier {
 
       _npcs[subjectIndex] = result['subject'] as NPC;
 
-      final Map<String, int> gains = result['resources'] as Map<String, int>;
+      final Map<String, num> gains = result['resources'] as Map<String, num>;
       gains.forEach((key, value) {
         _resources[key] = (_resources[key] ?? 0) + value;
       });
@@ -1808,6 +2358,16 @@ class GameState extends ChangeNotifier {
         requirements: {
           'tasks_performed': ['tillSoil'],
         },
+      ),
+    );
+    _objectives.add(
+      Objective(
+        id: 'build_laboratory',
+        title: 'Secluded Research',
+        description:
+            'Establish a Laboratory in the Attic or Basement to begin advanced experiments (50 Wood, 1000 Funds).',
+        type: ObjectiveType.science,
+        requirements: {'room_type_exists': 'laboratory'},
       ),
     );
     _objectives.add(
@@ -1859,6 +2419,16 @@ class GameState extends ChangeNotifier {
         }
       }
 
+      if (reqs.containsKey('room_type_exists')) {
+        final targetType = reqs['room_type_exists'] as String;
+        final hasType = _rooms.any(
+          (r) => r.type.name == targetType && r.isRestored,
+        );
+        if (!hasType) {
+          completed = false;
+        }
+      }
+
       if (reqs.containsKey('tasks_performed')) {
         final targetTasksList = reqs['tasks_performed'] as List<dynamic>;
         for (var t in targetTasksList) {
@@ -1888,6 +2458,15 @@ class GameState extends ChangeNotifier {
           _resources['funds'] = (_resources['funds'] ?? 0) + 1000;
           _lastAnnouncement =
               "THE MANOR IS RESTORED. A BOUNTY OF 1000 FUNDS HAS BEEN AWARDED.";
+        } else if (objective.id == 'farming_tutorial_5') {
+          _resources['funds'] = (_resources['funds'] ?? 0) + 100;
+          _resources['wood'] = (_resources['wood'] ?? 0) + 100;
+          _lastAnnouncement =
+              "HARVEST COMPLETE. YOU HAVE BEEN REWARDED WITH 100 FUNDS AND 100 WOOD.";
+        } else if (objective.id == 'build_laboratory') {
+          _resources['funds'] = (_resources['funds'] ?? 0) + 200;
+          _lastAnnouncement =
+              "LABORATORY ESTABLISHED. RESEARCH GRANTS OF 200 FUNDS HAVE BEEN DISBURSED.";
         }
 
         // Handle follow-up objectives
@@ -1963,6 +2542,31 @@ class GameState extends ChangeNotifier {
               },
             ),
           );
+        } else if (objective.id == 'farming_tutorial_5') {
+          nextObjectives.add(
+            Objective(
+              id: 'farming_tutorial_5',
+              title: 'The First Harvest',
+              description:
+                  'The cabbage is ready. Assign an NPC to harvest the garden.',
+              type: ObjectiveType.tutorial,
+              requirements: {
+                'tasks_performed': ['harvestCrops'],
+              },
+            ),
+          );
+        } else if (objective.id == 'build_laboratory') {
+          nextObjectives.add(
+            Objective(
+              id: 'zoology_curiosity',
+              title: 'Zoological Curiosity',
+              description: 'Reach Zoology Level 1 to unlock advanced study.',
+              type: ObjectiveType.science,
+              requirements: {
+                'research_level': {'Zoology': 1},
+              },
+            ),
+          );
         }
       }
     }
@@ -1980,8 +2584,15 @@ class GameState extends ChangeNotifier {
     for (var discovery in Discovery.allDiscoveries) {
       if (_unlockedDiscoveries.contains(discovery.id)) continue;
 
-      bool met = true;
-      // research_level check removed
+      bool met = false;
+      if (discovery.id == 'basic_reanimation') {
+        met = (_researchPoints['Small Creature Anatomy'] ?? 0) >= 10.0;
+      } else if (discovery.id == 'freezing_tech') {
+        met = (_researchPoints['Alchemy'] ?? 0) >= 30.0; // Gated behind Alchemy
+      } else if (discovery.id == 'artificial_muscle') {
+        met = (_researchPoints['Anatomy'] ?? 0) >= 20.0 && (_researchPoints['Zoology'] ?? 0) >= 20.0;
+      }
+
       if (met) {
         _unlockedDiscoveries.add(discovery.id);
         changed = true;
@@ -2089,13 +2700,19 @@ class GameState extends ChangeNotifier {
   }
 
   void startConstruction(ConstructionBlueprint blueprint) {
-    if (_resources['funds']! >= blueprint.cost['funds']! &&
-        _resources['wood']! >= (blueprint.cost['wood'] ?? 0)) {
-      _resources['funds'] = _resources['funds']! - blueprint.cost['funds']!;
-      _resources['wood'] = _resources['wood']! - (blueprint.cost['wood'] ?? 0);
+    num availableFunds = (_resources['funds'] ?? 0);
+    num neededFunds = (blueprint.cost['funds'] ?? 0);
+    num availableWood = (_resources['wood'] ?? 0);
+    num neededWood = (blueprint.cost['wood'] ?? 0);
+
+    if (availableFunds.round() >= neededFunds.round() &&
+        availableWood.round() >= neededWood.round()) {
+      _resources['funds'] = (availableFunds - neededFunds).round();
+      _resources['wood'] = (availableWood - neededWood).round();
 
       _activeConstruction.add(
         ConstructionProject(
+          id: const Uuid().v4(),
           blueprint: blueprint,
           minutesRemaining: blueprint.durationMinutes,
         ),
@@ -2106,58 +2723,88 @@ class GameState extends ChangeNotifier {
   }
 
   void _updateNpcs() {
-    for (var i = 0; i < _npcs.length; i++) {
-      // Intent Management
-      _updateIntentQueue(i);
-      _processCurrentIntent(i);
+    final Set<String> claimedWorkstations = {};
+    // Pre-populate with currently active tasks AND enqueued high-priority intents
+    for (var n in _npcs) {
+      if (n.activeTaskId != null) {
+        final task = _taskService.activeTasks.firstWhereOrNull((t) => t.id == n.activeTaskId);
+        if (task != null && task.targetId != null) {
+          if (!TaskService.isConcurrent(task.type)) {
+            claimedWorkstations.add(task.targetId!);
+          }
+        }
+      }
+      // Also pre-populate with what others are PLANNING to do immediately
+      if (n.intentQueue.isNotEmpty) {
+        final next = n.intentQueue.first;
+        if (next.targetRoomId != null && !TaskService.isConcurrent(next.action)) {
+          claimedWorkstations.add(next.targetRoomId!);
+        }
+      }
+    }
 
-      // Refresh reference after intent processing
-      var npc = _npcs[i];
+    // Deterministic Resolution Order: Player > Giles > Join Date/Index
+    final List<int> sortedIndices = List.generate(_npcs.length, (i) => i);
+    sortedIndices.sort((a, b) {
+      final npc1 = _npcs[a];
+      final npc2 = _npcs[b];
+
+      if (npc1.isPlayer != npc2.isPlayer) {
+        return npc1.isPlayer ? -1 : 1;
+      }
+      if (npc1.role == 'Butler' && npc2.role != 'Butler') {
+        return -1;
+      }
+      if (npc2.role == 'Butler' && npc1.role != 'Butler') {
+        return 1;
+      }
+      return a.compareTo(b); // Arrival order fallback
+    });
+
+    for (var i in sortedIndices) {
+      final initialNpc = _npcs[i];
+
+      _evaluateBehaviorTree(i, claimedWorkstations: claimedWorkstations);
+      var currentNpc = _npcs[i]; // Refresh after evaluation
 
       // Movement Logic
-      if (npc.targetRoomId != null || npc.movementPath.isNotEmpty) {
+      if (currentNpc.targetRoomId != null || currentNpc.movementPath.isNotEmpty) {
         _processNpcMovement(i);
-        npc = _npcs[i]; // Refresh after movement
+        currentNpc = _npcs[i]; // Refresh after movement
       }
 
-      // Deadlock Detection & Status Duration Tracking
-      // Reset ticks if status changed OR if activeTaskId changed (sequential tasks)
-      final bool statusChanged = npc.status != _npcs[i].status;
-      final bool taskChanged = npc.activeTaskId != _npcs[i].activeTaskId;
+      // Status Duration Tracking
+      final bool statusChanged = initialNpc.status != currentNpc.status;
+      final bool taskChanged = initialNpc.activeTaskId != currentNpc.activeTaskId;
 
-      if (statusChanged || taskChanged) {
-        _npcs[i] = _npcs[i].copyWith(currentStateTicks: 0);
-        npc = _npcs[i]; // Refresh for next part of loop if needed
-      } else if (npc.status != NPCStatus.idle &&
-          npc.status != NPCStatus.dead &&
-          npc.status != NPCStatus.sleeping &&
-          npc.status != NPCStatus.fainted &&
-          npc.status != NPCStatus.broken) {
-        final newTicks = npc.currentStateTicks + 1;
-        // 12 hour timeout is a bit low for industrious NPCs, let's bump it to 18 hours (1080)
+      if (taskChanged || statusChanged) {
+        _npcs[i] = currentNpc.copyWith(currentStateTicks: 0);
+        currentNpc = _npcs[i];
+      } else if (currentNpc.status != NPCStatus.idle &&
+          currentNpc.status != NPCStatus.dead &&
+          currentNpc.status != NPCStatus.sleeping &&
+          currentNpc.status != NPCStatus.fainted &&
+          currentNpc.status != NPCStatus.broken) {
+        final newTicks = currentNpc.currentStateTicks + 1;
+        // 18 hour timeout (1080 ticks)
         if (newTicks > 1080) {
-          // 12 hour timeout
-          final preferredRoom = npc.assignedRoomId ?? _butlerRoomId;
-          _npcs[i] = npc.copyWith(
+          final preferredRoom = currentNpc.assignedRoomId ?? _butlerRoomId;
+          _npcs[i] = currentNpc.copyWith(
             status: NPCStatus.idle,
             activeTaskId: null,
             targetRoomId: preferredRoom,
-            movementProgress: (preferredRoom == npc.currentRoomId) ? 1.0 : 0.0,
+            movementProgress: (preferredRoom == currentNpc.currentRoomId) ? 1.0 : 0.0,
             currentStateTicks: 0,
             currentThought: "I've been here too long...",
           );
-          npc = _npcs[i]; // Refresh
+          _announcementHistory.insert(
+            0,
+            "[${_currentDate.formattedTime}] ${currentNpc.name} stalled and reset their activity.",
+          );
         } else {
-          _npcs[i] = npc.copyWith(currentStateTicks: newTicks);
-          npc = _npcs[i]; // Refresh
+          _npcs[i] = currentNpc.copyWith(currentStateTicks: newTicks);
         }
-      } else if (statusChanged) {
-        _npcs[i] = npc.copyWith(currentStateTicks: 0);
-        npc = _npcs[i]; // Refresh
       }
-
-      // Refresh reference after ticks
-      npc = _npcs[i];
 
       // Needs Simulation
       _processNpcNeeds(i);
@@ -2166,10 +2813,11 @@ class GameState extends ChangeNotifier {
       _processNpcTravel(i);
 
       // Visitor Departure tracking
-      if (!npc.isResident &&
-          npc.role != 'Minion' &&
-          npc.worldDestinationId == null) {
-        final newMinutes = npc.minutesStaying + 1;
+      currentNpc = _npcs[i];
+      if (!currentNpc.isResident &&
+          currentNpc.role != 'Minion' &&
+          currentNpc.worldDestinationId == null) {
+        final newMinutes = currentNpc.minutesStaying + 1;
         if (newMinutes > 180) {
           // Leave after 3 hours
           _npcs[i] = _npcs[i].copyWith(
@@ -2275,7 +2923,7 @@ class GameState extends ChangeNotifier {
           double hungerRecovered = 40.0;
           _npcs[i] = npc.copyWith(
             hunger: (npc.hunger - hungerRecovered).clamp(0, 100),
-            currentThought: "EXCELLENT ${dish.name.toUpperCase()} ($activity).",
+            currentThought: "EXCELLENT ${dish.name.toUpperCase()} (${activity.name}).",
           );
         }
       }
@@ -2308,247 +2956,99 @@ class GameState extends ChangeNotifier {
     }
   }
 
-  NPC? _getBedSharer(NPC npc) {
-    if (npc.assignedRoomId == null) return null;
-    final room = _rooms.where((r) => r.id == npc.assignedRoomId).firstOrNull;
-    if (room == null) return null;
-
-    for (var bed in room.beds) {
-      if (bed.isShared && bed.assignedNpcIds.contains(npc.id)) {
-        final sharerId = bed.assignedNpcIds.firstWhere(
-          (id) => id != npc.id && id != null,
-          orElse: () => null,
-        );
-        if (sharerId != null) {
-          return _npcs.where((n) => n.id == sharerId).firstOrNull;
-        }
-      }
-    }
-    return null;
-  }
-
-  bool _hasRomanticLove(NPC a, NPC b) {
-    final relA = a.relationships[b.id];
-    final relB = b.relationships[a.id];
-    if (relA == null || relB == null) return false;
-
-    // "Romantic Love" = attraction > 4.0 AND admiration > 4.0 (bi-directional)
-    return relA.attraction > 4.0 &&
-        relA.admiration > 4.0 &&
-        relB.attraction > 4.0 &&
-        relB.admiration > 4.0;
-  }
-
   void _processNpcNeeds(int index) {
-    var npc = _npcs[index];
-    final hour = _currentDate.hour;
-    final activity = npc.schedule.getActivityForHour(hour);
+    var npcSnapshot = _npcs[index];
 
+    // Don't process needs for dead NPCs
+    if (npcSnapshot.status == NPCStatus.dead) return;
+
+    // Base drains
+    double dHunger = (5.0 / 60.0); // 5 hunger per hour base
     double dEnergy = 0.0;
-    double dHunger = (2.5 / 60.0); // Hunger increases by 2.5 per hour (approx 60/day)
-    double dSatisf = 0.0;
+    double dSatisf = -(2.0 / 60.0); // 2 satisfaction per hour base
+    double dDigestion = (100.0 / 1440.0); // ~1 day to full
+    double dHygiene = (3.0 / 60.0); // 3 hygiene per hour base
 
-    // "Thriving" or "Starving" satisfaction logic
-    if (npc.hunger < 20.0) {
-      dSatisf += (5.0 / 60.0); // Bliss from being well-fed
-    } else if (npc.hunger > 80.0) {
-      dSatisf -= (10.0 / 60.0); // Misery from hunger
+    final currentTask = _taskService.activeTasks
+        .firstWhereOrNull((t) => t.id == npcSnapshot.activeTaskId);
+    final isWorking = currentTask != null &&
+        currentTask.type != TaskType.rest &&
+        currentTask.type != TaskType.eat &&
+        currentTask.type != TaskType.relax &&
+        currentTask.type != TaskType.useToilet &&
+        currentTask.type != TaskType.wash;
+
+    if (isWorking) {
+      dHunger *= 2.0;
+      dEnergy -= (4.5 / 60.0); // Extra energy drain when working
+      dHygiene *= 1.5;
     }
 
-    // Digestion: Ramp up such that NPCs need to use toilet 2-3 times/day
-    // Target: ~480-720 minutes to hit 100.
-    double digestionMultiplier = npc.isPlayer ? 3.5 : 2.5; 
-    double dDigestion = (digestionMultiplier * 100.0 / 1440.0);
+    // Environmental factors (noise)
+    final Random rng = Random("${npcSnapshot.id}_${_currentDate.day}".hashCode);
+    final double awakeNoise = 0.8 + (rng.nextDouble() * 0.4);
+    final double sleepNoise = 0.5 + (rng.nextDouble() * 1.0);
+    final double noise = 0.9 + (rng.nextDouble() * 0.2);
 
-    // Hygiene decay logic based on numerical hygiene stat
-    double hygieneDecayDays;
-    if (npc.hygiene > 75) {
-      hygieneDecayDays = 1.0; // High
-    } else if (npc.hygiene > 25) {
-      hygieneDecayDays = 3.5; // Moderate
-    } else {
-      hygieneDecayDays = 7.0; // Low
-    }
-    double dHygiene = -(100.0 / (hygieneDecayDays * 1440.0));
-
-    if (npc.status == NPCStatus.sleeping) {
-      dEnergy = (10.0 / 60.0); // Recovery while sleeping
+    // --- RECOVERY LOGIC (Sleeping/Fainted) ---
+    if (npcSnapshot.status == NPCStatus.sleeping || npcSnapshot.status == NPCStatus.fainted) {
+      final room = _rooms.firstWhereOrNull((r) => r.id == npcSnapshot.currentRoomId);
+      double recoveryMult = 1.0;
+      if (room != null) {
+        if (room.type == RoomType.bedroom ||
+            room.type == RoomType.butlerQuarters) {
+          recoveryMult = 2.5;
+        } else if (room.isRestored) {
+          recoveryMult = 1.5;
+        }
+      }
       
-      // Bed sharing consequences
-      final sharer = _getBedSharer(npc);
-      if (sharer != null && sharer.status == NPCStatus.sleeping) {
-        final love = _hasRomanticLove(npc, sharer);
-        if (love) {
-          dEnergy += (2.0 / 60.0); // Better rest with love
-          dSatisf += (5.0 / 60.0); // Blissful sleep
-        } else {
-          dSatisf -= (3.0 / 60.0); // Uncomfortable sharing without love
-        }
+      dEnergy += (12.0 / 60.0) * recoveryMult * sleepNoise * noise; 
+      dSatisf += (5.0 / 60.0) * recoveryMult;
+
+      // Wake up check for fainting
+      if (npcSnapshot.status == NPCStatus.fainted && npcSnapshot.energy > 40.0) {
+        _npcs[index] = npcSnapshot = npcSnapshot.copyWith(status: NPCStatus.idle);
+        _announcementHistory.insert(0, "[${_currentDate.formattedTime}] SURVIVAL: ${npcSnapshot.name} has regained consciousness.");
       }
     } else {
-      dEnergy = -(2.0 / 60.0); // Exhaustion while awake
+      dEnergy -= (1.8 / 60.0) * awakeNoise * noise; 
     }
 
-    if (npc.status == NPCStatus.working) {
-      dEnergy *= 1.5; // Tasks are tiring
-      dHunger *= 1.5;
-      // Working makes you dirtier
-      dHygiene *= 1.25;
+    // Starvation check
+    if (npcSnapshot.hunger >= 100.0) {
+      dSatisf -= (10.0 / 60.0);
+      // Health decay or other penalties...
     }
 
-    // Auto-eating logic
-    double newHunger = npc.hunger + dHunger;
-    double newSatisf = (npc.satisfaction + dSatisf).clamp(0.0, 100.0);
+    double newEnergy = (npcSnapshot.energy + dEnergy).clamp(0.0, 100.0);
+    double newHunger = (npcSnapshot.hunger + dHunger).clamp(0.0, 100.0);
+    double newSatisf = (npcSnapshot.satisfaction + dSatisf).clamp(0.0, 100.0);
+    double newDigestion = (npcSnapshot.digestion + dDigestion).clamp(0.0, 105.0);
+    double newHygiene = (npcSnapshot.hygiene + dHygiene).clamp(0.0, 100.0);
 
-    // If very hungry, try to eat from pantry if in a kitchen/dining area or scheduled to eat
-    if (newHunger > 50.0 &&
-        (activity == ScheduleActivity.eat || npc.status == NPCStatus.idle)) {
-      if ((_resources['meals'] ?? 0) > 0) {
-        _resources['meals'] = _resources['meals']! - 1;
-        newHunger -= 60.0;
-        newSatisf += 10.0;
-        // Increment dirty dishes on auto-eat
-        _resources['dirty_dishes'] = (_resources['dirty_dishes'] ?? 0) + 1;
+    // Faint Trigger
+    NPCStatus finalStatus = npcSnapshot.status;
+    bool shouldClearTask = false;
+    
+    if (newEnergy <= 0 && finalStatus != NPCStatus.fainted && finalStatus != NPCStatus.dead) {
+      finalStatus = NPCStatus.fainted;
+      _announcementHistory.insert(0, "[${_currentDate.formattedTime}] SURVIVAL: ${npcSnapshot.name} has fainted from exhaustion!");
+      
+      if (npcSnapshot.activeTaskId != null) {
+        _taskService.removeTask(npcSnapshot.activeTaskId!);
+        shouldClearTask = true;
       }
     }
 
-    // Diet / Hunger recovery is now handled by _processDishes
-    // But we keep basic logic if pantry is empty (emergency foraging?)
-    if (activity == ScheduleActivity.eat && newHunger > 50 && _pantry.isEmpty) {
-      if ((_resources['meat'] ?? 0) > 0 || (_resources['cabbage'] ?? 0) > 0) {
-        // Emergency feeding from raw ingredients if no dishes
-        if ((_resources['meat'] ?? 0) > 0) {
-          _resources['meat'] = _resources['meat']! - 1;
-          newHunger -= 20.0; // Raw meat is worse than cooked meal
-        } else {
-          _resources['cabbage'] = _resources['cabbage']! - 1;
-          newHunger -= 10.0;
-        }
-        // Increment dirty dishes on emergency eat
-        _resources['dirty_dishes'] = (_resources['dirty_dishes'] ?? 0) + 1;
-      }
-    }
-
-    // --- Survival Failure Logic ---
-
-    // 1. Energy Collapse (Fainting)
-    double newEnergy = (npc.energy + dEnergy).clamp(0.0, 100.0);
-    double newHygiene = (npc.hygiene + dHygiene).clamp(0.0, 100.0);
-    NPCStatus newStatus = npc.status;
-    String? newThought = npc.currentThought;
-    String? newActiveTaskId = npc.activeTaskId;
-    String? newTargetRoomId = npc.targetRoomId;
-
-    if (newEnergy <= 0.0 &&
-        npc.status != NPCStatus.fainted &&
-        npc.status != NPCStatus.dead) {
-      newStatus = NPCStatus.fainted;
-      newThought = "Everything is... turning... black...";
-      newActiveTaskId = null;
-      newTargetRoomId = null;
-    } else if (npc.status == NPCStatus.fainted && newEnergy >= 30.0) {
-      // Recover from fainting at 30 energy
-      newStatus = NPCStatus.idle;
-      newThought = "Ugh... my head...";
-    }
-
-    // 2. Starvation & Health Decay
-    if (newHunger >= 100.0 && npc.status != NPCStatus.dead) {
-      // NPC is starving! Damage body parts.
-      final List<BodyPart> newBodyParts = List.from(npc.bodyParts);
-      bool died = false;
-      for (int i = 0; i < newBodyParts.length; i++) {
-        // Lose 0.5 HP per tick (approx 30 HP per hour)
-        double newHp = (newBodyParts[i].health - 0.5).clamp(0.0, 100.0);
-        newBodyParts[i] = newBodyParts[i].copyWith(health: newHp);
-
-        if (newHp <= 0 &&
-            (newBodyParts[i].type == BodyPartType.head ||
-                newBodyParts[i].type == BodyPartType.torso)) {
-          died = true;
-        }
-      }
-
-      if (died) {
-        newStatus = NPCStatus.dead;
-        newThought = "Farewell...";
-      } else {
-        newThought = "SO... HUNGRY...";
-      }
-      _npcs[index] = npc.copyWith(bodyParts: newBodyParts);
-      npc = _npcs[index]; // Refresh ref
-    } else if (newHunger < 50.0 && npc.status != NPCStatus.dead) {
-      // Natural healing if well fed
-      final List<BodyPart> newBodyParts = List.from(npc.bodyParts);
-      for (int i = 0; i < newBodyParts.length; i++) {
-        if (newBodyParts[i].health < newBodyParts[i].maxHealth) {
-          double newHp = (newBodyParts[i].health + 0.1).clamp(
-            0.0,
-            newBodyParts[i].maxHealth.toDouble(),
-          );
-          newBodyParts[i] = newBodyParts[i].copyWith(health: newHp);
-        }
-      }
-      _npcs[index] = npc.copyWith(bodyParts: newBodyParts);
-      npc = _npcs[index]; // Refresh ref
-    }
-
-    // 3. Autonomous Hygiene & Digestion Trigger
-    if (newActiveTaskId == null && newStatus == NPCStatus.idle) {
-      // Digestion Trigger
-      if (npc.digestion > 85.0) {
-        final toiletRoom = _rooms.firstWhere(
-          (r) => r.type == RoomType.toilet && r.isRestored,
-          orElse: () => _rooms.firstWhere((r) => r.type == RoomType.toilet, orElse: () => _rooms.first),
-        );
-        assignTask(
-          GameTask(
-            id: "toilet_${npc.id}_${_currentDate.totalMinutes}",
-            npcId: npc.id,
-            type: TaskType.useToilet,
-            targetId: toiletRoom.id,
-            minutesRemaining: 10, // Base duration
-          ),
-        );
-      }
-      // Hygiene Trigger
-      else if (newHygiene < 20.0) {
-        final washRoom = _rooms.firstWhere(
-          (r) => r.type == RoomType.toilet && r.isRestored,
-          orElse: () => _rooms.firstWhere(
-            (r) => r.type == RoomType.toilet,
-            orElse: () => Room.initial('na', 'na', RoomType.unused, Floor.ground),
-          ),
-        );
-
-        if (washRoom.id != 'na') {
-          // Duration based on hygiene needs (simulated via current hygiene level or traits if available)
-          int duration = (newHygiene < 10) ? 25 : 15;
-          assignTask(
-            GameTask(
-              id: "wash_${npc.id}_${_currentDate.totalMinutes}",
-              npcId: npc.id,
-              type: TaskType.wash,
-              targetId: washRoom.id,
-              minutesRemaining: duration,
-            ),
-          );
-          newThought = "I desperately need to wash up.";
-        }
-      }
-    }
-
-    _npcs[index] = npc.copyWith(
-      status: newStatus,
+    _npcs[index] = npcSnapshot.copyWith(
       energy: newEnergy,
-      hunger: newHunger.clamp(0.0, 100.0),
-      satisfaction: newSatisf.clamp(0.0, 100.0),
-      digestion: (npc.digestion + dDigestion).clamp(0.0, 105.0),
+      hunger: newHunger,
+      satisfaction: newSatisf,
+      digestion: newDigestion,
       hygiene: newHygiene,
-      currentThought: newThought,
-      activeTaskId: newActiveTaskId,
-      targetRoomId: newTargetRoomId,
-      clearTarget: newTargetRoomId == null,
+      status: finalStatus,
+      clearActiveTask: shouldClearTask,
     );
   }
 
@@ -2583,15 +3083,23 @@ class GameState extends ChangeNotifier {
         }
       }
 
+      // 0.5. Spontaneous Baseline Incident Check (Once a year = 1 / 525600 mins)
+      double baselineChance = (latestNpc.isPlayer ? 2.0 : 1.0) / 525600.0;
+      if (Random().nextDouble() < baselineChance) {
+        _triggerBowelMovementIncident(i);
+        continue;
+      }
+
       // 1. Breaking Point Tracking
       if (latestNpc.digestion >= 100.0) {
         int newBreakingMinutes = latestNpc.breakingPointMinutes + 1;
-        if (newBreakingMinutes >= 15) {
+        // Accident chance is high: approx 5% chance per minute after holding it at 100% capacity.
+        if (Random().nextDouble() < 0.05) {
           _triggerBowelMovementIncident(i);
         } else {
           _npcs[i] = latestNpc.copyWith(
             breakingPointMinutes: newBreakingMinutes,
-            currentThought: "I CAN'T HOLD IT MUCH LONGER!",
+            currentThought: "I really... need... to go...",
           );
         }
       }
@@ -2614,35 +3122,12 @@ class GameState extends ChangeNotifier {
         }
       }
 
-      // 2. Desperate Need (85%)
+      // 2. Desperate Need (90%)
       latestNpc = _npcs[i]; // Refresh reference
-      if (latestNpc.digestion >= 85.0 &&
-          latestNpc.activeTaskId == null &&
-          latestNpc.status != NPCStatus.working) {
-        // Try to find a toilet
-        final toiletRoom = _rooms.firstWhere(
-          (r) => r.type == RoomType.toilet && r.isRestored,
-          orElse: () => _rooms.firstWhere(
-            (r) => r.type == RoomType.toilet,
-            orElse: () =>
-                Room.initial('na', 'na', RoomType.unused, Floor.ground),
-          ),
+      if (latestNpc.digestion >= 90.0) {
+        _npcs[i] = latestNpc.copyWith(
+          currentThought: "DESPERATE NEED: TOILET.",
         );
-
-        if (toiletRoom.id != 'na') {
-          assignTask(
-            GameTask(
-              id: "toilet_${latestNpc.id}_${_currentDate.totalMinutes}",
-              npcId: latestNpc.id,
-              type: TaskType.useToilet,
-              targetId: toiletRoom.id,
-              minutesRemaining: 3 + Random().nextInt(18),
-            ),
-          );
-          _npcs[i] = _npcs[i].copyWith(
-            currentThought: "DESPERATE NEED: TOILET.",
-          );
-        }
       }
     }
   }
@@ -2861,6 +3346,15 @@ class GameState extends ChangeNotifier {
   void _processNpcMovement(int index) {
     var npc = _npcs[index];
 
+    if (npc.status == NPCStatus.dead || 
+        npc.status == NPCStatus.fainted || 
+        npc.status == NPCStatus.broken) {
+      if (npc.targetRoomId != null || npc.movementPath.isNotEmpty) {
+        _npcs[index] = npc.copyWith(clearTarget: true, movementPath: []);
+      }
+      return;
+    }
+
     // If we have a path but no current target, set the next target from path
     if (npc.targetRoomId == null && npc.movementPath.isNotEmpty) {
       final List<String> newPath = List.from(npc.movementPath);
@@ -2880,17 +3374,20 @@ class GameState extends ChangeNotifier {
 
     // walkSpeed is now percentage points per minute (e.g. 15 = 0.15 per minute)
     final double walkSpeed = (npc.stats['walkSpeed'] ?? 10).toDouble();
-    final double speedPerMinute = walkSpeed / 100.0;
+    final double baseSpeedMultiplier = 5.0; // Boost movement
+    final double speedPerMinute = (walkSpeed / 100.0) * baseSpeedMultiplier;
 
     double newProgress = npc.movementProgress + speedPerMinute;
 
     if (newProgress >= 1.0) {
-      _npcs[index] = npc.copyWith(
-        currentRoomId: npc.targetRoomId,
-        clearTarget: true,
+      final arrivedRoomId = npc.targetRoomId;
+      final arrivedNpc = npc.copyWith(currentRoomId: arrivedRoomId);
+      _npcs[index] = arrivedNpc.copyWith(
+        status: _determineStatus(arrivedNpc, arrivedNpc.activeTaskId != null ? _taskService.activeTasks.firstWhereOrNull((t) => t.id == arrivedNpc.activeTaskId) : null),
         movementProgress: 1.0,
+        targetRoomId: null,
+        movementPath: [],
       );
-      // After arriving, if there's more path, it will be picked up next tick (or we could chain it here)
     } else {
       _npcs[index] = npc.copyWith(movementProgress: newProgress);
     }
@@ -2995,8 +3492,24 @@ class GameState extends ChangeNotifier {
       final roomIndex = _rooms.indexWhere((r) => r.id == task.targetId);
       if (roomIndex != -1) {
         final room = _rooms[roomIndex];
-        final List<String> newQueue = List.from(room.taskQueue);
-        newQueue.add(task.id);
+        final List<EnqueuedTask> newQueue = List.from(room.taskQueue);
+        
+        // Find worker name for description
+        final worker = _npcs.firstWhere((n) => n.id == task.npcId, orElse: () => _npcs[0]);
+        final taskName = task.type.displayName;
+        final taskDesc = "${worker.name}: $taskName";
+
+        // 1.1 Deduplication: Check if same worker AND same intent already exists in room queue
+        final alreadyEnqueued = newQueue.any((e) => e.npcId == task.npcId && e.intentId == task.intentId);
+        if (alreadyEnqueued && task.intentId != null) {
+          debugPrint("NPC_ASSIGN_SKIP_ROOM: ${task.npcId} already in queue for ${task.type.name} with intent ${task.intentId}");
+        } else {
+          newQueue.add(EnqueuedTask(
+            npcId: task.npcId,
+            intentId: task.intentId ?? task.id, // Use stable intentId if available
+            description: taskDesc,
+          ));
+        }
 
         // If no one is occupying and no project is at the workstation, this NPC takes it
         String? newOccupancy = room.occupyingNpcId;
@@ -3004,15 +3517,18 @@ class GameState extends ChangeNotifier {
           room.activeProjects,
         );
 
-        final projectType = Room.getProjectType(task.type);
-        newProjects[task.id] = PhysicalProject(
-          id: task.id,
-          taskId: task.id,
-          name: task.type.displayName,
-          type: projectType,
-          progress: 0.0,
-          isAtWorkstation: room.occupyingNpcId == null,
-        );
+        // 1.2 Duplicate Projects check (ID-based)
+        if (!newProjects.containsKey(task.id)) {
+          final projectType = Room.getProjectType(task.type);
+          newProjects[task.id] = PhysicalProject(
+            id: task.id,
+            taskId: task.id,
+            name: taskName,
+            type: projectType,
+            progress: 0.0,
+            isAtWorkstation: room.occupyingNpcId == null,
+          );
+        }
 
         if (room.occupyingNpcId == null) {
           newOccupancy = task.npcId;
@@ -3036,21 +3552,23 @@ class GameState extends ChangeNotifier {
     if (index != -1) {
       var npc = _npcs[index];
 
-      final intent = NPCIntent(
-        id: task.id,
-        priority: IntentPriority.assignment,
-        action: task.type,
-        targetRoomId: task.targetId,
-        recipeId: task.recipeId,
-        targetName: task.targetName,
-        minutesRemaining: task.minutesRemaining,
-        expectedDurationMin: task.minutesRemaining,
-      );
+      if (task.intentId == null) {
+        final intent = NPCIntent(
+          id: task.id,
+          priority: task.priority,
+          action: task.type,
+          targetRoomId: task.targetId,
+          recipeId: task.recipeId,
+          targetName: task.targetName,
+          minutesRemaining: task.minutesRemaining,
+          expectedDurationMin: task.minutesRemaining,
+        );
 
-      _npcs[index] = npc.copyWith(
-        intentQueue: [...npc.intentQueue, intent],
-      );
-      _lastAnnouncement = "Task for ${npc.name} added to assignment queue.";
+        _npcs[index] = npc.copyWith(
+          intentQueue: [intent.copyWith(isManual: true), ...npc.intentQueue],
+        );
+        _lastAnnouncement = "Task for ${npc.name} added to assignment queue.";
+      }
     }
     notifyListeners();
   }
@@ -3098,23 +3616,53 @@ class GameState extends ChangeNotifier {
     }
   }
 
+  void _clearRoomOccupancyForNpc(String npcId) {
+    bool changed = false;
+    for (int i = 0; i < _rooms.length; i++) {
+        if (_rooms[i].occupyingNpcId == npcId) {
+            _rooms[i] = _rooms[i].copyWith(clearOccupancy: true);
+            changed = true;
+        }
+    }
+    if (changed) notifyListeners();
+  }
+
   void _handleTaskCompletion(GameTask task) {
     final npcIndex = _npcs.indexWhere((n) => n.id == task.npcId);
     if (npcIndex == -1) return;
+    
+    // CRITICAL: Robust task removal on first completion attempt
+    _taskService.removeTask(task.id);
+    
+    var currentNpc = _npcs[npcIndex];
+    var worker = currentNpc;
+    final List<NPCIntent> newQueue = List.from(currentNpc.intentQueue);
+    if (task.intentId != null) {
+      newQueue.removeWhere((i) => i.id == task.intentId);
+    }
+
+    // Initialise local status variables for update at end of function
+    double newHunger = currentNpc.hunger;
+    double newSatisfaction = currentNpc.satisfaction;
+    double newDigestion = currentNpc.digestion;
+    double newHygiene = currentNpc.hygiene;
+    int newBreakingPointMinutes = currentNpc.breakingPointMinutes;
+    String? newThought = currentNpc.currentThought;
+    List<GameItem> newInventory = List.from(currentNpc.inventory);
 
     final room = task.targetId != null
         ? _rooms.firstWhereOrNull((r) => r.id == task.targetId)
         : null;
-
-    var worker = _npcs[npcIndex];
 
     // Clear room occupancy if this was a room task
     if (task.targetId != null) {
       final roomIndex = _rooms.indexWhere((r) => r.id == task.targetId);
       if (roomIndex != -1) {
         final room = _rooms[roomIndex];
-        final List<String> newQueue = List.from(room.taskQueue);
-        newQueue.remove(task.id);
+        final List<EnqueuedTask> newQueue = List.from(room.taskQueue);
+        newQueue.removeWhere(
+          (e) => e.intentId == task.intentId || e.intentId == task.id,
+        );
 
         final Map<String, PhysicalProject> newProjects = Map.from(
           room.activeProjects,
@@ -3128,6 +3676,12 @@ class GameState extends ChangeNotifier {
         );
       }
     }
+    
+    // Release reserved entities
+    for (var id in task.reservedEntityIds) {
+      setReservation(id, false);
+    }
+
     TaskResult result = TaskResultGenerator.generate(
       task.type,
       room?.name,
@@ -3200,22 +3754,195 @@ class GameState extends ChangeNotifier {
     } else if (task.type == TaskType.butcherAnimals) {
       if (task.targetId == 'rat_specimen' || task.targetId == 'bat_specimen') {
         _resources[task.targetId!] = (_resources[task.targetId!] ?? 0) - 1;
-        _lastAnnouncement = "${worker.name} butchered a ${task.targetId == 'rat_specimen' ? 'rat' : 'bat'}.";
-      } else if (task.targetId != null) {
-        // Remove from inventory if it's an item
-        final itemIndex = _inventory.indexWhere((i) => i.id == task.targetId);
-        if (itemIndex != -1) {
-          final itemName = _inventory[itemIndex].name;
-          _inventory.removeAt(itemIndex);
-          _lastAnnouncement = "${worker.name} has finished butchering $itemName.";
+        final meat = GameItem.create(
+          name: task.targetId == 'rat_specimen' ? "Rat Meat" : "Bat Meat",
+          type: 'meat_small',
+          category: ItemCategory.food,
+          quantity: 1,
+          quality: 0.8,
+        );
+        _inventory.add(meat);
+        _resources['meat_small'] = (_resources['meat_small'] ?? 0) + 1;
+        
+        // Add to room inventory for ledger visibility
+        if (task.targetId != null) {
+          final roomIndex = _rooms.indexWhere((r) => r.id == 'kitchen');
+          if (roomIndex != -1) {
+            _rooms[roomIndex] = _rooms[roomIndex].copyWith(
+              inventory: [..._rooms[roomIndex].inventory, meat],
+            );
+          }
         }
+        _lastAnnouncement = "${worker.name} butchered a ${task.targetId == 'rat_specimen' ? 'rat' : 'bat'} for a small amount of meat.";
+      } else if (task.targetId != null) {
+        // Check if it's a chicken
+        final chickenIndex = _chickens.indexWhere((c) => c.id == task.targetId);
+        if (chickenIndex != -1) {
+          final chicken = _chickens[chickenIndex];
+          final yield = chicken.isMature ? 4 : 2;
+          final poultry = GameItem.create(
+            name: "Raw Poultry",
+            type: 'meat_chicken',
+            category: ItemCategory.food,
+            quantity: yield,
+            quality: 1.0,
+          );
+          _inventory.add(poultry);
+          _resources['meat_chicken'] = (_resources['meat_chicken'] ?? 0) + yield;
+          _chickens.removeAt(chickenIndex);
 
-        _chickens.removeWhere((c) => c.id == task.targetId);
-        _npcs.removeWhere((n) => n.id == task.targetId && !n.isPlayer);
-        _lastAnnouncement = "${worker.name} has finished the butchery.";
+          // Add to room inventory for ledger visibility
+          final roomIndex = _rooms.indexWhere((r) => r.id == 'kitchen');
+          if (roomIndex != -1) {
+            _rooms[roomIndex] = _rooms[roomIndex].copyWith(
+              inventory: [..._rooms[roomIndex].inventory, poultry],
+            );
+          }
+          _lastAnnouncement = "${worker.name} butchered the chicken and collected $yield units of poultry.";
+        } else {
+          // Check if it's an NPC or other item
+          final itemIndex = _inventory.indexWhere((i) => i.id == task.targetId);
+          if (itemIndex != -1) {
+            final item = _inventory[itemIndex];
+            final itemName = item.name;
+            _inventory.removeAt(itemIndex);
+            
+            final yield = (item.weight * 0.6).clamp(1.0, 50.0).toInt();
+            final resKey = item.type.contains('cow') || item.type.contains('cattle') ? 'meat_beef' : 'meat_generic';
+            final meat = GameItem.create(
+              name: "Raw Meat ($itemName)",
+              type: resKey,
+              category: ItemCategory.food,
+              quantity: yield,
+              quality: 0.9,
+            );
+            _inventory.add(meat);
+            _resources[resKey] = (_resources[resKey] ?? 0) + yield;
+
+            // Add to room inventory for ledger visibility
+            final roomIndex = _rooms.indexWhere((r) => r.id == 'kitchen');
+            if (roomIndex != -1) {
+              _rooms[roomIndex] = _rooms[roomIndex].copyWith(
+                inventory: [..._rooms[roomIndex].inventory, meat],
+              );
+            }
+            _lastAnnouncement = "${worker.name} has finished butchering $itemName, yielding $yield units of meat.";
+          } else {
+            final npcIndex = _npcs.indexWhere((n) => n.id == task.targetId && !n.isPlayer);
+            if (npcIndex != -1) {
+              final npc = _npcs[npcIndex];
+              final npcName = npc.name;
+              _npcs.removeAt(npcIndex);
+              
+              final yield = 10;
+              final meat = GameItem.create(
+                name: "Raw Meat ($npcName)",
+                type: 'meat_generic',
+                category: ItemCategory.food,
+                quantity: yield,
+                quality: 0.7,
+              );
+              _inventory.add(meat);
+              _resources['meat_generic'] = (_resources['meat_generic'] ?? 0) + yield;
+
+              // Add to room inventory for ledger visibility
+              final roomIndex = _rooms.indexWhere((r) => r.id == 'kitchen');
+              if (roomIndex != -1) {
+                _rooms[roomIndex] = _rooms[roomIndex].copyWith(
+                  inventory: [..._rooms[roomIndex].inventory, meat],
+                );
+              }
+              _lastAnnouncement = "${worker.name} has finished butchering $npcName.";
+            }
+          }
+        }
       }
     } else if (task.type == TaskType.tillSoil) {
       if (task.targetId != null) tillSoil(task.targetId!);
+    } else if (task.type == TaskType.fertilizeSoil) {
+      if (task.targetId != null) fertilizeSoil(task.targetId!);
+    } else if (task.type == TaskType.eat) {
+      // 1. Try to find a dish in the pantry first (high quality satisfaction)
+      int? bestDishIndex;
+      final neededTypes = worker.diet.dailyRequirements.keys.toList();
+      for (int j = 0; j < _pantry.length; j++) {
+        final dish = _pantry[j];
+        if (neededTypes.contains(dish.type)) {
+          if (bestDishIndex == null ||
+              _pantry[bestDishIndex].quality.index > dish.quality.index) {
+            bestDishIndex = j;
+          }
+        }
+      }
+
+      String mealSource = "supplies";
+      String mealName = "a simple meal";
+      double satBonus = 20.0;
+      bool mealConsumed = false;
+
+      if (bestDishIndex != null) {
+        final dish = _pantry.removeAt(bestDishIndex);
+        mealSource = "the pantry";
+        mealName = dish.name;
+        satBonus = 30.0; // Pantry food is better
+        mealConsumed = true;
+      } else if ((_resources['meals'] ?? 0) > 0) {
+        _resources['meals'] = _resources['meals']! - 1;
+        mealSource = "the kitchen supplies";
+        mealName = "a saved meal";
+        satBonus = 20.0;
+        mealConsumed = true;
+      } else if ((_resources['meat'] ?? 0) > 0 || (_resources['cabbage'] ?? 0) > 0) {
+        // Scavenge raw ingredients if no meals exist
+        if ((_resources['meat'] ?? 0) > 0) {
+          _resources['meat'] = _resources['meat']! - 1;
+        } else {
+          _resources['cabbage'] = _resources['cabbage']! - 1;
+        }
+        mealSource = "raw ingredients";
+        mealName = "scavenged food";
+        satBonus = 5.0; // Low satisfaction from raw/emergency food
+        mealConsumed = true;
+      }
+
+      if (mealConsumed) {
+        // Each meal restores 60 hunger (roughly 14 hours of decay at 0.07/min)
+        newHunger = (newHunger - 60.0).clamp(0.0, 100.0);
+        newSatisfaction = (newSatisfaction + satBonus).clamp(0.0, 100.0);
+        newThought = "That $mealName from $mealSource was exactly what I needed.";
+        _resources['dirty_dishes'] = (_resources['dirty_dishes'] ?? 0) + 1;
+        
+        _lastAnnouncement = "${worker.name} finished consuming $mealName from $mealSource.";
+
+        // Track meal timing to prevent immediate loops
+        _npcs[npcIndex] = _npcs[npcIndex].copyWith(lastMealHour: _currentDate.hour);
+
+        // Optional: Resident cleanup duty
+        if (worker.isResident) {
+          final cleanupIntent = NPCIntent(
+            id: 'cleanish_${worker.id}_${DateTime.now().millisecondsSinceEpoch}',
+            priority: IntentPriority.normal,
+            action: TaskType.cleanDish,
+            targetRoomId: 'kitchen',
+            expectedDurationMin: 15,
+          );
+          if (!newQueue.any((i) => i.action == TaskType.cleanDish)) {
+            newQueue.add(cleanupIntent);
+          }
+        }
+      } else {
+        _lastAnnouncement = "${worker.name} tried to eat, but found nothing but an empty pantry.";
+        final cooldownIntent = NPCIntent(
+          id: 'high_priority_hunger_${worker.id}',
+          priority: IntentPriority.high,
+          action: TaskType.relax,
+          targetRoomId: 'entryway',
+          startTimeMin: _currentDate.totalMinutes + 60, // Wait 1 hour before trying to eat again
+          expectedDurationMin: 1, 
+        );
+        newQueue.removeWhere((i) => i.id == 'high_priority_hunger_${worker.id}');
+        newQueue.add(cooldownIntent);
+      }
     } else if (task.type == TaskType.plantCrops) {
       CropType type = CropType.cabbage;
       if (task.recipeId != null) {
@@ -3226,10 +3953,19 @@ class GameState extends ChangeNotifier {
       plantCrops(type, task.targetId ?? 'vegetable_garden');
     } else if (task.type == TaskType.waterCrops) {
       if (task.targetId != null) waterCrops(task.targetId!);
-    } else if (task.type == TaskType.fertilizeSoil) {
-      if (task.targetId != null) fertilizeSoil(task.targetId!);
     } else if (task.type == TaskType.careForCrops) {
       if (task.targetId != null) careForCrops(task.targetId!);
+    } else if (task.type == TaskType.useToilet) {
+      newDigestion = 0.0;
+      _lastAnnouncement = "${worker.name} finished using the washroom.";
+    } else if (task.type == TaskType.wash) {
+      newHygiene = 0.0;
+      _lastAnnouncement = "${worker.name} finished washing.";
+    } else if (task.type == TaskType.rest) {
+      _lastAnnouncement = "${worker.name} finished resting.";
+    } else if (task.type == TaskType.careForInjured || task.type == TaskType.careForSick) {
+      // Nursing completion improves patient health slightly or just provides care
+      _lastAnnouncement = "${worker.name} finished providing medical care.";
     } else if (task.type == TaskType.extinguishFire ||
         task.type == TaskType.recombineSpecimen ||
         task.type == TaskType.defendManor) {
@@ -3282,18 +4018,7 @@ class GameState extends ChangeNotifier {
         }
       }
 
-      // Check if we need to clear an intent (Unified Queue)
-      final updatedWorker = _npcs[npcIndex];
-      final List<NPCIntent> newQueue = List.from(updatedWorker.intentQueue);
-      newQueue.removeWhere((intent) => intent.id == task.id);
-
-      _npcs[npcIndex] = updatedWorker.copyWith(
-        status: NPCStatus.idle,
-        activeTaskId: null,
-        intentQueue: newQueue,
-      );
-      _taskService.removeTask(task.id);
-      notifyListeners();
+      // Task removal from newQueue is already handled universally at the start of the method.
     }
 
     // 2. Process Items Found
@@ -3306,7 +4031,8 @@ class GameState extends ChangeNotifier {
       final key = entry.key;
       final value = entry.value;
       _resources[key] =
-          (_resources[key] ?? 0) + (value * yieldMultiplier);
+          ((_resources[key] ?? 0) + (value * yieldMultiplier))
+          .round();
     }
 
     // 4. Process Specialized Task Types
@@ -3321,7 +4047,7 @@ class GameState extends ChangeNotifier {
 
           for (var entry in missing.entries) {
             String key = entry.key;
-            int stillNeeded = entry.value;
+            num stillNeeded = entry.value;
 
             // 1. Take from global inventory
             for (
@@ -3344,13 +4070,16 @@ class GameState extends ChangeNotifier {
               }
 
               if (matches) {
-                int toTake = min(item.quantity, stillNeeded);
+                num toTake = min(item.quantity, stillNeeded);
                 workerInv.add(
-                  item.copyWith(quantity: toTake, id: const Uuid().v4()),
+                  item.copyWith(
+                    quantity: toTake.toInt(),
+                    id: const Uuid().v4(),
+                  ),
                 );
                 if (item.quantity > toTake) {
                   _inventory[i] = item.copyWith(
-                    quantity: item.quantity - toTake,
+                    quantity: (item.quantity - toTake).toInt(),
                   );
                 } else {
                   _inventory.removeAt(i);
@@ -3360,19 +4089,17 @@ class GameState extends ChangeNotifier {
             }
 
             // 2. Take from resources
-            if (stillNeeded > 0 && (_resources[key] ?? 0) > 0) {
-              int toTake = min((_resources[key] ?? 0).toInt(), stillNeeded);
+            num toTake = min(_resources[key] ?? 0, stillNeeded);
               _resources[key] = (_resources[key] ?? 0) - toTake;
               workerInv.add(
                 GameItem.create(
                   name: key.toUpperCase(),
                   type: key,
                   category: ItemCategory.resource,
-                  quantity: toTake,
+                quantity: toTake.toInt(),
                 ),
               );
               stillNeeded -= toTake;
-            }
           }
           _npcs[npcIndex] = _npcs[npcIndex].copyWith(inventory: workerInv);
           _lastAnnouncement =
@@ -3453,7 +4180,7 @@ class GameState extends ChangeNotifier {
         for (var ingEntry in recipe.ingredients.entries) {
           final ing = ingEntry.key;
           final count = ingEntry.value;
-          int remainingToDeduct = count;
+          num remainingToDeduct = count;
 
           while (remainingToDeduct > 0) {
             final itemIndex = kitchenInv.indexWhere((i) {
@@ -3468,7 +4195,7 @@ class GameState extends ChangeNotifier {
             final taken = min(item.quantity, remainingToDeduct);
             if (item.quantity > taken) {
               kitchenInv[itemIndex] = item.copyWith(
-                quantity: item.quantity - taken,
+                quantity: (item.quantity - taken).toInt(),
               );
             } else {
               kitchenInv.removeAt(itemIndex);
@@ -3489,7 +4216,7 @@ class GameState extends ChangeNotifier {
             final taken = min(item.quantity, remainingToDeduct);
             if (item.quantity > taken) {
               workerInv[itemIndex] = item.copyWith(
-                quantity: item.quantity - taken,
+                quantity: (item.quantity - taken).toInt(),
               );
             } else {
               workerInv.removeAt(itemIndex);
@@ -3497,7 +4224,8 @@ class GameState extends ChangeNotifier {
             remainingToDeduct -= taken;
           }
           if (remainingToDeduct > 0) {
-            _resources[ing] = (_resources[ing] ?? 0) - remainingToDeduct;
+            _resources[ing] = ((_resources[ing] ?? 0) - remainingToDeduct)
+                .round();
           }
         }
 
@@ -3531,12 +4259,38 @@ class GameState extends ChangeNotifier {
         }
 
         double yieldLoss = 0.0;
-        if (rand.nextInt(100) > (30 + fire + (nose / 2))) {
+        final isFailure = rand.nextInt(100) > (30 + fire + (nose / 2));
+        if (isFailure) {
           yieldLoss = 0.2 + (rand.nextDouble() * 0.3);
           _announcementHistory.insert(
             0,
             "[${_currentDate.formattedTime}] ${latestWorker.name} scorched the ${recipe.id}!",
           );
+
+          // Fire risk during failures: 20% base chance if scorched, increased by dirtiness
+          final kitchen = _rooms.firstWhere((r) => r.id == 'kitchen');
+          final fireBaseChance = 0.2 + (kitchen.dirtiness * 0.3);
+          if (Random().nextDouble() < fireBaseChance) {
+            final fireEvent = ManorCrisis(
+              id: const Uuid().v4(),
+              type: ManorCrisisType.fire,
+              roomId: 'kitchen',
+              discoveryDate: _currentDate.toDateTime(),
+              severity: 0.15,
+              isDiscovered: true,
+            );
+            if (!_crises.any(
+              (c) => c.roomId == 'kitchen' && c.type == ManorCrisisType.fire,
+            )) {
+              _crises.add(fireEvent);
+              _speed = GameSpeed.paused;
+              _announcementHistory.insert(
+                0,
+                "[${_currentDate.formattedTime}] EMERGENCY: A cooking failure has ignited a grease fire!",
+              );
+              notifyListeners();
+            }
+          }
         }
 
         final kitchen = _rooms.firstWhere((r) => r.id == 'kitchen');
@@ -3572,10 +4326,6 @@ class GameState extends ChangeNotifier {
         Map<String, double> newExp = Map.from(_npcs[npcIndex].dishExperience);
         newExp[recipe.id] = (exp + 0.05).clamp(0.0, 1.0);
         _npcs[npcIndex] = _npcs[npcIndex].copyWith(dishExperience: newExp);
-
-        if (_cookingQueue.isNotEmpty && _cookingQueue.first == recipe.id) {
-          _cookingQueue.removeAt(0);
-        }
       } else {
         final recipeName = recipe.name;
         _announcementHistory.insert(
@@ -3684,201 +4434,123 @@ class GameState extends ChangeNotifier {
       _handleSurgicalCombination(npcIndex, task);
     }
 
-    // Character status synchronization
-    var currentNpc = _npcs[npcIndex];
-    List<NPCIntent> newQueue = List.from(currentNpc.intentQueue);
-    newQueue.removeWhere((i) => i.id == task.id);
+    // Science Research Points
+    if (task.type == TaskType.dissect || task.type == TaskType.vivisection) {
+      // Check if subject was a small creature (rat, bat, chicken, fox)
+      // This is slightly simplified since the task targetId points to the NPC/Entity ID
+      final target = _npcs.firstWhereOrNull((n) => n.id == task.targetId);
+      if (target != null) {
+        double points = 0;
+        final sType = target.specimenType.toLowerCase();
+        if (sType.contains('rat') || sType.contains('bat') || sType.contains('chicken')) {
+          points = 2.0;
+        } else if (sType.contains('fox')) {
+          points = 5.0;
+        }
 
-    // Points logic
+        if (points > 0) {
+          _researchPoints['Small Creature Anatomy'] = (_researchPoints['Small Creature Anatomy'] ?? 0) + points;
+          _announcementHistory.insert(0, "[${_currentDate.formattedTime}] RESEARCH: Gained ${points.toInt()} points in Small Creature Anatomy.");
+          _checkDiscoveries();
+        }
+      }
+    }
+
+    // Character status synchronization
     final hour = _currentDate.hour;
     final preferredRoom = currentNpc.schedule.getPreferredRoomForHour(hour);
 
-    double newSatisfaction = currentNpc.satisfaction;
-    double newDigestion = currentNpc.digestion;
-    double newHygiene = currentNpc.hygiene;
-    int newBreakingPointMinutes = currentNpc.breakingPointMinutes;
-    String? newThought = currentNpc.currentThought;
+    // [FIX] RE-FETCH latest worker to preserve changes from sub-methods (e.g., _handleScienceTaskCompletion)
+    final latestWorker = _npcs[npcIndex];
 
-    if (task.type == TaskType.eat) {
-      // 1. Try to find a dish in the pantry
-      int? bestDishIndex;
-      final neededTypes = currentNpc.diet.dailyRequirements.keys.toList();
-      for (int j = 0; j < _pantry.length; j++) {
-        final dish = _pantry[j];
-        if (neededTypes.contains(dish.type)) {
-          if (bestDishIndex == null ||
-              _pantry[bestDishIndex].quality.index > dish.quality.index) {
-            bestDishIndex = j;
-          }
-        }
-      }
-
-      String mealSource = "supplies";
-      String mealName = "a simple meal";
-
-      if (bestDishIndex != null) {
-        final dish = _pantry.removeAt(bestDishIndex);
-        mealSource = "the pantry";
-        mealName = dish.name;
-        newSatisfaction = (newSatisfaction + 15.0).clamp(0.0, 100.0);
-      } else if ((_resources['meals'] ?? 0) > 0) {
-        _resources['meals'] = _resources['meals']! - 1;
-        newSatisfaction = (newSatisfaction + 5.0).clamp(0.0, 100.0);
-      } else if ((_resources['meat'] ?? 0) > 0 ||
-          (_resources['cabbage'] ?? 0) > 0) {
-        if ((_resources['meat'] ?? 0) > 0) {
-          _resources['meat'] = _resources['meat']! - 1;
-        } else {
-          _resources['cabbage'] = _resources['cabbage']! - 1;
-        }
-        mealSource = "raw ingredients";
-        mealName = "scavenged food";
-        newSatisfaction = (newSatisfaction - 5.0).clamp(0.0, 100.0);
-      }
-
-      _resources['dirty_dishes'] = (_resources['dirty_dishes'] ?? 0) + 1;
-      _lastAnnouncement =
-          "${currentNpc.name} consumed $mealName from $mealSource.";
-
-      if (currentNpc.isResident) {
-        newQueue.insert(
-          0,
-          NPCIntent(
-            id: 'cleanish_${currentNpc.id}_${DateTime.now().millisecondsSinceEpoch}',
-            priority: IntentPriority.normal,
-            action: TaskType.cleanDish,
-            targetRoomId: 'butler_quarters',
-            expectedDurationMin: 15,
-          ),
-        );
-      }
-    }
-
-    if (task.type == TaskType.wash) {
-      newHygiene = 100.0;
-      newThought = "Clean and refreshed.";
-      _lastAnnouncement = "${currentNpc.name} has finished washing up.";
-    }
-
-
-    if (task.type == TaskType.useToilet) {
-      newDigestion = 0.0;
-      newBreakingPointMinutes = 0;
-      newThought = "Much better.";
-    }
-
-    if (currentNpc.role == 'Scientist' &&
-        (task.type == TaskType.cleanRoom ||
-            task.type == TaskType.collectEggs ||
-            task.type == TaskType.harvestCabbage)) {
-      newSatisfaction -= 15.0;
-    }
-
-    _npcs[npcIndex] = currentNpc.copyWith(
-      status: NPCStatus.idle,
+    // Final Sync: Apply all accumulated changes back to global list
+    _npcs[npcIndex] = latestWorker.copyWith(
+      status: (result.message.contains("waiting instructions") && latestWorker.specimenType.toLowerCase() == 'fox')
+          ? NPCStatus.idle
+          : NPCStatus.idle,
       activeTaskId: null,
       targetRoomId: preferredRoom,
       clearTarget: preferredRoom == null,
-      movementProgress:
-          (preferredRoom == currentNpc.currentRoomId || preferredRoom == null)
-              ? 1.0
-              : 0.0,
+      movementProgress: (preferredRoom == currentNpc.currentRoomId || preferredRoom == null) ? 1.0 : 0.0,
       satisfaction: newSatisfaction.clamp(0.0, 100.0),
       digestion: newDigestion,
       hygiene: newHygiene,
+      hunger: newHunger.clamp(0.0, 100.0),
       breakingPointMinutes: newBreakingPointMinutes,
       currentThought: newThought,
-      currentStateTicks: 0, // Reset ticks on task completion
+      currentStateTicks: 0,
       intentQueue: newQueue,
+      inventory: (latestWorker.inventory.length > newInventory.length) ? latestWorker.inventory : newInventory,
     );
 
-    if (task.type == TaskType.useToilet && task.targetId != null) {
-      final roomIndex = _rooms.indexWhere((r) => r.id == task.targetId);
-      if (roomIndex != -1) {
-        final r = _rooms[roomIndex];
-        _rooms[roomIndex] = r.copyWith(
-          dirtiness: (r.dirtiness + 0.15).clamp(0.0, 1.0),
-        );
-      }
+    // Filter silence for foxes
+    final isFoxWaiting = worker.specimenType.toLowerCase() == 'fox' && result.message.contains("waiting instructions");
+    if (!isFoxWaiting) {
+       _announcementHistory.insert(0, "[${_currentDate.formattedTime}] ${result.message}");
+       if (_announcementHistory.length > 50) _announcementHistory.removeLast();
     }
 
     _inventory.addAll(result.itemsFound);
     _lastAnnouncement = result.message;
-    _announcementHistory.insert(
-      0,
-      "[${_currentDate.formattedTime}] ${result.message}",
-    );
-    if (_announcementHistory.length > 50) _announcementHistory.removeLast();
 
-    // Room Type Conversion for Industrials (Use latest worker state if needed)
+    // Room Type Conversion for Industrials
     if (task.targetId != null) {
-      final roomIndex = _rooms.indexWhere((r) => r.id == task.targetId);
-      if (roomIndex != -1) {
-        Room r = _rooms[roomIndex];
-        RoomType? newType;
-        String? announcement;
-
-        if (task.type == TaskType.setupBrewery && r.type == RoomType.unused) {
-          newType = RoomType.brewery;
-          announcement =
-              "${worker.name} has finished converting ${r.name} into a Brewery!";
-        } else if (task.type == TaskType.setupDistillery &&
-            r.type == RoomType.unused) {
-          newType = RoomType.distillery;
-          announcement =
-              "${worker.name} has finished converting ${r.name} into a Distillery!";
-        } else if (task.type == TaskType.setupWorkshop &&
-            r.type == RoomType.unused) {
-          newType = RoomType.workshop;
-          announcement =
-              "${worker.name} has finished converting ${r.name} into a Carpenter's Workshop!";
-        } else if (task.type == TaskType.setupGranary &&
-            r.type == RoomType.unused) {
-          newType = RoomType.granary;
-          announcement =
-              "${worker.name} has finished converting ${r.name} into a Granary!";
-        }
-
-        if (newType != null) {
-          _rooms[roomIndex] = r.copyWith(type: newType, isRestored: true);
-          _announcementHistory.insert(
-            0,
-            "[${_currentDate.formattedTime}] $announcement",
-          );
-          _checkObjectives();
-        } else if (task.type == TaskType.restoreRoom) {
-          _rooms[roomIndex] = r.copyWith(isRestored: true);
-          _announcementHistory.insert(
-            0,
-            "[${_currentDate.formattedTime}] ${worker.name} finished restoring the ${r.name}.",
-          );
-
-          if (r.id == 'chicken_coop') {
-            for (int i = 0; i < 3; i++) {
-              _chickens.add(
-                Chicken.create(ChickenBreedType.houdan, _currentDate, isMale: false),
-              );
+      final roomIdx = _rooms.indexWhere((r) => r.id == task.targetId);
+      if (roomIdx != -1) {
+        Room r = _rooms[roomIdx];
+        if (task.type == TaskType.restoreRoom) {
+          if (!r.isRestored) {
+            RoomType upgradedType = r.type;
+            String upgradedName = r.name;
+            if (r.id.startsWith('library')) {
+              upgradedType = RoomType.library;
+              upgradedName = 'Library';
+            } else if (r.id.startsWith('study')) {
+              upgradedType = RoomType.study;
+              upgradedName = 'Study';
+            } else if (r.id.startsWith('attic')) {
+              upgradedType = RoomType.unused;
+              upgradedName = r.name.replaceAll('Unused ', '');
+            } else if (r.id.startsWith('chicken_coop')) {
+              upgradedType = RoomType.chickenCoop;
+              upgradedName = 'Chicken Coop';
+            } else if (r.id.startsWith('vegetable_garden')) {
+              upgradedType = RoomType.garden;
+              upgradedName = 'Vegetable Garden';
             }
-            _lastAnnouncement =
-                "${worker.name} finished restoring the coop, and 3 Houdan chickens have been settled in!";
+            
+            _rooms[roomIdx] = r.copyWith(
+              restorationProgress: 1.0,
+              isRestored: true,
+              type: upgradedType,
+              name: upgradedName,
+            );
+            if (r.id == 'chicken_coop') {
+              for (int i = 0; i < 3; i++) {
+                _chickens.add(Chicken.create(ChickenBreedType.houdan, _currentDate, isMale: false));
+              }
+            }
+            _checkForCreatures(worker, _rooms[roomIdx]);
           }
-
-          // Chance to find creatures
-          _checkForCreatures(worker, r);
-          _checkObjectives();
+        } else if (task.type == TaskType.construction) {
+          int pIdx = _activeConstruction.indexWhere((p) => p.blueprint.id == r.id.split('_').first);
+          if (pIdx != -1) {
+            var project = _activeConstruction[pIdx];
+            double nextP = (project.progress + 0.25).clamp(0.0, 1.0);
+            _activeConstruction[pIdx] = project.copyWith(progress: nextP, isStarted: true);
+            if (nextP >= 1.0) {
+              _completeConstruction(project);
+              _activeConstruction.removeAt(pIdx);
+            }
+          }
         } else if (task.type == TaskType.cleanRoom) {
-          _rooms[roomIndex] = r.copyWith(dirtiness: 0.0);
-          _announcementHistory.insert(
-            0,
-            "[${_currentDate.formattedTime}] ${worker.name} finished cleaning the ${r.name}.",
-          );
-          
-          // Chance to find creatures
-          _checkForCreatures(worker, r);
+          _rooms[roomIdx] = r.copyWith(dirtiness: 0.0);
         }
       }
     }
   }
+
+
 
   void _checkForCreatures(NPC worker, Room r) {
     final random = Random();
@@ -3991,101 +4663,206 @@ class GameState extends ChangeNotifier {
   }
 
   int getEstimatedTaskMinutes(NPC npc, TaskType type) {
-    int baseMinutes = 4 * 60; // 4 hours base
-    if (type == TaskType.cleanRoom) {
-      baseMinutes = 20; // 20 minutes for regular cleaning
+    int baseMinutes = 120; // 2 hours default
+    
+    switch (type) {
+      // Quick Actions (10-15 mins)
+      case TaskType.useToilet:
+      case TaskType.wash:
+      case TaskType.collectEggs:
+      case TaskType.checkBedridden:
+      case TaskType.collectIngredients:
+      case TaskType.discardTrash:
+      case TaskType.discardSpoiledFood:
+        baseMinutes = 15;
+        break;
+        
+      // Short Actions (20-45 mins)
+      case TaskType.cleanRoom:
+      case TaskType.cleanDish:
+      case TaskType.eat:
+      case TaskType.relax:
+      case TaskType.harvestCabbage:
+      case TaskType.greetGuest:
+      case TaskType.stopBleeding:
+      case TaskType.hauling:
+        baseMinutes = 30;
+        break;
+        
+      // Medium Actions (60-90 mins)
+      case TaskType.cook:
+      case TaskType.prepareMeals:
+      case TaskType.butcherAnimals:
+      case TaskType.diagnoseIllness:
+      case TaskType.treatIllness:
+      case TaskType.careForInjured:
+      case TaskType.careForSick:
+        baseMinutes = 60;
+        break;
+
+      // Long Actions (4 Hours/240 mins)
+      case TaskType.tillSoil:
+      case TaskType.fertilizeSoil:
+      case TaskType.plantCrops:
+      case TaskType.waterCrops:
+      case TaskType.careForCrops:
+      case TaskType.harvestCrops:
+      case TaskType.harvestGrain:
+      case TaskType.research:
+      case TaskType.study:
+      case TaskType.experiment:
+      case TaskType.dissect:
+      case TaskType.vivisection:
+      case TaskType.surgicalOperation:
+      case TaskType.surgery:
+      case TaskType.surgicalCombination:
+        baseMinutes = 240;
+        break;
+
+      // Major Actions (12-24 Hours)
+      case TaskType.construction:
+      case TaskType.mining:
+      case TaskType.manufacturing:
+      case TaskType.blacksmithing:
+      case TaskType.restoreRoom:
+        baseMinutes = 240; // 4 Hours
+        break;
+
+      case TaskType.rest:
+        baseMinutes = 480; // 8 Hours for full sleep
+        break;
+
+      default:
+        baseMinutes = 120;
+        break;
+      
+      // The original code had a duplicate default here. Removed it.
     }
+
     final efficiency = getTaskEfficiency(npc, type);
-    return (baseMinutes / efficiency).round();
+    int finalMinutes = (baseMinutes / efficiency).round();
+
+    // Clamp room restoration so it doesn't punish poorly suited characters too extremely
+    if (type == TaskType.restoreRoom && finalMinutes > 360) {
+      finalMinutes = 360; // Max 6 hours
+    }
+
+    return finalMinutes;
   }
 
-  void assignNpcToTask(
-    String npcId,
-    TaskType type,
-    String? targetId, {
-    String? recipeId,
-  }) {
+  bool assignNpcToTask(String npcId, TaskType type, String? targetId,
+      {String? recipeId, String? targetName, String? intentId, IntentPriority priority = IntentPriority.normal, bool silent = false}) {
     final npcIndex = _npcs.indexWhere((n) => n.id == npcId);
-    if (npcIndex == -1) return;
+    if (npcIndex == -1) {
+      debugPrint("NPC_ASSIGN_FAIL: $npcId not found");
+      return false;
+    }
 
     final npc = _npcs[npcIndex];
+    debugPrint("NPC_ASSIGN_ATTEMPT: ${npc.name} -> ${type.name} @ ${targetId ?? 'N/A'} (Intent: $intentId)");
     if (!npc.isResident) {
       _lastAnnouncement =
           "${npc.name} is a visitor and cannot be assigned tasks.";
-      notifyListeners();
-      return;
+      if (!silent) notifyListeners();
+      return false;
     }
 
-    // Avoid redundant task assignment if already working on the same thing or it's already queued
-    final isQueueBased = (targetId == 'kitchen' && type == TaskType.cook) ||
-        (targetId == 'study' && type == TaskType.research) ||
-        (targetId == 'library' &&
-            (type == TaskType.archiveResearch ||
-                type == TaskType.transcribeNotes));
-
-    if (!isQueueBased) {
-      // Check active task
-      if (npc.status == NPCStatus.working && npc.activeTaskId != null) {
-        try {
-          final currentTask = _taskService.activeTasks.firstWhere(
-            (t) => t.id == npc.activeTaskId,
-          );
-          if (currentTask.type == type && currentTask.targetId == targetId) {
-            _lastAnnouncement = "${npc.name} is already performing this task.";
-            notifyListeners();
-            return;
-          }
-        } catch (e) {}
-      }
-      // Check intent queue
-      if (npc.intentQueue.any((i) => i.action == type && i.targetRoomId == targetId)) {
-        _lastAnnouncement = "${npc.name} already has this task in their queue.";
-        notifyListeners();
-        return;
+    if (npc.activeTaskId != null) {
+      try {
+        final currentTask =
+            _taskService.activeTasks.firstWhereOrNull((t) => t.id == npc.activeTaskId);
+        if (currentTask != null &&
+            intentId != null &&
+            currentTask.intentId == intentId) {
+          return true; // Already doing this specific intent
+        }
+        
+        if (currentTask != null && currentTask.type == type && currentTask.targetId == targetId) {
+           _lastAnnouncement = "${npc.name} is already performing this task.";
+           if (!silent) notifyListeners();
+           return true;
+        }
+      } catch (e) {
+        // Task not found
       }
     }
 
     // RESOURCE CHECK & DEDUCTION
     final metadata = TaskService.getMetadata(type);
     if (metadata.requirements.isNotEmpty) {
-      // Check if we have all resources
       for (var req in metadata.requirements.entries) {
         final has = _resources[req.key] ?? 0;
         if (has < req.value) {
           _lastAnnouncement =
               "Insufficient ${req.key.toUpperCase()} for ${type.displayName}. Need ${req.value}, have $has.";
-          notifyListeners();
-          return;
+          if (!silent) notifyListeners();
+          return false;
         }
       }
 
-      // Deduct resources
       for (var req in metadata.requirements.entries) {
         _resources[req.key] = (_resources[req.key] ?? 0) - req.value;
+        debugPrint("NPC_RESOURCE_CONSUME: ${npc.name} used ${req.value} ${req.key}. Remaining: ${_resources[req.key]}");
       }
     }
 
     // OCCUPANCY CHECK
     if (targetId != null) {
-      final room = _rooms.firstWhere((r) => r.id == targetId);
-      if (room.occupyingNpcId != null && room.occupyingNpcId != npcId) {
+      final room = _rooms.firstWhereOrNull((r) => r.id == targetId);
+      if (room == null) {
+        debugPrint("ERROR: assignNpcToTask called with non-existent room ID: $targetId");
+        return false;
+      }
+      bool allowConcurrent = TaskService.isConcurrent(type);
+
+      if (!allowConcurrent &&
+          room.occupyingNpcId != null &&
+          room.occupyingNpcId != npcId) {
+        debugPrint("NPC_ASSIGN_STALL: ${npc.name} -> Station ${room.name} (${room.id}) busy with ${room.occupyingNpcId}");
         _lastAnnouncement = "The ${room.name} workstation is currently busy.";
-        notifyListeners();
-        return;
+        if (!silent) notifyListeners();
+        return false;
       }
     }
 
-    // Kitchen Special Logic: Enforce queue-only
     TaskType assignedType = type;
     String? assignedRecipeId = recipeId;
     String? assignedTargetId = targetId;
-    String? assignedTargetName;
+    String? assignedTargetName = targetName;
     int duration = 0;
+
+    if (assignedType == TaskType.rest) {
+      if (assignedTargetId != null) {
+        final room = _rooms.firstWhereOrNull((r) => r.id == assignedTargetId);
+        if (room == null || !room.beds.any((b) => b.assignedNpcIds.contains(npcId) || b.assignedNpcIds.contains(null))) {
+          final fallbackRoom = _rooms.firstWhereOrNull((r) => r.type == RoomType.bedroom && r.isRestored && r.beds.any((b) => b.assignedNpcIds.contains(npcId) || b.assignedNpcIds.contains(null)));
+          if (fallbackRoom != null) {
+            assignedTargetId = fallbackRoom.id;
+          }
+        }
+      } else {
+        final fallbackRoom = _rooms.firstWhereOrNull((r) => r.type == RoomType.bedroom && r.isRestored && r.beds.any((b) => b.assignedNpcIds.contains(npcId) || b.assignedNpcIds.contains(null)));
+        if (fallbackRoom != null) {
+          assignedTargetId = fallbackRoom.id;
+        }
+      }
+    }
+
+    bool shouldPopResearch = false;
+    
+    if (intentId != null) {
+      final intent = npc.intentQueue.firstWhereOrNull((i) => i.id == intentId);
+      if (intent != null && intent.minutesRemaining != null) {
+        duration = intent.minutesRemaining!;
+      }
+    }
+    bool shouldPopCooking = false;
 
     if (targetId == 'study') {
       if (type == TaskType.research) {
         if (_researchQueue.isNotEmpty) {
-          final qId = _researchQueue.removeAt(0);
+          final qId = _researchQueue.first;
+          shouldPopResearch = true;
           assignedRecipeId = qId;
 
           if (qId.startsWith('activity:')) {
@@ -4095,47 +4872,38 @@ class GameState extends ChangeNotifier {
               assignedType = activity.type;
               assignedRecipeId = activityId;
               duration = activity.baseDurationMinutes;
-
-              // Consume ingredients immediately on assignment to avoid double-spend
               _consumeScienceIngredients(activity.ingredients);
             }
           } else if (qId.startsWith('recipe:')) {
             final recipe = KitchenService.getAvailableRecipes().firstWhere(
               (r) => r.id == qId.replaceFirst('recipe:', ''),
             );
-            assignedType =
-                TaskType.refineFood; // Map generic research to specific
+            assignedType = TaskType.refineFood;
             assignedRecipeId = recipe.id;
             duration = recipe.durationMinutes;
-
-            // Consume ingredients
             for (var entry in recipe.ingredients.entries) {
-              _resources[entry.key] =
-                  (_resources[entry.key] ?? 0) - entry.value;
+              _resources[entry.key] = (_resources[entry.key] ?? 0) - entry.value;
             }
           } else {
-            // Direct item research
             assignedType = TaskType.research;
             assignedRecipeId = qId;
-            duration = 60; // Base study time
+            duration = 60;
           }
         } else {
-          // No queue! Clean room?
           final room = _rooms.firstWhere((r) => r.id == targetId);
-          if (room.dirtiness > 0.1) {
+          if (room.isRestored && room.dirtiness > 0.1) {
             assignedType = TaskType.cleanRoom;
           } else {
-            _lastAnnouncement = "${npc.name} found nothing to research.";
-            notifyListeners();
-            return;
+            _lastAnnouncement = "${npc.name} found nothing to research and the ${room.name} is in disrepair.";
+            if (!silent) notifyListeners();
+            return false;
           }
         }
       }
-    } else if (targetId == 'library' &&
-        (type == TaskType.archiveResearch ||
-            type == TaskType.transcribeNotes)) {
+    } else if (targetId == 'library' && (type == TaskType.archiveResearch || type == TaskType.transcribeNotes)) {
       if (_researchQueue.isNotEmpty) {
-        final qId = _researchQueue.removeAt(0);
+        final qId = _researchQueue.first;
+        shouldPopResearch = true;
         assignedRecipeId = qId;
 
         if (qId == 'library_archive') {
@@ -4145,58 +4913,63 @@ class GameState extends ChangeNotifier {
           assignedType = TaskType.transcribeNotes;
           duration = 60;
         } else {
-          // Fallback for other research/items in library queue
           assignedType = TaskType.archiveResearch;
           duration = 30;
         }
       } else {
-        // No queue! Clean?
         final room = _rooms.firstWhere((r) => r.id == targetId);
-        if (room.dirtiness > 0.1) {
+        if (room.isRestored && room.dirtiness > 0.1) {
           assignedType = TaskType.cleanRoom;
         } else {
-          _lastAnnouncement = "${npc.name} found nothing to archive.";
-          notifyListeners();
-          return;
+          _lastAnnouncement = "${npc.name} found nothing to archive and the ${room.name} is in disrepair.";
+          if (!silent) notifyListeners();
+          return false;
         }
       }
     } else if (targetId == 'kitchen') {
       if (type == TaskType.cook) {
         if (_cookingQueue.isNotEmpty) {
           final orderStr = _cookingQueue.first;
-          _cookingQueue.removeAt(0);
-          
-          if (orderStr.startsWith('butcher:')) {
+          shouldPopCooking = true;
+
+          if (orderStr.startsWith('butcher_generic:')) {
             final parts = orderStr.split(':');
             assignedType = TaskType.butcherAnimals;
-            assignedRecipeId = parts[1];
-            assignedTargetId = parts[2];
-            assignedTargetName = parts[3];
+            assignedRecipeId = parts[0];
+            assignedTargetId = parts[1];
+            assignedTargetName = parts[2];
+            duration = 90;
           } else {
             assignedType = TaskType.cook;
             assignedRecipeId = orderStr;
+            final recipe = KitchenService.getAvailableRecipes().firstWhere(
+              (r) => r.id == orderStr,
+              orElse: () => Recipe(
+                  id: 'manual',
+                  name: 'Meal',
+                  ingredients: {},
+                  yield: 1,
+                  baseQuality: 1.0,
+                  durationMinutes: 60),
+            );
+            duration = recipe.durationMinutes;
           }
         } else {
-          // No queue! Does it need cleaning?
           final kitchen = _rooms.firstWhere((r) => r.id == 'kitchen');
-          if (kitchen.dirtiness > 0.1) {
+          if (kitchen.isRestored && kitchen.dirtiness > 0.1) {
             assignedType = TaskType.cleanRoom;
           } else {
-            _lastAnnouncement =
-                "${npc.name} found nothing to do in the kitchen.";
-            notifyListeners();
-            return;
+            // Kitchen is usually restored at start, but for safety: 
+            return false;
           }
         }
       }
     }
 
-    // Cleaning logic: If room is already restored, it's a hygiene clean (quick)
     if (duration == 0) {
-      if (assignedType == TaskType.cleanRoom && targetId != null) {
-        final room = _rooms.firstWhere((r) => r.id == targetId);
+      if (assignedType == TaskType.cleanRoom && assignedTargetId != null) {
+        final room = _rooms.firstWhere((r) => r.id == assignedTargetId);
         if (room.isRestored) {
-          // Hygiene clean: 15-20 mins based on speed
           final speed = npc.stats['walkSpeed'] ?? 25;
           duration = (20 * (25 / speed)).round().clamp(10, 45);
         } else {
@@ -4207,20 +4980,19 @@ class GameState extends ChangeNotifier {
       }
     }
 
-    // Agricultural reduction: half labor if partial field
-    if ((assignedType == TaskType.plantCrops ||
-            assignedType == TaskType.harvestCrops) &&
-        assignedTargetId != null) {
+    if ((assignedType == TaskType.plantCrops || assignedType == TaskType.harvestCrops) && assignedTargetId != null) {
       final room = _rooms.firstWhere((r) => r.id == assignedTargetId);
       if (room.tilledAmount < 1.0) {
         duration = (duration * 0.5).round();
       }
     }
 
-    final intentId = DateTime.now().millisecondsSinceEpoch.toString();
+    final taskId = "task_${npc.id}_${DateTime.now().microsecondsSinceEpoch}_${assignedType.name}";
     final task = GameTask(
-      id: intentId,
+      id: taskId,
+      intentId: intentId,
       npcId: npc.id,
+      priority: priority,
       type: assignedType,
       targetId: assignedTargetId,
       targetName: assignedTargetName,
@@ -4228,22 +5000,53 @@ class GameState extends ChangeNotifier {
       minutesRemaining: duration,
     );
 
-    // Use assignTask to handle queuing correctly
+    if (shouldPopResearch && _researchQueue.isNotEmpty) {
+      _researchQueue.removeAt(0);
+    }
+    if (shouldPopCooking && _cookingQueue.isNotEmpty) {
+      _cookingQueue.removeAt(0);
+    }
+
     assignTask(task);
+
+    final updatedNpc = _npcs[npcIndex]; 
+    List<String> path = [];
+    String? firstTarget = task.targetId;
+
+    if (task.targetId != null && task.targetId != updatedNpc.currentRoomId) {
+      path = _findPath(updatedNpc.currentRoomId ?? 'entryway', task.targetId!);
+      if (path.isNotEmpty) {
+        firstTarget = path.removeAt(0);
+      }
+    }
+
+    double finalProgress = (firstTarget == updatedNpc.currentRoomId) ? 1.0 : 0.0;
+    if (firstTarget == updatedNpc.targetRoomId && updatedNpc.movementProgress < 1.0) {
+      finalProgress = updatedNpc.movementProgress;
+    }
+
+    _npcs[npcIndex] = updatedNpc.copyWith(
+      activeTaskId: task.id,
+      targetRoomId: firstTarget,
+      movementPath: path,
+      movementProgress: finalProgress,
+      status: _determineStatus(updatedNpc, task),
+    );
+    return true;
   }
 
-  void assignTaskByRole(String role, TaskType type, String? targetId) {
+  void assignTaskByRole(String role, TaskType type, String? targetId, {String? intentId, IntentPriority priority = IntentPriority.normal}) {
     try {
       final npcId = _npcs.firstWhere((n) => n.role == role).id;
-      assignNpcToTask(npcId, type, targetId);
+      assignNpcToTask(npcId, type, targetId, intentId: intentId, priority: priority);
     } catch (e) {
       _lastAnnouncement = "No one with the role of $role is available.";
       notifyListeners();
     }
   }
 
-  void assignButlerTask(TaskType type, String? targetId) {
-    assignTaskByRole('Butler', type, targetId);
+  void assignButlerTask(TaskType type, String? targetId, {String? intentId, IntentPriority priority = IntentPriority.normal}) {
+    assignTaskByRole('Butler', type, targetId, intentId: intentId, priority: priority);
   }
 
   List<NPC>? _simulationPlayerDeck;
@@ -4267,7 +5070,7 @@ class GameState extends ChangeNotifier {
   void startJourney(
     String npcId,
     String destinationId,
-    Map<String, int> resources,
+    Map<String, num> resources,
     List<String> escortIds,
   ) {
     final index = _npcs.indexWhere((n) => n.id == npcId);
@@ -4286,7 +5089,7 @@ class GameState extends ChangeNotifier {
       worldDestinationId: destinationId,
       worldDepartureId: 'manor',
       worldTravelProgress: 0.0,
-      journeyInventory: Map<String, int>.from(resources),
+      journeyInventory: Map<String, num>.from(resources),
       escortIds: escortIds,
       lastEscortIds: escortIds, // Persist for next time
       status: NPCStatus.idle,
@@ -4440,7 +5243,7 @@ class GameState extends ChangeNotifier {
   }
 
   DishQuality _calculateCookQuality(NPC npc) {
-    final skill = npc.stats['intellect'] ?? 50;
+    final skill = npc.stats['intelligence'] ?? 50;
     if (skill > 90) return DishQuality.exquisite;
     if (skill > 80) return DishQuality.delectable;
     if (skill > 70) return DishQuality.sophisticated;
@@ -4452,8 +5255,21 @@ class GameState extends ChangeNotifier {
     return DishQuality.mediocre;
   }
 
-  String getTaskDescription(GameTask task) =>
-      _taskService.getTaskDescription(task);
+  String getTaskDescription(GameTask task) {
+    if (task.type == TaskType.restoreRoom) {
+      final room = _rooms.firstWhereOrNull((r) => r.id == task.targetId);
+      return "Restore ${room?.name ?? 'Room'}";
+    }
+    String desc = _taskService.getTaskDescription(task);
+    if (task.targetId != null) {
+      final room = _rooms.firstWhereOrNull((r) => r.id == task.targetId);
+      if (room != null) {
+        // Append room name for clarity
+        desc = "$desc at ${room.name}";
+      }
+    }
+    return desc;
+  }
 
   void spawnRefugee() {
     final refugee = NPCGenerator.generateRefugee();
@@ -4480,6 +5296,7 @@ class GameState extends ChangeNotifier {
       'timber': 0,
       'herbs': 0,
     });
+    _taskStagnationCounters.clear();
     _inventory.clear();
     _activeConstruction.clear();
     _activeExperiments.clear();
@@ -4503,7 +5320,7 @@ class GameState extends ChangeNotifier {
   // Placeholder for new research consumption logic if needed.
   // For now, physical items in room inventory are the source of truth.
 
-  void craftItem(String name, Map<String, int> requirements, String product) {
+  void craftItem(String name, Map<String, num> requirements, String product) {
     bool canCraft = true;
     requirements.forEach((res, amount) {
       if ((_resources[res] ?? 0) < amount) canCraft = false;
@@ -4533,20 +5350,18 @@ class GameState extends ChangeNotifier {
     );
 
     final travelerStock = traveler.journeyInventory[resource] ?? 0;
-    if (travelerStock >= amount) {
+    if (travelerStock.round() >= amount.round()) {
       final price = _marketService.getSellPrice(resource);
       final int gain = (price * amount).toInt();
 
-      final newInv = Map<String, int>.from(traveler.journeyInventory);
+      final newInv = Map<String, num>.from(traveler.journeyInventory);
       newInv[resource] = travelerStock - amount;
-      newInv['funds'] = (newInv['funds'] ?? 0) + gain;
+      newInv['funds'] = ((newInv['funds'] ?? 0) + gain).round();
 
       final index = _npcs.indexOf(traveler);
       _npcs[index] = traveler.copyWith(journeyInventory: newInv);
 
       _lastAnnouncement = "Sold $amount $resource via ${traveler.name}.";
-
-      _lastAnnouncement = "Purchased $amount $resource via ${traveler.name}.";
       notifyListeners();
     }
   }
@@ -4568,7 +5383,7 @@ class GameState extends ChangeNotifier {
       );
       final travelerFunds = traveler.journeyInventory['funds'] ?? 0;
       if (travelerFunds >= cost) {
-        final newInv = Map<String, int>.from(traveler.journeyInventory);
+        final newInv = Map<String, num>.from(traveler.journeyInventory);
         newInv['funds'] = travelerFunds - cost;
         final index = _npcs.indexOf(traveler);
         _npcs[index] = traveler.copyWith(journeyInventory: newInv);
@@ -4615,73 +5430,84 @@ class GameState extends ChangeNotifier {
     }
   }
 
-  void tryScheduleNpcTask(String npcId, TaskType type, String targetId) {
+  void tryScheduleNpcTask(
+    String npcId,
+    TaskType type,
+    String targetId, {
+    String? recipeId,
+  }) {
+    enqueueNpcTask(npcId, type, targetId, recipeId: recipeId);
+  }
+
+  void enqueueNpcTask(
+    String npcId,
+    TaskType type,
+    String targetId, {
+    String? recipeId,
+  }) {
     final npcIndex = _npcs.indexWhere((n) => n.id == npcId);
     if (npcIndex == -1) return;
     var npc = _npcs[npcIndex];
 
-    final durationHours = (getEstimatedTaskMinutes(npc, type) / 60.0).ceil();
-    final currentHour = _currentDate.hourIndex;
+    final roomIndex = _rooms.indexWhere((r) => r.id == targetId);
+    if (roomIndex == -1) return;
+    final room = _rooms[roomIndex];
 
-    // 1. Determine where to start searching.
-    // We skip until the end of the current Sleep, Eat, or existing Manual Assignment block
-    // to ensure we don't interrupt critical activities or recently assigned tasks.
-    int searchStart = currentHour;
-    final maxSearch = currentHour + 168; // Search up to a week
-    while (searchStart < maxSearch) {
-      final idx = searchStart % 168;
-      final activity = npc.schedule.getActivityForHour(idx);
-      final block = npc.schedule.getBlock(idx);
-      if (activity == ScheduleActivity.sleep ||
-          activity == ScheduleActivity.eat ||
-          block.manualTaskType != null) {
-        searchStart++;
-      } else {
-        break;
-      }
-    }
+    final durationMin = getEstimatedTaskMinutes(npc, type);
+    final intentId = const Uuid().v4();
 
-    // 2. Collect the next available hours that are not Sleep, Eat, or existing Manual Assignment.
-    // We allow splitting the task across multiple gaps.
-    final List<int> targetHours = [];
-    for (int i = searchStart; i < maxSearch; i++) {
-      final idx = i % 168;
-      final activity = npc.schedule.getActivityForHour(idx);
-      final block = npc.schedule.getBlock(idx);
+    final intent = NPCIntent(
+      id: intentId,
+      action: type,
+      targetRoomId: targetId,
+      recipeId: recipeId,
+      priority: IntentPriority.normal,
+      minutesRemaining: durationMin,
+      expectedDurationMin: durationMin,
+      isManual: true,
+    );
 
-      if (activity != ScheduleActivity.sleep &&
-          activity != ScheduleActivity.eat &&
-          block.manualTaskType == null) {
-        targetHours.add(idx);
-        if (targetHours.length >= durationHours) break;
-      }
-    }
+    // 1. Add to NPC queue
+    List<NPCIntent> newNpcQueue = List.from(npc.intentQueue);
+    newNpcQueue.add(intent);
+    _npcs[npcIndex] = npc.copyWith(intentQueue: newNpcQueue);
 
-    if (targetHours.length < durationHours) {
-      _lastAnnouncement = "${npc.name} is too busy to perform this task.";
-      notifyListeners();
-      return;
-    }
+    // 2. Add to Room task queue for visibility
+    List<EnqueuedTask> newRoomQueue = List.from(room.taskQueue);
+    final taskDesc = "${npc.name}: ${getTaskDescriptionForType(type)}";
+    newRoomQueue.add(EnqueuedTask(
+      npcId: npcId,
+      intentId: intentId,
+      description: taskDesc,
+    ));
 
-    // 3. Apply the manual assignment to the found hours.
-    var updatedSchedule = npc.schedule;
-    for (final idx in targetHours) {
-      updatedSchedule = updatedSchedule.updateBlock(
-        idx,
-        updatedSchedule.getBlock(idx).copyWith(
-              manualTaskType: type,
-              manualTargetId: targetId,
-            ),
+    // 3. Create a Physical Project if it involves restoration or science
+    Map<String, PhysicalProject> newProjects = Map.from(room.activeProjects);
+    if (type == TaskType.restoreRoom ||
+        type == TaskType.experiment ||
+        type == TaskType.research) {
+      newProjects[intentId] = PhysicalProject(
+        id: const Uuid().v4(),
+        taskId: intentId,
+        name: getTaskDescriptionForType(type),
+        type: Room.getProjectType(type),
+        progress: 0.0,
       );
     }
 
-    _npcs[npcIndex] = npc.copyWith(
-      schedule: updatedSchedule,
-      clearThought: true,
+    _rooms[roomIndex] = room.copyWith(
+      taskQueue: newRoomQueue,
+      activeProjects: newProjects,
     );
+
     _lastAnnouncement =
-        "Scheduled ${type.name} for ${npc.name} starting ${targetHours.contains(_currentDate.hourIndex) ? 'now' : 'later'}.";
+        "Task '${getTaskDescriptionForType(type)}' has been enqueued for ${npc.name}.";
     notifyListeners();
+  }
+
+  String getTaskDescriptionForType(TaskType type) {
+    if (type == TaskType.restoreRoom) return "Restoring room";
+    return type.displayName.toUpperCase();
   }
 
   void buyResource(String resource, int amount) {
@@ -4695,9 +5521,9 @@ class GameState extends ChangeNotifier {
     final totalCost = price * amount;
     final travelerFunds = traveler.journeyInventory['funds'] ?? 0;
 
-    if (travelerFunds >= totalCost) {
-      final newInv = Map<String, int>.from(traveler.journeyInventory);
-      newInv['funds'] = travelerFunds - totalCost;
+    if (travelerFunds.round() >= totalCost.round()) {
+      final newInv = Map<String, num>.from(traveler.journeyInventory);
+      newInv['funds'] = (travelerFunds - totalCost).round();
       newInv[resource] = (newInv[resource] ?? 0) + amount;
 
       final index = _npcs.indexOf(traveler);
@@ -4721,15 +5547,45 @@ class GameState extends ChangeNotifier {
     }
   }
 
-  void reorderIntentQueue(String npcId, int oldIndex, int newIndex) {
+  void reorderIntentQueue(String npcId, int oldIndex, int newIndex,
+      {bool isFiltered = false}) {
     final idx = _npcs.indexWhere((n) => n.id == npcId);
     if (idx != -1) {
       final npc = _npcs[idx];
-      var queue = List<NPCIntent>.from(npc.intentQueue);
-      if (newIndex > oldIndex) newIndex -= 1;
-      final item = queue.removeAt(oldIndex);
-      queue.insert(newIndex, item);
-      _npcs[idx] = npc.copyWith(intentQueue: queue);
+      var fullQueue = List<NPCIntent>.from(npc.intentQueue);
+
+      if (isFiltered) {
+        // Map filtered indices back to full queue
+        final upcoming =
+            fullQueue.where((i) => i.id != npc.activeTaskId).toList();
+        if (oldIndex < upcoming.length) {
+          final targetId = upcoming[oldIndex].id;
+          final fullOldIndex = fullQueue.indexWhere((i) => i.id == targetId);
+
+          int fullNewIndex;
+          if (newIndex >= upcoming.length) {
+            fullNewIndex = fullQueue.length;
+          } else {
+            final newTargetId = upcoming[newIndex].id;
+            fullNewIndex = fullQueue.indexWhere((i) => i.id == newTargetId);
+          }
+
+          if (fullOldIndex != -1) {
+            final item = fullQueue.removeAt(fullOldIndex);
+            if (fullNewIndex > fullOldIndex) {
+              fullNewIndex -= 1;
+            }
+            fullQueue.insert(fullNewIndex, item.copyWith());
+          }
+        }
+      } else {
+        // Simple 1:1 reorder
+        if (newIndex > oldIndex) newIndex -= 1;
+        final item = fullQueue.removeAt(oldIndex);
+        fullQueue.insert(newIndex, item);
+      }
+
+      _npcs[idx] = npc.copyWith(intentQueue: fullQueue);
       notifyListeners();
     }
   }
@@ -4739,6 +5595,12 @@ class GameState extends ChangeNotifier {
   }
 
   void cancelTask(String taskId) {
+    String? resolvedIntentId = taskId;
+    try {
+      final t = _taskService.activeTasks.firstWhere((it) => it.id == taskId);
+      if (t.intentId != null) resolvedIntentId = t.intentId;
+    } catch (_) {}
+
     // 1. Find NPC using this task
     final npcIndex = _npcs.indexWhere((n) => n.activeTaskId == taskId);
     if (npcIndex != -1) {
@@ -4752,8 +5614,8 @@ class GameState extends ChangeNotifier {
 
     // 2. Remove from all NPC intent queues
     for (int i = 0; i < _npcs.length; i++) {
-      if (_npcs[i].intentQueue.any((it) => it.id == taskId)) {
-        final newIntents = _npcs[i].intentQueue.where((it) => it.id != taskId).toList();
+      if (_npcs[i].intentQueue.any((it) => it.id == taskId || it.id == resolvedIntentId)) {
+        final newIntents = _npcs[i].intentQueue.where((it) => it.id != taskId && it.id != resolvedIntentId).toList();
         _npcs[i] = _npcs[i].copyWith(intentQueue: newIntents);
       }
       if (_npcs[i].taskQueue.contains(taskId)) {
@@ -4765,9 +5627,9 @@ class GameState extends ChangeNotifier {
     // 3. Remove from all Room task queues and active projects
     for (int i = 0; i < _rooms.length; i++) {
       bool changed = false;
-      List<String> newQueue = _rooms[i].taskQueue.toList();
-      if (newQueue.contains(taskId)) {
-        newQueue.remove(taskId);
+      List<EnqueuedTask> newQueue = List.from(_rooms[i].taskQueue);
+      if (newQueue.any((e) => e.intentId == taskId)) {
+        newQueue.removeWhere((e) => e.intentId == taskId);
         changed = true;
       }
 
@@ -4797,6 +5659,15 @@ class GameState extends ChangeNotifier {
     }
 
     // 4. Remove from Task Service
+    final activeTask = _taskService.activeTasks.firstWhereOrNull(
+      (t) => t.id == taskId,
+    );
+    if (activeTask != null) {
+      for (var id in activeTask.reservedEntityIds) {
+        setReservation(id, false);
+      }
+    }
+
     _taskService.cancelTask(taskId);
     notifyListeners();
   }
@@ -4835,8 +5706,8 @@ class GameState extends ChangeNotifier {
 
       if (removed) {
         // Pay the fee
-        final newInv = Map<String, int>.from(traveler.journeyInventory);
-        newInv['funds'] = travelerFunds - hiringFee;
+        final newInv = Map<String, num>.from(traveler.journeyInventory);
+        newInv['funds'] = (travelerFunds - hiringFee).round();
         final tIndex = _npcs.indexOf(traveler);
         
         // Update traveler's inventory
@@ -4874,21 +5745,7 @@ class GameState extends ChangeNotifier {
     }
   }
 
-  void addToCookingQueue(String recipeId, {String? targetId, String? targetName}) {
-    if (targetId != null) {
-      _cookingQueue.add("butcher:$recipeId:$targetId:$targetName");
-    } else {
-      _cookingQueue.add(recipeId);
-    }
-    notifyListeners();
-  }
-
-  void removeFromCookingQueue(int index) {
-    if (index >= 0 && index < _cookingQueue.length) {
-      _cookingQueue.removeAt(index);
-      notifyListeners();
-    }
-  }
+  // Cleaned up duplicate addToCookingQueue and removeFromCookingQueue
 
   DishQuality _mapToDishQuality(double value) {
     if (value > 2.0) return DishQuality.exquisite;
@@ -4922,355 +5779,209 @@ class GameState extends ChangeNotifier {
     return DishType.treat;
   }
 
-  void _updateIntentQueue(int index) {
+  void _evaluateBehaviorTree(int index, {Set<String>? claimedWorkstations}) {
     var npc = _npcs[index];
-    List<NPCIntent> newQueue = List.from(npc.intentQueue);
-    final hourIndex = _currentDate.hourIndex;
-    final activity = npc.schedule.getActivityForHour(hourIndex);
-    final block = npc.schedule.getBlock(hourIndex);
+    final totalMin = _currentDate.totalMinutes;
+    final int hourIndex = _currentDate.hour;
     
+    // 0. Dead/Fainted/Broken - Stop processing
     if (npc.status == NPCStatus.dead ||
         npc.status == NPCStatus.fainted ||
-        npc.status == NPCStatus.broken) {
-      // Clear queue if they can't act
-      if (newQueue.isNotEmpty) {
-        _npcs[index] = npc.copyWith(intentQueue: []);
-      }
+        npc.status == NPCStatus.broken ||
+        npc.status == NPCStatus.sleeping) { 
       return;
     }
 
-    // 0. Emergency Response (Highest Priority)
-    for (var crisis in _crises) {
-      // Crisis is discovered if NPC is in the room or it's already discovered
-      bool isNear = npc.currentRoomId == crisis.roomId;
+    final activeTask = npc.activeTaskId != null 
+        ? _taskService.activeTasks.firstWhereOrNull((t) => t.id == npc.activeTaskId) 
+        : null;
 
-      if (isNear || crisis.isDiscovered) {
-        // If not discovered, discovering it now
-        if (!crisis.isDiscovered && isNear) {
-          final updatedCrisis = crisis.copyWith(isDiscovered: true);
-          final cIndex = _crises.indexOf(crisis);
-          if (cIndex != -1) _crises[cIndex] = updatedCrisis;
-          _announcementHistory.insert(
-            0,
-            "[${_currentDate.formattedTime}] ${npc.name} has discovered the ${crisis.name} in the ${_rooms.firstWhere((r) => r.id == crisis.roomId).name}!",
-          );
-        }
-
-        // Trigger panic intent if not already handling it
-        TaskType emergencyTask;
-        switch (crisis.type) {
-          case ManorCrisisType.fire:
-            emergencyTask = TaskType.extinguishFire;
-            break;
-          case ManorCrisisType.specimenEscape:
-            emergencyTask = TaskType.recombineSpecimen;
-            break;
-          case ManorCrisisType.intruder:
-            emergencyTask = TaskType.defendManor;
-            break;
-        }
-
-        bool alreadyHandling = newQueue.any(
-          (intent) =>
-              intent.action == emergencyTask &&
-              intent.targetRoomId == crisis.roomId,
-        );
-
-        if (!alreadyHandling) {
-          final panicIntent = NPCIntent(
-            id: 'panic_${crisis.id}_${npc.id}',
-            action: emergencyTask,
-            targetRoomId: crisis.roomId,
-            priority: IntentPriority.panic,
-            minutesRemaining: (15 + (crisis.severity * 30)).toInt(),
-            expectedDurationMin: (20 + (crisis.severity * 40)).toInt(),
-          );
-
-          // Panic intents clear lower priority tasks or prepend
-          newQueue.insert(0, panicIntent);
-          _npcs[index] = npc.copyWith(
-            intentQueue: newQueue,
-            status: NPCStatus.panicked,
-          );
-          notifyListeners();
-          return; // Process this immediately
-        }
-      }
-    }
-
-    // 1. Determine autonomous candidates from Responsibility Grid
-    List<_ResponsibilityTaskCandidate> candidates = [];
-
-    for (var cat in ResponsibilityCategory.values) {
-      final stars = npc.responsibilities[cat] ?? 0;
-      if (stars == 0) continue;
-
-      final tasks = _categoryPriorities[cat] ?? [];
-      final divider = _categoryDividers[cat] ?? 0;
-
-      for (int i = 0; i < tasks.length; i++) {
-        final taskType = tasks[i];
-        final isAboveDivider = i < divider;
-
-        final targetRoomId = _getAutonomousTargetForTask(taskType, npc);
-        if (targetRoomId == null) continue;
-
-        bool canPerformNow = false;
-        IntentPriority priority = IntentPriority.normal;
-
-        if (stars == 5 && isAboveDivider) {
-          canPerformNow = true;
-          priority = IntentPriority.vital; // Overrides routine eat/sleep
-        } else if (stars == 4 && isAboveDivider) {
-          // 4-star only if not eating/sleeping
-          if (activity != ScheduleActivity.sleep &&
-              activity != ScheduleActivity.eat) {
-            canPerformNow = true;
-          }
-          priority = IntentPriority.urgent;
-        } else if (activity == ScheduleActivity.work) {
-          canPerformNow = true;
-          priority = IntentPriority.normal;
-        }
-
-        if (canPerformNow) {
-          candidates.add(
-            _ResponsibilityTaskCandidate(
-              taskType: taskType,
-              category: cat,
-              stars: stars,
-              priority: priority,
-              targetRoomId: targetRoomId,
-              isAboveDivider: isAboveDivider,
-              verticalIndex: i,
-            ),
-          );
-        }
-      }
-    }
-
-    // Sort candidates
-    candidates.sort((a, b) {
-      if (a.priority != b.priority) {
-        return b.priority.index.compareTo(a.priority.index);
-      }
-      if (a.stars != b.stars) {
-        return b.stars.compareTo(a.stars);
-      }
-      return a.verticalIndex.compareTo(b.verticalIndex);
-    });
-
-    // 2. Clear stale autonomous/scheduled intents from queue
-    // Preserve ONLY the currently active intent to avoid flickering restart
-    newQueue.removeWhere(
-      (i) =>
-          i.id != npc.activeTaskId &&
-          (i.priority == IntentPriority.normal ||
-              i.priority == IntentPriority.urgent ||
-              i.priority == IntentPriority.vital ||
-              i.priority == IntentPriority.panic),
-    );
-
-    // 3. Panic State Overrides (Breaking point needs) - Point 1
-    // TODO: Point 2 - Emergency System (Fire, Combat, etc)
-    // Characters should respond to global emergencies here with highest priority.
-    final inEmergency = newQueue.any(
-      (i) =>
-          i.action == TaskType.extinguishFire ||
-          i.action == TaskType.defendManor ||
-          i.action == TaskType.recombineSpecimen,
-    );
-
-    if (npc.hunger > 95 && !inEmergency) {
-      newQueue.insert(
-        0,
-        NPCIntent(
-          id: 'panic_hunger_${npc.id}_$hourIndex',
-          priority: IntentPriority.panic,
-          action: TaskType.eat,
-          targetRoomId: 'kitchen',
-          expectedDurationMin: 30,
-        ),
-      );
-    } else if (npc.energy < 5 && !inEmergency) {
-      newQueue.insert(
-        0,
-        NPCIntent(
-          id: 'panic_exhaustion_${npc.id}_$hourIndex',
-          priority: IntentPriority.panic,
-          action: TaskType.rest,
-          targetRoomId: npc.assignedRoomId ?? 'butler_quarters',
-          expectedDurationMin: 240,
-        ),
-      );
-    } else if (npc.digestion >= 85) {
-      // Find a toilet
-      final toiletRoom = _rooms.firstWhere(
-        (r) => r.type == RoomType.toilet && r.isRestored,
-        orElse: () => _rooms.firstWhere(
-          (r) => r.type == RoomType.toilet,
-          orElse: () => Room.initial('na', 'na', RoomType.unused, Floor.ground),
-        ),
-      );
-      if (toiletRoom.id != 'na' &&
-          !newQueue.any((i) => i.action == TaskType.useToilet)) {
-        newQueue.insert(
-          0,
-          NPCIntent(
-            id: 'urgent_toilet_${npc.id}_$hourIndex',
-            priority: npc.digestion >= 95
-                ? IntentPriority.panic
-                : IntentPriority.urgent,
-            action: TaskType.useToilet,
-            targetRoomId: toiletRoom.id,
-            expectedDurationMin: 15,
-          ),
-        );
-      }
-    }
-
-    // 4. Add Top Responsibility candidate if exists - Point 3 & 6
-    if (candidates.isNotEmpty) {
-      final top = candidates.first;
-      if (!newQueue.any(
-        (i) => i.action == top.taskType && i.priority == top.priority,
-      )) {
-        final isScienceTask =
-            (top.taskType == TaskType.research ||
-            top.taskType == TaskType.vivisection ||
-            top.taskType == TaskType.dissect ||
-            top.taskType == TaskType.puzzleStudy ||
-            top.taskType == TaskType.deprivationStudy ||
-            top.taskType == TaskType.clinicalTrial);
-
-        final scienceActivity = isScienceTask
-            ? _getAvailableScienceActivityForNpc(index, top.taskType)
-            : null;
-
-        if (scienceActivity != null) {
-          final missingIngredients = _getMissingIngredientsForActivity(
-            index,
-            scienceActivity,
-          );
-          if (missingIngredients.isNotEmpty) {
-            // NPC needs to gather ingredients first
-            if (!newQueue.any((i) => i.action == TaskType.collectIngredients)) {
-              newQueue.insert(
-                0,
-                NPCIntent(
-                  id: 'gather_${npc.id}_${scienceActivity.id}_$hourIndex',
-                  priority: IntentPriority
-                      .urgent, // Higher priority than the activity itself
-                  action: TaskType.collectIngredients,
-                  targetRoomId: 'pantry', // Default to pantry for now
-                  expectedDurationMin: 30,
-                  recipeId: scienceActivity.id, // Stashing activityId here
-                ),
-              );
-            }
+    // Clean up resolved tasks
+    if (activeTask != null) {
+      bool isResolved = false;
+      if (activeTask.priority == IntentPriority.emergency) {
+        final crisis = _crises.firstWhereOrNull((c) => c.severity > 0.0);
+        if (crisis == null) isResolved = true;
+      } else if (activeTask.priority == IntentPriority.high) {
+        if (activeTask.type == TaskType.rest && npc.energy >= 100.0) {
+          final activity = npc.schedule.getActivityForHour(hourIndex);
+          if (activity != ScheduleActivity.sleep) {
+            isResolved = true;
           }
         }
-
-        String? targetRecipeId = scienceActivity?.id;
-        if (targetRecipeId == null && top.taskType == TaskType.research) {
-          for (var qId in _researchQueue) {
-            if (!qId.startsWith('activity:')) {
-              targetRecipeId = qId;
-              break;
-            }
-          }
-        }
-
-        final intent = NPCIntent(
-          id: 'resp_${npc.id}_${top.taskType.name}_$hourIndex',
-          priority: top.priority,
-          action: top.taskType,
-          targetRoomId: top.targetRoomId,
-          expectedDurationMin: 60,
-          recipeId: targetRecipeId,
-        );
-        // Insert based on priority
-        if (top.priority.index >= IntentPriority.vital.index) {
-          newQueue.insert(0, intent);
-        } else {
-          newQueue.add(intent);
-        }
+        else if (activeTask.type == TaskType.useToilet && npc.digestion <= 10) { isResolved = true; }
+      }
+      if (isResolved) {
+        _taskService.removeTask(activeTask.id);
+        _clearRoomOccupancyForNpc(npc.id);
+        _npcs[index] = npc = npc.copyWith(activeTaskId: null);
       }
     }
 
-    // 5. Default Scheduled needs (Eat/Sleep) - Point 4 & 5
-    if (activity == ScheduleActivity.eat &&
-        !newQueue.any((i) => i.priority.index >= IntentPriority.vital.index)) {
-      newQueue.add(
-        NPCIntent(
-          id: 'sched_eat_${npc.id}_$hourIndex',
-          priority: IntentPriority.vital,
-          action: TaskType.eat,
-          targetRoomId: 'kitchen',
-          expectedDurationMin: 60,
-        ),
-      );
-    } else if (activity == ScheduleActivity.sleep &&
-        !newQueue.any((i) => i.priority.index >= IntentPriority.vital.index)) {
-      newQueue.add(
-        NPCIntent(
-          id: 'sched_sleep_${npc.id}_$hourIndex',
-          priority: IntentPriority.vital,
-          action: TaskType.rest,
-          targetRoomId: npc.assignedRoomId ?? 'butler_quarters',
-          expectedDurationMin: 480,
-        ),
-      );
-    }
+    final currentTask = npc.activeTaskId != null 
+        ? _taskService.activeTasks.firstWhereOrNull((t) => t.id == npc.activeTaskId) 
+        : null;
 
-    // 6. Default Scheduled Work/Routine - Point 9 & 10
-    if (newQueue.isEmpty ||
-        !newQueue.any((i) => i.priority.index > IntentPriority.normal.index)) {
-      TaskType scheduledTask = _mapActivityToTask(activity, npc);
-      String? personalityTarget = _getPersonalityIdleTarget(index, activity);
+    bool tryAssign(NPCIntent intent) {
+      if (currentTask != null && currentTask.intentId == intent.id) { return true; }
+      if (intent.startTimeMin != null && intent.startTimeMin! > totalMin) { return false; }
 
-      // We allow re-adding if queue is truly empty (except possibly low-priority wander)
-      // ID includes hour and a 'salt' to allow re-evaluation within the hour if finished
-      final salt = Random().nextInt(1000);
-      newQueue.add(
-        NPCIntent(
-          id: 'sched_normal_${npc.id}_${hourIndex}_$salt',
-          priority: IntentPriority.normal,
-          action: scheduledTask,
-          targetRoomId: personalityTarget ?? block.preferredRoomId,
-          expectedDurationMin: 15 + Random().nextInt(15), // Re-evaluate every 15-30m
-        ),
-      );
-    }
+      if (currentTask != null) {
+        bool preempt = intent.priority.index > currentTask.priority.index;
+        bool isCurrentIdleOrNormal = currentTask.priority.index <= IntentPriority.normal.index || 
+            currentTask.type == TaskType.idle || currentTask.type == TaskType.relax;
+            
+        if (intent.isManual && isCurrentIdleOrNormal) {
+          preempt = true;
+        }
 
-    // 7. Manual Assignments (Drag & Drop overrides)
-    if (block.manualTaskType != null) {
-      final manualId = 'manual_assign_${npc.id}_${block.manualTaskType!.name}';
-      if (!newQueue.any((i) =>
-          i.priority == IntentPriority.assignment &&
-          i.action == block.manualTaskType &&
-          i.targetRoomId == block.manualTargetId)) {
-        newQueue.insert(
-          0,
-          NPCIntent(
-            id: manualId,
-            priority: IntentPriority.assignment,
-            action: block.manualTaskType!,
-            targetRoomId: block.manualTargetId,
-            expectedDurationMin: 60,
-          ),
-        );
+        // Idle and Relax should never block the behavior tree from switching to a new activity
+        if (currentTask.type == TaskType.idle || currentTask.type == TaskType.relax) {
+          preempt = true;
+        }
+
+        // Always allow high priority toilet needs to wake a resting character
+        if (intent.action == TaskType.useToilet && currentTask.type == TaskType.rest) {
+          preempt = true;
+        }
+
+        if (!preempt) return false;
+
+        final oldIdx = npc.intentQueue.indexWhere((i) => i.id == currentTask.intentId);
+        if (oldIdx != -1) {
+          final mutableQueue = List<NPCIntent>.from(npc.intentQueue);
+          mutableQueue[oldIdx] = npc.intentQueue[oldIdx].copyWith(minutesRemaining: currentTask.minutesRemaining);
+          _npcs[index] = npc = npc.copyWith(intentQueue: mutableQueue);
+        }
+        _taskService.removeTask(currentTask.id);
+        _clearRoomOccupancyForNpc(npc.id);
+        _npcs[index] = npc = npc.copyWith(activeTaskId: null);
+      }
+
+      final success = assignNpcToTask(npc.id, intent.action, intent.targetRoomId, recipeId: intent.recipeId, intentId: intent.id, priority: intent.priority, silent: true);
+      
+      if (success) {
+        if (!npc.intentQueue.any((i) => i.id == intent.id)) {
+           _npcs[index] = npc = npc.copyWith(intentQueue: [...npc.intentQueue, intent], lastScheduledHour: hourIndex);
+        }
+        return true;
+      } else {
+        if (!intent.isManual) {
+           final cooled = intent.copyWith(startTimeMin: totalMin + 10);
+           var q = List<NPCIntent>.from(npc.intentQueue);
+           q.removeWhere((i) => i.id == intent.id);
+           q.add(cooled);
+           _npcs[index] = npc = npc.copyWith(intentQueue: q, lastScheduledHour: hourIndex);
+        }
+        return false;
       }
     }
 
-    // 8. Sort Queue by priority AGAIN to ensure correct order
-    newQueue.sort((a, b) => b.priority.index.compareTo(a.priority.index));
+    // --- STEP 0: Eating a Meal ---
+    if (currentTask != null && currentTask.type == TaskType.eat) return;
 
-    _npcs[index] = npc.copyWith(
-      intentQueue: newQueue,
-      lastScheduledHour: hourIndex,
-    );
+    // --- STEP 1 & 2: EMERGENCY OVERRIDES ---
+    if (npc.energy <= 0.0) {
+      _npcs[index] = npc = npc.copyWith(energy: 15.0, status: NPCStatus.sleeping);
+      return;
+    }
+    if (npc.digestion >= 100.0) {
+      _npcs[index] = npc = npc.copyWith(digestion: 0.0, energy: max(0.0, npc.energy - 10.0));
+      _announcementHistory.insert(0, "[${_currentDate.formattedTime}] EMERGENCY: ${npc.name} had a bowel incident.");
+      notifyListeners();
+      return;
+    }
+
+    final crisis = _crises.firstWhereOrNull((c) => c.severity > 0.0);
+    if (crisis != null) {
+      TaskType eqTask = TaskType.relax;
+      switch (crisis.type) {
+        case ManorCrisisType.fire: eqTask = TaskType.extinguishFire; break;
+        case ManorCrisisType.specimenEscape: eqTask = TaskType.recombineSpecimen; break;
+        case ManorCrisisType.intruder: eqTask = TaskType.defendManor; break;
+      }
+      final eIntent = NPCIntent(id: 'emergency_${crisis.id}', action: eqTask, targetRoomId: crisis.roomId, priority: IntentPriority.emergency, expectedDurationMin: 30);
+      if (tryAssign(eIntent)) return;
+    }
+
+    // --- STEP 3 & 4: HIGH PRIORITY PIPELINE ---
+    var mutableQueue = List<NPCIntent>.from(npc.intentQueue);
+    bool addedHighPri = false;
+    
+    if (npc.hunger > 89 && !mutableQueue.any((i) => i.id == 'high_priority_hunger_${npc.id}')) {
+       mutableQueue.add(NPCIntent(id: 'high_priority_hunger_${npc.id}', action: TaskType.eat, targetRoomId: 'kitchen', priority: IntentPriority.high, expectedDurationMin: 60));
+       addedHighPri = true;
+    }
+    if (npc.energy < 11 && !mutableQueue.any((i) => i.id == 'high_priority_energy_${npc.id}')) {
+       mutableQueue.add(NPCIntent(id: 'high_priority_energy_${npc.id}', action: TaskType.rest, targetRoomId: npc.assignedRoomId ?? 'entryway', priority: IntentPriority.high, expectedDurationMin: 480));
+       addedHighPri = true;
+    }
+    if (npc.digestion > 84 && !mutableQueue.any((i) => i.id == 'high_priority_toilet_${npc.id}')) {
+       String targetBathroom = 'bathroom_down';
+       if (npc.currentRoomId != null) {
+         final pathDown = _findPath(npc.currentRoomId!, 'bathroom_down');
+         final pathUp = _findPath(npc.currentRoomId!, 'bathroom_up');
+         bool downOccupied = _taskService.activeTasks.any((t) => t.targetId == 'bathroom_down' && !TaskService.isConcurrent(t.type));
+         bool upOccupied = _taskService.activeTasks.any((t) => t.targetId == 'bathroom_up' && !TaskService.isConcurrent(t.type));
+         
+         if (upOccupied && !downOccupied) {
+            targetBathroom = 'bathroom_down';
+         } else if (downOccupied && !upOccupied) {
+            targetBathroom = 'bathroom_up';
+         } else if (pathUp.length < pathDown.length) {
+            targetBathroom = 'bathroom_up';
+         } else {
+            targetBathroom = 'bathroom_down';
+         }
+       }
+       mutableQueue.add(NPCIntent(id: 'high_priority_toilet_${npc.id}', action: TaskType.useToilet, targetRoomId: targetBathroom, priority: IntentPriority.high, expectedDurationMin: 30));
+       addedHighPri = true;
+    }
+    
+    if (addedHighPri) {
+       _npcs[index] = npc = npc.copyWith(intentQueue: mutableQueue);
+    }
+
+    final highPriQueue = npc.intentQueue.where((i) => i.priority == IntentPriority.high).toList();
+    if (highPriQueue.isNotEmpty) {
+      if (tryAssign(highPriQueue.first)) return;
+    }
+
+    // --- PHASE 2: SCHEDULE BRANCHES ---
+    final activity = npc.schedule.getActivityForHour(hourIndex);
+
+    if (activity == ScheduleActivity.sleep) { // SLEEP BLOCK
+       final sleepIntent = NPCIntent(id: 'sched_sleep_${npc.id}_$hourIndex', action: TaskType.rest, targetRoomId: npc.assignedRoomId ?? 'entryway', priority: IntentPriority.high, expectedDurationMin: 480);
+       tryAssign(sleepIntent);
+       return;
+    } 
+    
+    if (activity == ScheduleActivity.eat) { // EAT BLOCK
+       if (currentTask != null && (currentTask.type == TaskType.cook || currentTask.type == TaskType.eat)) return;
+       final eatIntent = NPCIntent(id: 'sched_eat_${npc.id}_$hourIndex', action: TaskType.eat, targetRoomId: 'kitchen', priority: IntentPriority.high, expectedDurationMin: 60);
+       tryAssign(eatIntent);
+       return;
+    }
+
+    if (activity == ScheduleActivity.work || activity == ScheduleActivity.cleanRoom || activity == ScheduleActivity.cook || activity == ScheduleActivity.guardCoop || activity == ScheduleActivity.study) { // WORK BLOCK
+       final normalQueue = npc.intentQueue.where((i) => i.priority == IntentPriority.normal).toList();
+       if (normalQueue.isNotEmpty && tryAssign(normalQueue.first)) return;
+
+       final mappedTask = _mapActivityToTask(activity, npc);
+       final workRoom = _getAutonomousTargetForTask(mappedTask, npc) ?? npc.assignedRoomId ?? 'entryway';
+       
+       if (mappedTask == TaskType.idle) {
+         tryAssign(NPCIntent(id: 'sched_idle_w_${npc.id}', action: TaskType.idle, targetRoomId: _getPersonalityIdleTarget(index, activity) ?? 'entryway', priority: IntentPriority.low, expectedDurationMin: 60));
+       } else {
+         tryAssign(NPCIntent(id: 'sched_work_${npc.id}_$hourIndex', action: mappedTask, targetRoomId: workRoom, priority: IntentPriority.low, expectedDurationMin: 60));
+       }
+       return;
+    }
+
+    // LEISURE BLOCK
+    tryAssign(NPCIntent(id: 'sched_leisure_${npc.id}_$hourIndex', action: TaskType.idle, targetRoomId: _getPersonalityIdleTarget(index, activity) ?? 'entryway', priority: IntentPriority.low, expectedDurationMin: 60));
   }
+
 
   String? _getAutonomousTargetForTask(TaskType type, NPC npc) {
     switch (type) {
@@ -5283,7 +5994,8 @@ class GameState extends ChangeNotifier {
         dirtyRooms.sort((a, b) => b.dirtiness.compareTo(a.dirtiness));
         return dirtyRooms.first.id;
       case TaskType.cook:
-        return _cookingQueue.isNotEmpty ? 'kitchen' : null;
+        final currentMeals = (_resources['meals'] ?? 0) + _pantry.length;
+        return (currentMeals < 10 && _cookingQueue.isNotEmpty) ? 'kitchen' : null;
       case TaskType.tillSoil:
         final untilliedFields = _rooms
             .where((r) => r.type == RoomType.field && r.tilledAmount < 0.9)
@@ -5319,9 +6031,7 @@ class GameState extends ChangeNotifier {
         return hasSeeds ? tilledFields.first.id : null;
       case TaskType.waterCrops:
         bool needsWater = _crops.any((c) => c.moistureLevel < 0.5);
-        return needsWater
-            ? 'vegetable_garden'
-            : null; // Default to garden for now
+        return needsWater ? 'vegetable_garden' : null; // Default to garden for now
       case TaskType.careForCrops:
         bool needsCare = _crops.any(
           (c) =>
@@ -5368,7 +6078,8 @@ class GameState extends ChangeNotifier {
         );
         return library.id;
       case TaskType.guardCoop:
-        return 'chicken_coop';
+        final coop = _rooms.firstWhereOrNull((r) => r.id == 'chicken_coop');
+        return (coop != null && coop.isRestored) ? 'chicken_coop' : null;
       case TaskType.hunt:
         return 'entryway'; // "Outside"
       case TaskType.brew:
@@ -5384,28 +6095,12 @@ class GameState extends ChangeNotifier {
   }
 
   String _getRandomPropertyRoom() {
-    final pool = [
-      'kitchen',
-      'study',
-      'library',
-      'laboratory',
-      'operating_room',
-      'dining_hall',
-      'master_bedroom',
-      'bathroom_up',
-      'bathroom_down',
-      'butler_quarters',
-      'vegetable_garden',
-      'chicken_coop',
-      'field_1',
-      'field_2',
-      'entryway',
-    ];
-    // Filter by restored? User said "inspecting all buildings and fields"
-    // Let's just use the pool but maybe weighted or filtered by existence
-    final validRooms = _rooms.where((r) => pool.contains(r.id)).toList();
-    if (validRooms.isEmpty) return 'entryway';
-    return validRooms[Random().nextInt(validRooms.length)].id;
+    // Dynamically select from restored rooms or key property areas
+    final restoredRooms = _rooms.where((r) => r.isRestored && r.id != 'road').toList();
+    if (restoredRooms.isEmpty) return 'entryway';
+    
+    final Random random = Random();
+    return restoredRooms[random.nextInt(restoredRooms.length)].id;
   }
 
   String? _getPersonalityIdleTarget(int index, ScheduleActivity activity) {
@@ -5414,22 +6109,22 @@ class GameState extends ChangeNotifier {
     final isAlphonse = npc.isPlayer;
     final random = Random();
 
+    if (isAlphonse) return 'vegetable_garden';
+    if (isGiles) return 'entryway';
+    
     if (activity == ScheduleActivity.work) {
-      if (isAlphonse) {
-        // experiment > research > study > cook > garden
-        final searches = [
-          TaskType.experiment,
-          TaskType.research,
-          TaskType.study,
-          TaskType.cook,
-          TaskType.harvestCrops,
-        ];
-        for (var task in searches) {
-          final target = _getAutonomousTargetForTask(task, npc);
-          if (target != null) return target;
-        }
-      }
-      // Giles work logic: Clean or stand in Entryway (handled by mapActivityToTask + preferredRoom)
+      // Work-time cleaning logic
+      final cleaningTarget = _getAutonomousTargetForTask(TaskType.cleanRoom, npc);
+      if (cleaningTarget != null) return cleaningTarget;
+
+      // Special fallback Room check
+      final library = _rooms.firstWhereOrNull((r) => r.id == 'library');
+      final study = _rooms.firstWhereOrNull((r) => r.id == 'study');
+      
+      if (library != null && library.isRestored) return 'library';
+      if (study != null && study.isRestored) return 'study';
+      
+      return 'entryway';
     }
 
     // Default/Leisure/Free Time or no work found
@@ -5441,157 +6136,41 @@ class GameState extends ChangeNotifier {
           'bathroom_down',
           'chicken_coop'
         ];
+        final reachable = areas.where((id) {
+          final r = _rooms.firstWhereOrNull((rm) => rm.id == id);
+          return r != null && r.isRestored;
+        }).toList();
+        if (reachable.isEmpty) return 'entryway';
+        
         // 25% chance to wander
         if (random.nextDouble() < 0.25) return _getRandomPropertyRoom();
-        return areas[random.nextInt(areas.length)];
+        return reachable[random.nextInt(reachable.length)];
       }
     } else if (isAlphonse) {
       if (activity == ScheduleActivity.leisure) {
         final areas = [
-          'vegetable_garden',
           'library',
+          'vegetable_garden',
           'master_bedroom',
-          'bathroom_up'
+          'bathroom_up',
+          'study',
+          'laboratory'
         ];
+        final reachable = areas.where((id) {
+          final r = _rooms.firstWhereOrNull((rm) => rm.id == id);
+          return r != null && r.isRestored;
+        }).toList();
+        if (reachable.isEmpty) return 'library';
+
         // 25% chance to wander
         if (random.nextDouble() < 0.25) return _getRandomPropertyRoom();
-        return areas[random.nextInt(areas.length)];
+        return reachable[random.nextInt(reachable.length)];
       }
       // If it's work hours but no work found, he wanders/inspects
       return _getRandomPropertyRoom();
     }
 
     return null;
-  }
-
-  void _processCurrentIntent(int index) {
-    var npc = _npcs[index];
-    if (npc.intentQueue.isEmpty) return;
-
-    final totalMin = _currentDate.totalMinutes;
-    final readyIntents = npc.intentQueue
-        .where((i) => i.startTimeMin == null || i.startTimeMin! <= totalMin)
-        .toList();
-
-    if (readyIntents.isEmpty) return;
-    final currentIntent = readyIntents.first;
-
-    // Check if we are already doing this
-    if (npc.activeTaskId != null) {
-      // Is the current task an intent in our queue?
-      final activeIntentInQueue = npc.intentQueue
-          .where((i) => i.id == npc.activeTaskId)
-          .firstOrNull;
-
-      if (activeIntentInQueue == null) {
-        // Legacy or manual task not in queue - allow cancellation for ANY intent since we want to move to unified
-        _taskService.cancelTask(npc.activeTaskId!);
-      } else {
-        // If the top intent is different from our active task:
-        if (activeIntentInQueue.id != currentIntent.id) {
-          // Only switch if the new intent has HIGHER priority than current
-          if (currentIntent.priority.index >
-              activeIntentInQueue.priority.index) {
-            _taskService.cancelTask(npc.activeTaskId!);
-          } else {
-            // Keep doing what we're doing
-            return;
-          }
-        } else {
-          // It's the same intent, just keep working
-          return;
-        }
-      }
-    }
-
-    String? assignedRecipeId = currentIntent.recipeId;
-    final isScienceAction =
-        (currentIntent.action == TaskType.research ||
-        currentIntent.action == TaskType.dissect ||
-        currentIntent.action == TaskType.vivisection ||
-        currentIntent.action == TaskType.puzzleStudy ||
-        currentIntent.action == TaskType.deprivationStudy ||
-        currentIntent.action == TaskType.clinicalTrial);
-
-    if (currentIntent.action == TaskType.cook && assignedRecipeId == null) {
-      if (_cookingQueue.isNotEmpty) {
-        assignedRecipeId = _cookingQueue.first;
-      }
-    } else if (isScienceAction && assignedRecipeId == null) {
-      if (_researchQueue.isNotEmpty) {
-        // Try to find a matching activity or just take the first item if research
-        String? foundId;
-        for (var qId in _researchQueue) {
-          if (qId.startsWith('activity:')) {
-            final aId = qId.replaceFirst('activity:', '');
-            final activity = ScienceService.getActivityById(aId);
-            if (activity != null && activity.type == currentIntent.action) {
-              foundId = aId;
-              break;
-            }
-          } else if (currentIntent.action == TaskType.research) {
-            foundId = qId;
-            break;
-          }
-        }
-        assignedRecipeId = foundId;
-      }
-    }
-
-    int baseDuration =
-        currentIntent.minutesRemaining ?? currentIntent.expectedDurationMin;
-    int actualDuration = baseDuration;
-
-    // Apply intellect-based duration reduction for science tasks
-    final isScienceTask =
-        (currentIntent.action == TaskType.research ||
-        currentIntent.action == TaskType.dissect ||
-        currentIntent.action == TaskType.vivisection ||
-        currentIntent.action == TaskType.puzzleStudy ||
-        currentIntent.action == TaskType.deprivationStudy ||
-        currentIntent.action == TaskType.clinicalTrial);
-
-    if (isScienceTask) {
-      final intellect = npc.stats['intellect'] ?? 10;
-      // Formula: -1% duration per 2 intellect points, max 40% reduction at 80 intellect
-      final reductionPercent = (intellect / 2).clamp(0, 40) / 100.0;
-      actualDuration = (baseDuration * (1.0 - reductionPercent)).round();
-      if (actualDuration < 1) actualDuration = 1;
-    }
-
-    final task = GameTask(
-      id: currentIntent.id,
-      npcId: npc.id,
-      type: currentIntent.action,
-      targetId: currentIntent.targetRoomId,
-      recipeId: assignedRecipeId,
-      minutesRemaining: actualDuration,
-    );
-
-    _taskService.addTask(task);
-
-    List<String> path = [];
-    String? firstTarget = task.targetId;
-
-    if (task.targetId != null && task.targetId != npc.currentRoomId) {
-      path = _findPath(npc.currentRoomId ?? 'entryway', task.targetId!);
-      if (path.isNotEmpty) {
-        firstTarget = path.removeAt(0);
-      }
-    }
-
-    _npcs[index] = npc.copyWith(
-      activeTaskId: task.id,
-      targetRoomId: firstTarget,
-      movementPath: path,
-      movementProgress: (firstTarget == npc.currentRoomId) ? 1.0 : 0.0,
-      status:
-          task.type == TaskType.rest ||
-              task.type == TaskType.eat ||
-              task.type == TaskType.idle
-          ? (task.type == TaskType.rest ? NPCStatus.sleeping : NPCStatus.idle)
-          : NPCStatus.working,
-    );
   }
 
   TaskType _mapActivityToTask(ScheduleActivity activity, NPC npc) {
@@ -5625,7 +6204,6 @@ class GameState extends ChangeNotifier {
           }
         }
         if (npc.role == 'Scientist') return TaskType.research;
-        // Only clean if something is actually dirty
         final needsCleaning = _rooms.any(
           (r) => r.isRestored && r.isInsideManor && r.dirtiness > 0.1,
         );
@@ -5634,7 +6212,7 @@ class GameState extends ChangeNotifier {
         return TaskType.research;
       case ScheduleActivity.leisure:
       case ScheduleActivity.prayer:
-        return TaskType.idle;
+        return TaskType.relax;
     }
   }
 
@@ -5686,7 +6264,7 @@ class GameState extends ChangeNotifier {
           : <GameItem>[];
 
       for (var entry in activity.ingredients.entries) {
-        int avail = 0;
+        num avail = 0;
         final key = entry.key;
 
         bool matches(String type) {
@@ -5703,14 +6281,14 @@ class GameState extends ChangeNotifier {
 
         avail += _inventory
             .where((i) => matches(i.type))
-            .fold<int>(0, (sum, i) => sum + i.quantity);
+            .fold<num>(0, (sum, i) => sum + i.quantity);
         avail += roomInv
             .where((i) => matches(i.type))
-            .fold<int>(0, (sum, i) => sum + i.quantity);
+            .fold<num>(0, (sum, i) => sum + i.quantity);
         avail += worker.inventory
             .where((i) => matches(i.type))
-            .fold<int>(0, (sum, i) => sum + i.quantity);
-        avail += (_resources[key] ?? 0).toInt();
+            .fold<num>(0, (sum, i) => sum + i.quantity);
+        avail += (_resources[key] ?? 0);
 
         if (avail < entry.value) {
           hasAll = false;
@@ -5720,7 +6298,7 @@ class GameState extends ChangeNotifier {
       if (hasAll) {
         // Deduct ingredients effectively
         for (var entry in activity.ingredients.entries) {
-          int remaining = entry.value;
+          num remaining = entry.value;
           final key = entry.key;
 
           bool matches(String type) {
@@ -5741,9 +6319,9 @@ class GameState extends ChangeNotifier {
           final List<GameItem> updatedWorkerInv = List.from(worker.inventory);
           for (int i = 0; i < updatedWorkerInv.length && remaining > 0; i++) {
             if (matches(updatedWorkerInv[i].type)) {
-              int toTake = min(updatedWorkerInv[i].quantity, remaining);
+              num toTake = min(updatedWorkerInv[i].quantity, remaining);
               updatedWorkerInv[i] = updatedWorkerInv[i].copyWith(
-                quantity: updatedWorkerInv[i].quantity - toTake,
+                quantity: (updatedWorkerInv[i].quantity - toTake).toInt(),
               );
               remaining -= toTake;
             }
@@ -5759,9 +6337,9 @@ class GameState extends ChangeNotifier {
             );
             for (int i = 0; i < updatedRoomInv.length && remaining > 0; i++) {
               if (matches(updatedRoomInv[i].type)) {
-                int toTake = min(updatedRoomInv[i].quantity, remaining);
+                num toTake = min(updatedRoomInv[i].quantity, remaining);
                 updatedRoomInv[i] = updatedRoomInv[i].copyWith(
-                  quantity: updatedRoomInv[i].quantity - toTake,
+                  quantity: (updatedRoomInv[i].quantity - toTake).toInt(),
                 );
                 remaining -= toTake;
               }
@@ -5775,12 +6353,14 @@ class GameState extends ChangeNotifier {
           if (remaining > 0) {
             for (int i = _inventory.length - 1; i >= 0 && remaining > 0; i--) {
               if (matches(_inventory[i].type)) {
-                int toTake = min(_inventory[i].quantity, remaining);
-                int newQty = _inventory[i].quantity - toTake;
+                num toTake = min(_inventory[i].quantity, remaining);
+                num newQty = _inventory[i].quantity - toTake;
                 if (newQty <= 0) {
                   _inventory.removeAt(i);
                 } else {
-                  _inventory[i] = _inventory[i].copyWith(quantity: newQty);
+                  _inventory[i] = _inventory[i].copyWith(
+                    quantity: newQty.toInt(),
+                  );
                 }
                 remaining -= toTake;
               }
@@ -5789,7 +6369,7 @@ class GameState extends ChangeNotifier {
 
           // Deduct from resources
           if (remaining > 0) {
-            _resources[key] = (_resources[key] ?? 0) - remaining;
+            _resources[key] = (_resources[key] ?? 0) - remaining.toInt();
           }
         }
 
@@ -5948,40 +6528,19 @@ class GameState extends ChangeNotifier {
     _npcs[npcIndex] = worker;
   }
 
-  ScienceActivity? _getAvailableScienceActivityForNpc(
-    int index,
-    TaskType type,
-  ) {
-    if (_researchQueue.isEmpty) {
-      return null;
-    }
 
-    for (String qId in _researchQueue) {
-      if (qId.startsWith('activity:')) {
-        final aId = qId.replaceFirst('activity:', '');
-        final activity = ScienceService.getActivityById(aId);
-        if (activity != null && activity.type == type) return activity;
-      } else if (type == TaskType.research) {
-        // Fallback: If we are just doing "Research", any item in the queue counts
-        // We'll return null here but the caller might need to know which itemId to use.
-        // Actually, let's look at how candidates are used.
-      }
-    }
-    return null;
-  }
-
-  Map<String, int> _getMissingIngredientsForActivity(
+  Map<String, num> _getMissingIngredientsForActivity(
     int npcIndex,
     ScienceActivity activity,
   ) {
-    final Map<String, int> missing = {};
+    final Map<String, num> missing = {};
     final npc = _npcs[npcIndex];
 
     for (var entry in activity.ingredients.entries) {
       final key = entry.key;
       final needed = entry.value;
 
-      int avail = npc.inventory
+      num avail = npc.inventory
           .where((i) {
             if (key == 'meat') {
               return i.type.contains('meat') ||
@@ -6250,24 +6809,104 @@ class GameState extends ChangeNotifier {
     }
     notifyListeners();
   }
-}
 
-class _ResponsibilityTaskCandidate {
-  final TaskType taskType;
-  final ResponsibilityCategory category;
-  final int stars;
-  final IntentPriority priority;
-  final String targetRoomId;
-  final bool isAboveDivider;
-  final int verticalIndex;
+  void _consolidateUndeadUnits() {
+    // Merge individual reanimated rats/bats/chickens into swarms
+    final typesToMerge = {
+      'Rat': 4,
+      'Bat': 3,
+      'Chicken': 5,
+      'Fox': 1,
+    };
 
-  _ResponsibilityTaskCandidate({
-    required this.taskType,
-    required this.category,
-    required this.stars,
-    required this.priority,
-    required this.targetRoomId,
-    required this.isAboveDivider,
-    required this.verticalIndex,
-  });
+    bool changed = false;
+    for (var entry in typesToMerge.entries) {
+      final type = entry.key;
+      final threshold = entry.value;
+
+      final candidates = _npcs.where((n) => 
+        n.specimenType == type && 
+        n.status == NPCStatus.zombie && 
+        !n.name.contains('Swarm') &&
+        !n.name.contains('Unit')
+      ).toList();
+
+      if (candidates.length >= threshold) {
+        // Create Swarm Unit
+        final idsToRemove = candidates.take(threshold).map((n) => n.id).toList();
+        _npcs.removeWhere((n) => idsToRemove.contains(n.id));
+
+        final name = threshold > 1 ? "Undead $type Swarm" : "Undead $type Unit";
+        final swarm = NPC(
+          id: const Uuid().v4(),
+          name: name,
+          role: "Combat Unit",
+          age: 0,
+          gender: "None",
+          nationality: "Lab",
+          religion: "None",
+          specimenType: type,
+          isPlayer: false,
+          isResident: true,
+          status: NPCStatus.zombie,
+          disposition: NPCDisposition.voluntary,
+          currentRoomId: 'laboratory',
+          stats: {
+            'strength': threshold * 5,
+            'willpower': 100,
+            'intelligence': 5,
+          },
+          appearance: candidates.first.appearance,
+          bodyParts: [
+            BodyPart(type: BodyPartType.head, health: 100, maxHealth: 100),
+            BodyPart(type: BodyPartType.torso, health: 100, maxHealth: 100),
+          ], 
+          combatStats: CombatStats(
+            health: threshold * 20.0,
+            maxHealth: threshold * 20.0,
+            attack: threshold * 4.0,
+            defense: threshold * 2.0,
+            speed: 1.0,
+            movement: 1.0,
+            distance: 1.0,
+            accuracy: 0.8,
+            cost: threshold,
+          ),
+          inventory: [],
+          schedule: NPCSchedule.visitor(),
+          diet: NPCDiet.defaultDiet(),
+        );
+
+        _npcs.add(swarm);
+        _announcementHistory.insert(0, "[${_currentDate.formattedTime}] SCIENCE: $threshold reanimated ${type}s have formed a lethal Swarm!");
+        changed = true;
+      }
+    }
+    if (changed) notifyListeners();
+  }
+
+  NPCStatus _determineStatus(NPC npc, GameTask? task) {
+    if (npc.status == NPCStatus.fainted || npc.status == NPCStatus.broken) {
+      return NPCStatus.sleeping;
+    }
+    if (task == null) return NPCStatus.idle;
+
+    switch (task.type) {
+      case TaskType.rest:
+        return (npc.currentRoomId == task.targetId)
+          ? NPCStatus.sleeping
+          : NPCStatus.idle;
+      case TaskType.idle:
+        return NPCStatus.idle;
+      case TaskType.eat:
+        return (npc.currentRoomId == task.targetId)
+          ? NPCStatus.working
+          : NPCStatus.idle;
+      default:
+        // Working if at target, otherwise idle (traveling to work)
+        return (npc.currentRoomId == task.targetId)
+          ? NPCStatus.working
+          : NPCStatus.idle;
+    }
+  }
 }

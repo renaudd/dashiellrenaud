@@ -122,10 +122,10 @@ class CombatService {
       stats['walkSpeed'] = (stats['walkSpeed'] ?? 5) ~/ 2;
     }
 
-    // Head wounds affect intellect
+    // Head wounds affect intelligence
     final head = bodyParts.firstWhere((bp) => bp.type == BodyPartType.head);
     if (head.wounds.any((w) => w.type == WoundType.concussion)) {
-      stats['intellect'] = (stats['intellect'] ?? 50) ~/ 2;
+      stats['intelligence'] = (stats['intelligence'] ?? 50) ~/ 2;
     }
 
     return stats;

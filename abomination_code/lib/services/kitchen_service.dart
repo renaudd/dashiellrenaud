@@ -1,7 +1,7 @@
 class Recipe {
   final String id;
   final String name;
-  final Map<String, int> ingredients;
+  final Map<String, num> ingredients;
   final int yield;
   final double baseQuality;
   final int durationMinutes;

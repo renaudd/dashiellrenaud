@@ -107,7 +107,7 @@ class CombatManager extends ChangeNotifier {
   bool _isDefeat = false;
 
   final List<NPC> _killedEnemies = [];
-  final Map<String, int> _accumulatedLoot = {'funds': 0, 'meat': 0};
+  final Map<String, num> _accumulatedLoot = {'funds': 0, 'meat': 0};
 
   final List<String> _highlightedTargetIds = [];
   List<String> get highlightedTargetIds =>
@@ -123,7 +123,7 @@ class CombatManager extends ChangeNotifier {
   bool get isVictory => _isVictory;
   bool get isDefeat => _isDefeat;
   List<NPC> get killedEnemies => List.unmodifiable(_killedEnemies);
-  Map<String, int> get accumulatedLoot => Map.unmodifiable(_accumulatedLoot);
+  Map<String, num> get accumulatedLoot => Map.unmodifiable(_accumulatedLoot);
   bool get isSimulation => _isSimulation;
   double get aiActionPoints => _aiActionPoints;
   List<NPC> get aiHand => List.unmodifiable(_aiHand);

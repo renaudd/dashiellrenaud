@@ -95,35 +95,33 @@ class RoomTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const Spacer(),
-                      if (room.activeProjects.isNotEmpty)
+                      if (room.activeProjects.isNotEmpty && occupants.any((n) => n.status == NPCStatus.working))
                         Padding(
                           padding: const EdgeInsets.only(bottom: 4.0),
                           child: Wrap(
                             spacing: 4,
                             runSpacing: 4,
                             children: room.activeProjects.values.map((project) {
+                              // Only show projects that have a worker assigned AND they are present (which we know by 'working' status + occupants filter)
+                              final isBeingWorkedOn = occupants.any((n) => n.activeTaskId == project.taskId && n.status == NPCStatus.working);
+                              if (!isBeingWorkedOn) return const SizedBox.shrink();
+
                               return Tooltip(
                                 message:
                                     "${project.name} (${(project.progress * 100).toInt()}%)",
                                 child: Container(
                                   padding: const EdgeInsets.all(2),
                                   decoration: BoxDecoration(
-                                    color: project.isAtWorkstation
-                                        ? Colors.amber.withValues(alpha: 0.2)
-                                        : Colors.white12,
+                                    color: Colors.amber.withValues(alpha: 0.2),
                                     border: Border.all(
-                                      color: project.isAtWorkstation
-                                          ? Colors.amber.withValues(alpha: 0.5)
-                                          : Colors.white24,
+                                      color: Colors.amber.withValues(alpha: 0.5),
                                       width: 0.5,
                                     ),
                                   ),
                                   child: Icon(
                                     _getProjectIcon(project.type),
                                     size: 12,
-                                    color: project.isAtWorkstation
-                                        ? Colors.amber
-                                        : Colors.white70,
+                                    color: Colors.amber,
                                   ),
                                 ),
                               );
@@ -148,7 +146,7 @@ class RoomTile extends StatelessWidget {
                 ),
 
                 // Construction Progress Overlay
-                if (constructionProgress != null)
+                if (constructionProgress != null && occupants.any((n) => n.status == NPCStatus.working))
                   Positioned.fill(
                     child: Container(
                       color: Colors.black.withValues(alpha: 0.7),
@@ -181,6 +179,29 @@ class RoomTile extends StatelessWidget {
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+
+                // Toolbox Icon (Active Work Indicator)
+                if (occupants.any((n) => n.status == NPCStatus.working && n.activeTaskId != null && n.currentRoomId == room.id))
+                  Positioned(
+                    left: 8,
+                    bottom: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: const Color(0xFFC4B89B).withValues(alpha: 0.4),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.build,
+                        size: 14,
+                        color: Color(0xFFC4B89B),
                       ),
                     ),
                   ),
@@ -270,6 +291,10 @@ class RoomTile extends StatelessWidget {
         return Icons.pets;
       case RoomType.cattlePasture:
         return Icons.agriculture;
+      case RoomType.greenhouse:
+        return Icons.eco;
+      case RoomType.tenement:
+        return Icons.home_work;
     }
   }
 
@@ -299,6 +324,10 @@ class RoomTile extends StatelessWidget {
         return const Color(0xFF1D1A16); // Mud/Wood
       case RoomType.cattlePasture:
         return const Color(0xFF161C15); // Grass
+      case RoomType.greenhouse:
+        return const Color(0xFF1A2218); // Modern glass/green
+      case RoomType.tenement:
+        return const Color(0xFF1E1612); // Brick/Wood
       default:
         return const Color(0xFF1A1D21);
     }

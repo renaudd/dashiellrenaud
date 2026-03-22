@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../state/game_state.dart';
 import '../../services/kitchen_service.dart';
 import '../../services/task_service.dart';
+import '../../models/room.dart';
+import '../widgets/room_ledger.dart';
 
 class KitchenScreen extends StatelessWidget {
   const KitchenScreen({super.key});
@@ -65,13 +67,16 @@ class KitchenScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionTitle('PANTRY INVENTORY'),
+                        _buildSectionTitle('KITCHEN LEDGER'),
                         const SizedBox(height: 16),
-                        _buildPantrySummary(state),
-                        const SizedBox(height: 32),
-                        _buildSectionTitle('CORE SUPPLIES'),
-                        const SizedBox(height: 16),
-                        _buildSuppliesGrid(state),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: RoomLedger(
+                              room: state.rooms.firstWhere((r) => r.type == RoomType.kitchen),
+                              state: state,
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 32),
                         _buildSectionTitle('COOKING QUEUE'),
                         const SizedBox(height: 16),
@@ -124,75 +129,6 @@ class KitchenScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPantrySummary(GameState state) {
-    final dishes = state.pantry;
-    if (dishes.isEmpty) {
-      return Text(
-        'EERILY EMPTY.',
-        style: GoogleFonts.oldStandardTt(color: Colors.white24, fontSize: 12),
-      );
-    }
-
-    // Group by name
-    final counts = <String, int>{};
-    for (var d in dishes) {
-      counts[d.name] = (counts[d.name] ?? 0) + 1;
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: counts.entries.map((e) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 4.0),
-          child: Text(
-            '${e.key.toUpperCase()} x${e.value}',
-            style: GoogleFonts.oldStandardTt(
-              color: const Color(0xFFC4B89B),
-              fontSize: 13,
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildSuppliesGrid(GameState state) {
-    final core = [
-      'flour_spelt',
-      'flour_durum',
-      'meat_beef',
-      'meat_chicken',
-      'eggs',
-      'salt',
-    ];
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: core.map((key) {
-        final val = state.resources[key] ?? 0;
-        return Column(
-          children: [
-            Text(
-              key.split('_').last.toUpperCase(),
-              style: GoogleFonts.playfairDisplay(
-                color: const Color(0xFFC4B89B),
-                fontSize: 10,
-              ),
-            ),
-            Text(
-              val.toString(),
-              style: GoogleFonts.oldStandardTt(
-                color: const Color(0xFFE5D5B0),
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        );
-      }).toList(),
-    );
-  }
-
   Widget _buildRecipeTile(
     BuildContext context,
     GameState state,
@@ -200,7 +136,7 @@ class KitchenScreen extends StatelessWidget {
   ) {
     bool canCraft = true;
     recipe.ingredients.forEach((res, amount) {
-      if ((state.resources[res] ?? 0) < amount) canCraft = false;
+      if ((state.resources[res] ?? 0).round() < amount.round()) canCraft = false;
     });
 
     final metadata = TaskService.getMetadata(TaskType.cook);
@@ -272,9 +208,9 @@ class KitchenScreen extends StatelessWidget {
                       Wrap(
                         spacing: 8,
                         children: recipe.ingredients.entries.map((e) {
-                          final has = (state.resources[e.key] ?? 0) >= e.value;
+                          final has = (state.resources[e.key] ?? 0).round() >= e.value.round();
                           return Text(
-                            '${e.key.toUpperCase()}: ${e.value}',
+                            '${e.key.toUpperCase()}: ${e.value.round()}',
                             style: GoogleFonts.oldStandardTt(
                               color: has ? const Color(0xFFC4B89B) : Colors.red,
                               fontSize: 10,
@@ -365,12 +301,13 @@ class KitchenScreen extends StatelessWidget {
         final recipeId = entry.value;
         String displayName;
 
-        if (recipeId.startsWith('butcher:')) {
+        if (recipeId.startsWith('butcher_generic:')) {
           final parts = recipeId.split(':');
-          displayName = "BUTCHER: ${parts[3].toUpperCase()}";
+          displayName = "BUTCHER: ${parts[2].toUpperCase()}";
         } else {
+          final baseId = recipeId.split(':').first;
           final recipe = recipes.firstWhere(
-            (r) => r.id == recipeId,
+            (r) => r.id == baseId,
             orElse: () => recipes.first,
           );
           displayName = recipe.name.toUpperCase();

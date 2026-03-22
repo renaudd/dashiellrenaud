@@ -101,7 +101,7 @@ class TaskResultGenerator {
 
         return TaskResult(
           message:
-              "${targetName ?? "The target"} is now $cleanMsg thanks to ${worker.name}.${specimens.isNotEmpty ? " A specimen was found!" : ""}",
+              "${targetName != null ? "The $targetName" : "The target"} is now $cleanMsg thanks to ${worker.name}.${specimens.isNotEmpty ? " A specimen was found!" : ""}",
           quality: cleanQuality * 2.0,
           itemsFound: specimens,
         );
@@ -117,7 +117,7 @@ class TaskResultGenerator {
 
         return TaskResult(
           message:
-              "${worker.name} finished restoring ${targetName ?? "the room"}.${specimens.isNotEmpty ? " During the heavy work, a specimen was uncovered!" : ""}",
+              "${worker.name} finished restoring ${targetName != null ? "the $targetName" : "the room"}.${specimens.isNotEmpty ? " During the heavy work, a specimen was uncovered!" : ""}",
           quality: restoreQuality * 2.0,
           itemsFound: specimens,
         );
@@ -224,6 +224,11 @@ class TaskResultGenerator {
         );
       case TaskType.eat:
         return TaskResult(message: "${worker.name} finished a meal.");
+      case TaskType.useToilet:
+        return TaskResult(
+            message: "${worker.name} finished using the washroom.");
+      case TaskType.wash:
+        return TaskResult(message: "${worker.name} finished washing up.");
       case TaskType.idle:
         return TaskResult(
           message: "${worker.name} is waiting instructions at their post.",

@@ -120,7 +120,8 @@ class TaskCategoryMapping {
       case TaskType.idle:
       case TaskType.useToilet:
       case TaskType.wash:
-        return null; // Maintenance tasks, not part of responsibility grid
+      case TaskType.relax:
+        return null;
     }
   }
 

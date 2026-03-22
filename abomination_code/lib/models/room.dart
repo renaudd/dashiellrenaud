@@ -25,6 +25,8 @@ enum RoomType {
   operatingRoom,
   pigPen,
   cattlePasture,
+  greenhouse,
+  tenement,
 }
 
 enum Floor { basement, ground, second, attic }
@@ -115,6 +117,30 @@ class PhysicalProject {
   }
 }
 
+class EnqueuedTask {
+  final String npcId;
+  final String intentId;
+  final String description;
+
+  EnqueuedTask({
+    required this.npcId,
+    required this.intentId,
+    required this.description,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'npcId': npcId,
+    'intentId': intentId,
+    'description': description,
+  };
+
+  factory EnqueuedTask.fromJson(Map<String, dynamic> json) => EnqueuedTask(
+    npcId: json['npcId'] as String,
+    intentId: json['intentId'] as String,
+    description: json['description'] as String,
+  );
+}
+
 class Room {
   final String id;
   final String name;
@@ -126,13 +152,16 @@ class Room {
   final int level;
   final double experience;
   final List<GameItem> inventory;
-  final List<String> taskQueue; // List of task descriptions or IDs
   final double dirtiness; // 0.0 to 1.0
   final List<Bed> beds;
   final double tilledAmount; // 0.0 to 1.0
   final double fertilizedAmount; // 0.0 to 1.0
-  final String? occupyingNpcId; // Who is currently at the desk/station
-  final Map<String, PhysicalProject> activeProjects; // taskId -> project
+  final List<EnqueuedTask> taskQueue;
+  final bool hasBeenTilledForReward;
+  final double restorationProgress; // 0.0 to 1.0
+  final bool isUnderConstruction; // If true, it's a construction site
+  final String? occupyingNpcId;
+  final Map<String, PhysicalProject> activeProjects;
 
   Room({
     required this.id,
@@ -152,6 +181,9 @@ class Room {
     this.fertilizedAmount = 0.0,
     this.occupyingNpcId,
     this.activeProjects = const {},
+    this.hasBeenTilledForReward = false,
+    this.restorationProgress = 0.0,
+    this.isUnderConstruction = false,
   });
 
   factory Room.initial(
@@ -165,7 +197,7 @@ class Room {
     int level = 1,
     double experience = 0.0,
     List<GameItem> inventory = const [],
-    List<String> taskQueue = const [],
+    List<EnqueuedTask> taskQueue = const [],
     List<Bed> beds = const [],
   }) {
     return Room(
@@ -186,6 +218,9 @@ class Room {
       fertilizedAmount: 0.0,
       occupyingNpcId: null,
       activeProjects: const {},
+      hasBeenTilledForReward: false,
+      restorationProgress: isRestored ? 1.0 : 0.0,
+      isUnderConstruction: false,
     );
   }
 
@@ -203,7 +238,7 @@ class Room {
     int? level,
     double? experience,
     List<GameItem>? inventory,
-    List<String>? taskQueue,
+    List<EnqueuedTask>? taskQueue,
     double? dirtiness,
     List<Bed>? beds,
     double? tilledAmount,
@@ -211,6 +246,9 @@ class Room {
     String? occupyingNpcId,
     bool clearOccupancy = false,
     Map<String, PhysicalProject>? activeProjects,
+    bool? hasBeenTilledForReward,
+    double? restorationProgress,
+    bool? isUnderConstruction,
   }) {
     return Room(
       id: id ?? this.id,
@@ -232,6 +270,10 @@ class Room {
           ? null
           : (occupyingNpcId ?? this.occupyingNpcId),
       activeProjects: activeProjects ?? this.activeProjects,
+      hasBeenTilledForReward:
+          hasBeenTilledForReward ?? this.hasBeenTilledForReward,
+      restorationProgress: restorationProgress ?? this.restorationProgress,
+      isUnderConstruction: isUnderConstruction ?? this.isUnderConstruction,
     );
   }
 
@@ -246,13 +288,16 @@ class Room {
     'level': level,
     'experience': experience,
     'inventory': inventory.map((e) => e.toJson()).toList(),
-    'taskQueue': taskQueue,
+    'taskQueue': taskQueue.map((e) => e.toJson()).toList(),
     'dirtiness': dirtiness,
     'beds': beds.map((e) => e.toJson()).toList(),
     'tilledAmount': tilledAmount,
     'fertilizedAmount': fertilizedAmount,
     'occupyingNpcId': occupyingNpcId,
     'activeProjects': activeProjects.map((k, v) => MapEntry(k, v.toJson())),
+    'hasBeenTilledForReward': hasBeenTilledForReward,
+    'restorationProgress': restorationProgress,
+    'isUnderConstruction': isUnderConstruction,
   };
 
   factory Room.fromJson(Map<String, dynamic> json) => Room(
@@ -262,12 +307,14 @@ class Room {
     isRestored: json['isRestored'] as bool? ?? false,
     description: json['description'] as String,
     floor: Floor.values[json['floor'] as int],
-    width: (json['width'] as num).toDouble(),
-    level: json['level'] as int? ?? 1,
-    experience: (json['experience'] as num?)?.toDouble() ?? 0.0,
+    inventory:
+        (json['inventory'] as List<dynamic>?)
+            ?.map((e) => GameItem.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [],
     taskQueue:
         (json['taskQueue'] as List<dynamic>?)
-            ?.map((e) => e as String)
+            ?.map((e) => EnqueuedTask.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [],
     dirtiness: (json['dirtiness'] as num?)?.toDouble() ?? 0.0,
@@ -282,6 +329,9 @@ class Room {
           (k, v) => MapEntry(k, PhysicalProject.fromJson(v)),
         ) ??
         {},
+    hasBeenTilledForReward: json['hasBeenTilledForReward'] as bool? ?? false,
+    restorationProgress: (json['restorationProgress'] as num?)?.toDouble() ?? 0.0,
+    isUnderConstruction: json['isUnderConstruction'] as bool? ?? false,
   );
 
   bool get isInsideManor {
@@ -380,6 +430,7 @@ class Room {
         break;
 
       case RoomType.garden:
+      case RoomType.greenhouse:
         tasks.addAll([
           task_service.TaskType.tillSoil,
           task_service.TaskType.plantCrops,
@@ -387,6 +438,12 @@ class Room {
           task_service.TaskType.careForCrops,
           task_service.TaskType.harvestCrops,
           task_service.TaskType.refinePlantFungus,
+        ]);
+        break;
+
+      case RoomType.tenement:
+        tasks.addAll([
+          task_service.TaskType.cleanRoom,
         ]);
         break;
 
@@ -541,10 +598,11 @@ class Room {
             "The primary source of sustenance. Workers can till, plant, water, and eventually harvest the crops required to feed the growing household.";
         break;
       case RoomType.garden:
+      case RoomType.greenhouse:
         baseDesc =
             "A refined plot of fertile earth, surrounded by low stone walls. It is a quiet sanctuary for the growth of rare specimens.";
         capabilities =
-            "Unlike the open fields, the garden is for delicate horticultural research and the refinement of rare botanical or fungal samples.";
+            "Unlike the open fields, the greenhouse allows for year-round horticultural research and the refinement of rare botanical or fungal samples.";
         break;
       case RoomType.brewery:
         baseDesc =
@@ -569,6 +627,7 @@ class Room {
             "Dedicated to the processing and safe storage of harvested grain, protecting it from rot and pests.";
         break;
       case RoomType.bedroom:
+      case RoomType.tenement:
         baseDesc =
             "Private and plush, offering the luxury required for deep, restorative sleep.";
         capabilities =

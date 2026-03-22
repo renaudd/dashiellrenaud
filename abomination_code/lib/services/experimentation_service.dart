@@ -11,7 +11,7 @@ class ExperimentationService {
   ) {
     List<String> logs = [];
     NPC updatedSubject = subject;
-    Map<String, int> resourceGain = {};
+    Map<String, num> resourceGain = {};
     int insightGain = 0;
 
     switch (experiment.type) {
@@ -34,7 +34,7 @@ class ExperimentationService {
           stats: {
             ...updatedSubject.stats,
             'willpower': 10,
-            'intellect': ((updatedSubject.stats['intellect'] ?? 50) / 2)
+            'intelligence': ((updatedSubject.stats['intelligence'] ?? 50) / 2)
                 .toInt(),
           },
         );
@@ -51,7 +51,7 @@ class ExperimentationService {
           status: NPCStatus.zombie,
           stats: {
             ...updatedSubject.stats,
-            'intellect': 20,
+            'intelligence': 20,
             'willpower': 100, // Absolute loyalty/unthinking obedience
           },
         );
@@ -98,6 +98,23 @@ class ExperimentationService {
         break;
       case ExperimentType.operation:
         logs.add("Surgical operation on ${subject.name} complete.");
+        break;
+      case ExperimentType.reanimationSmall:
+        insightGain = 15;
+        logs.add(
+          "The small form of ${subject.name} spasms and rights itself. It is... changed.",
+        );
+        // Small reanimation fully restores form but with absolute obedience
+        updatedSubject = _restoreAllParts(updatedSubject, 100);
+        updatedSubject = updatedSubject.copyWith(
+          status: NPCStatus.zombie,
+          stats: {
+            ...updatedSubject.stats,
+            'intelligence': 5,
+            'willpower': 100,
+            'strength': (updatedSubject.stats['strength'] ?? 5) + 5,
+          },
+        );
         break;
     }
 

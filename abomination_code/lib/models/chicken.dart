@@ -80,6 +80,7 @@ class Chicken {
   final double weight; // in kilograms
   final int eggsLaid;
   final List<int> eggProductionHistory; // Daily counts
+  final bool isReserved;
 
   Chicken({
     required this.id,
@@ -92,10 +93,12 @@ class Chicken {
     this.weight = 0.5,
     this.eggsLaid = 0,
     this.eggProductionHistory = const [],
+    this.isReserved = false,
   });
 
   bool get isMature => ageMinutes >= breed.growthRate;
   ChickenBreed get breed => ChickenBreed.getByTyped(breedType);
+  int get value => (breed.basePrice * (isMature ? 1.0 : 0.5) * (weight / 0.5)).round();
 
   Chicken copyWith({
     double? ageMinutes,
@@ -106,6 +109,7 @@ class Chicken {
     double? weight,
     int? eggsLaid,
     List<int>? eggProductionHistory,
+    bool? isReserved,
   }) {
     return Chicken(
       id: id,
@@ -118,6 +122,7 @@ class Chicken {
       weight: weight ?? this.weight,
       eggsLaid: eggsLaid ?? this.eggsLaid,
       eggProductionHistory: eggProductionHistory ?? this.eggProductionHistory,
+      isReserved: isReserved ?? this.isReserved,
     );
   }
 
@@ -132,6 +137,7 @@ class Chicken {
     'weight': weight,
     'eggsLaid': eggsLaid,
     'eggProductionHistory': eggProductionHistory,
+    'isReserved': isReserved,
   };
 
   factory Chicken.fromJson(Map<String, dynamic> json) => Chicken(
@@ -145,6 +151,7 @@ class Chicken {
     weight: (json['weight'] as num? ?? 0.5).toDouble(),
     eggsLaid: json['eggsLaid'] as int? ?? 0,
     eggProductionHistory: List<int>.from(json['eggProductionHistory'] ?? []),
+    isReserved: json['isReserved'] as bool? ?? false,
   );
 
   factory Chicken.create(

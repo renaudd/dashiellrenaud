@@ -1,4 +1,5 @@
 import '../models/game_item.dart';
+import '../models/npc_intent.dart';
 
 enum TaskType {
   cleanRoom,
@@ -73,6 +74,7 @@ enum TaskType {
   study,
   experiment,
   operation,
+  relax,
 }
 
 
@@ -96,12 +98,11 @@ extension TaskTypeExtensions on TaskType {
       case TaskType.cook:
         return 'Cook';
       case TaskType.transcribeNotes:
-        return 'Transcribe Notes';
+        return 'Transcribe';
       case TaskType.observeExperiment:
         return 'Observe Experiment';
       case TaskType.guardCoop:
         return 'Guard Coop';
-      
       case TaskType.archiveResearch:
         return 'Archive Research';
       case TaskType.greetGuest:
@@ -141,15 +142,15 @@ extension TaskTypeExtensions on TaskType {
       case TaskType.vivisection:
         return 'Vivisection';
       case TaskType.breedingAttempt:
-        return 'Breeding Attempt';
+        return 'Breed Attempt';
       case TaskType.surgicalOperation:
         return 'Surgical Operation';
       case TaskType.surgery:
         return 'Surgery';
       case TaskType.careForInjured:
-        return 'Care for Injured';
+        return 'Care For Injured';
       case TaskType.careForSick:
-        return 'Care for Sick';
+        return 'Care For Sick';
       case TaskType.stopBleeding:
         return 'Stop Bleeding';
       case TaskType.diagnoseIllness:
@@ -157,11 +158,11 @@ extension TaskTypeExtensions on TaskType {
       case TaskType.treatIllness:
         return 'Treat Illness';
       case TaskType.checkBedridden:
-        return 'Check Bed-ridden';
+        return 'Check Bedridden';
       case TaskType.prepareMeals:
         return 'Prepare Meals';
       case TaskType.butcherAnimals:
-        return 'Butcher Animals';
+        return 'Butcher Animal';
       case TaskType.refineFood:
         return 'Refine Food';
       case TaskType.plantCrops:
@@ -173,62 +174,64 @@ extension TaskTypeExtensions on TaskType {
       case TaskType.fertilizeSoil:
         return 'Fertilize Soil';
       case TaskType.careForCrops:
-        return 'Care for Crops';
+        return 'Care For Crops';
       case TaskType.harvestCrops:
         return 'Harvest Crops';
       case TaskType.refinePlantFungus:
         return 'Refine Plant/Fungus';
       case TaskType.hauling:
-        return 'Hauling';
+        return 'Haul';
       case TaskType.construction:
-        return 'Construction';
+        return 'Construct';
       case TaskType.mining:
-        return 'Mining';
+        return 'Mine';
       case TaskType.strengthLabor:
         return 'Heavy Labor';
       case TaskType.restoreRoom:
         return 'Restore Room';
       case TaskType.blacksmithing:
-        return 'Blacksmithing';
+        return 'Blacksmith';
       case TaskType.manufacturing:
-        return 'Manufacturing';
+        return 'Manufacture';
       case TaskType.refineNonLiving:
-        return 'Refine Non-Living';
+        return 'Refining Non-Living';
       case TaskType.discardSpoiledFood:
         return 'Discard Spoiled Food';
       case TaskType.discardTrash:
         return 'Discard Trash';
       case TaskType.invention:
-        return 'Invention';
+        return 'Invent';
       case TaskType.refineLifeForm:
         return 'Refine Life Form';
       case TaskType.cleanDish:
         return 'Clean Dish';
       case TaskType.useToilet:
-        return 'Using Washroom';
+        return 'Use Washroom';
       case TaskType.extinguishFire:
-        return 'Extinguishing Fire';
+        return 'Extinguish Fire';
       case TaskType.recombineSpecimen:
-        return 'Recombining Specimen';
+        return 'Recombine Specimen';
       case TaskType.defendManor:
-        return 'Defending Manor';
+        return 'Defend Manor';
       case TaskType.trainCreature:
         return 'Train Creature';
       case TaskType.surgicalCombination:
         return 'Surgical Combination';
       case TaskType.study:
-        return 'Study';
+        return 'Fundamental Research';
       case TaskType.experiment:
         return 'Experiment';
       case TaskType.operation:
         return 'Operation';
+      case TaskType.relax:
+        return 'Relax';
     }
   }
 }
 
 class TaskResult {
   final String message;
-  final Map<String, int> resourcesGained; // {'wood': 2, 'eggs': 4}
+  final Map<String, num> resourcesGained; // {'wood': 2, 'eggs': 4}
   final List<GameItem> itemsFound;
   final double quality; // 0.0 to 2.0 (standard 1.0)
 
@@ -242,11 +245,14 @@ class TaskResult {
 
 class GameTask {
   final String id;
+  final String? intentId; // Links back to the AI intent that created this task
   final String npcId;
+  final IntentPriority priority;
   final TaskType type;
   final String? targetId; // roomId, etc.
   final String? targetName;
   final String? recipeId;
+  final List<String> reservedEntityIds;
   double progressAccumulator = 0.0;
   final int totalMinutes;
   int minutesRemaining;
@@ -254,11 +260,14 @@ class GameTask {
 
   GameTask({
     required this.id,
+    this.intentId,
     required this.npcId,
+    required this.priority,
     required this.type,
     this.targetId,
     this.targetName,
     this.recipeId,
+    this.reservedEntityIds = const [],
     required this.minutesRemaining,
     this.totalMinutes = 0,
     this.isCompleted = false,
@@ -270,7 +279,7 @@ class TaskMetadata {
   final String typicalDuration;
   final List<String> relevantAttributes;
   final List<String> possibleOutcomes;
-  final Map<String, int> requirements;
+  final Map<String, num> requirements;
 
   const TaskMetadata({
     required this.explanation,
@@ -286,6 +295,18 @@ class TaskService {
 
   List<GameTask> get activeTasks => List.unmodifiable(_activeTasks);
 
+  static bool isConcurrent(TaskType type) {
+    return type == TaskType.restoreRoom ||
+        type == TaskType.construction ||
+        type == TaskType.tillSoil ||
+        type == TaskType.fertilizeSoil ||
+        type == TaskType.waterCrops ||
+        type == TaskType.careForCrops ||
+        type == TaskType.harvestCrops ||
+        type == TaskType.rest ||
+        type == TaskType.eat;
+  }
+
   static TaskMetadata getMetadata(TaskType type) {
     switch (type) {
       case TaskType.cleanRoom:
@@ -294,7 +315,7 @@ class TaskService {
       case TaskType.discardSpoiledFood:
         return const TaskMetadata(
           explanation: "Systematically removing dust and grime from the manor.",
-          typicalDuration: "1-2 Hours",
+          typicalDuration: "20-40 Minutes",
           relevantAttributes: ['endurance', 'hygiene', 'temperament'],
           possibleOutcomes: [
             "Clean surfaces",
@@ -340,12 +361,26 @@ class TaskService {
           ],
         );
       case TaskType.cook:
+        return const TaskMetadata(
+          explanation: "Preparing nourishing meals in the manor kitchen.",
+          typicalDuration: "45-75 Minutes",
+          relevantAttributes: [
+            'dexterity',
+            'intelligence',
+            'perception',
+          ],
+          possibleOutcomes: [
+            "High-quality food",
+            "Culinary experience",
+            "Burned meal",
+          ],
+        );
       case TaskType.prepareMeals:
       case TaskType.refineFood:
       case TaskType.butcherAnimals:
         return const TaskMetadata(
           explanation: "Converting raw ingredients into nourishing sustenence.",
-          typicalDuration: "1-3 Hours",
+          typicalDuration: "45-90 Minutes",
           relevantAttributes: [
             'hygiene',
             'perception',
@@ -398,8 +433,8 @@ class TaskService {
       case TaskType.harvestCabbage:
       case TaskType.harvestGrain:
         return const TaskMetadata(
-          explanation: "Performing essential agricultural labor for survival.",
-          typicalDuration: "3-6 Hours",
+          explanation: "Performing essential agricultural labor on the manor's fields to ensure survival.",
+          typicalDuration: "4 Hours",
           relevantAttributes: ['strength', 'endurance', 'temperament'],
           possibleOutcomes: ["Food resources", "Seeds", "Physical exhaustion"],
         );
@@ -444,7 +479,7 @@ class TaskService {
         return const TaskMetadata(
           explanation:
               "Renovating a section of the manor to functional status.",
-          typicalDuration: "12-48 Hours",
+          typicalDuration: "4 Hours",
           relevantAttributes: ['strength', 'endurance', 'dexterity'],
           possibleOutcomes: ["New room access", "Structural integrity"],
         );
@@ -488,9 +523,23 @@ class TaskService {
       case TaskType.wash:
         return const TaskMetadata(
           explanation: "Personal maintenance and hygiene.",
-          typicalDuration: "15-30 Minutes",
+          typicalDuration: "10-20 Minutes",
           relevantAttributes: ['hygiene'],
           possibleOutcomes: ["Improved hygiene", "Mental clarity"],
+        );
+      case TaskType.eat:
+        return const TaskMetadata(
+          explanation: "Restoring energy and fullness through nourishing meals.",
+          typicalDuration: "30-45 Minutes",
+          relevantAttributes: [],
+          possibleOutcomes: ["Restored fullness", "Better morale"],
+        );
+      case TaskType.relax:
+        return const TaskMetadata(
+          explanation: "Taking a moment to breathe and clear one's mind.",
+          typicalDuration: "30-60 Minutes",
+          relevantAttributes: ['temperament'],
+          possibleOutcomes: ["Restored focus", "Improved morale"],
         );
       // Fallback for others
       default:
@@ -508,6 +557,8 @@ class TaskService {
   }
 
   void addTask(GameTask task) {
+    // DUPLICATE GUARD: Strictly reject if this task ID is already tracked.
+    if (_activeTasks.any((t) => t.id == task.id)) return;
     _activeTasks.add(task);
   }
 
@@ -518,22 +569,29 @@ class TaskService {
   void cancelTask(String taskId) {
     _activeTasks.removeWhere((t) => t.id == taskId);
   }
-
   void assignTask({
     required String npcId,
     required TaskType type,
     String? targetId,
     String? recipeId,
+    String? intentId,
+    IntentPriority priority = IntentPriority.normal,
     required int durationMinutes,
+    List<String> reservedEntityIds = const [],
   }) {
+    // Generate simulation-safe, unique task ID
+    final taskId = "task_${npcId}_${DateTime.now().microsecondsSinceEpoch}_${type.name}";
 
     _activeTasks.add(
       GameTask(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: taskId,
+        intentId: intentId,
         npcId: npcId,
+        priority: priority,
         type: type,
         targetId: targetId,
         recipeId: recipeId,
+        reservedEntityIds: reservedEntityIds,
         minutesRemaining: durationMinutes,
         totalMinutes: durationMinutes,
       ),
@@ -586,149 +644,151 @@ class TaskService {
   String getTaskDescription(GameTask task) {
     switch (task.type) {
       case TaskType.cleanRoom:
-        return "Cleaning room";
+        return "Clean room";
       case TaskType.collectEggs:
-        return "Collecting eggs";
+        return "Collect eggs";
       case TaskType.harvestCabbage:
-        return "Harvesting cabbage";
+        return "Harvest cabbage";
       case TaskType.hunt:
-        return "Hunting";
+        return "Hunt";
       case TaskType.research:
-        return "Researching";
+        return "Research";
       case TaskType.dissect:
-        return "Dissecting";
+        return "Dissect";
       case TaskType.transcribeNotes:
-        return "Transcribing notes";
+        return "Transcribe notes";
       case TaskType.observeExperiment:
-        return "Observing experiment";
+        return "Observe experiment";
       case TaskType.cook:
         return task.recipeId != null
-            ? "Cooking ${task.recipeId!.replaceAll('_', ' ')}"
-            : "Cooking";
+            ? "Cook ${task.recipeId!.replaceAll('_', ' ')}"
+            : "Cook";
       case TaskType.guardCoop:
-        return "Guarding chicken coop";
+        return "Guard chicken coop";
       case TaskType.archiveResearch:
-        return "Archiving forbidden lore";
+        return "Archive forbidden lore";
       case TaskType.greetGuest:
-        return "Greeting a guest";
+        return "Greet a guest";
       case TaskType.rest:
-        return "Resting";
+        return "Rest";
       case TaskType.eat:
-        return "Eating";
+        return "Eat";
       case TaskType.idle:
-        return "Staying at post";
+        return "Stay at post";
       case TaskType.brew:
-        return "Brewing ale";
+        return "Brew ale";
       case TaskType.distill:
-        return "Distilling spirits";
+        return "Distill spirits";
       case TaskType.processTimber:
-        return "Processing timber";
+        return "Process timber";
       case TaskType.harvestGrain:
-        return "Harvesting grain";
+        return "Harvest grain";
       case TaskType.setupBrewery:
-        return "Setting up brewery equipment";
+        return "Setup brewery equipment";
       case TaskType.setupDistillery:
-        return "Calibrating distillery still";
+        return "Calibrate distillery still";
       case TaskType.setupWorkshop:
-        return "Organizing carpenter's workshop";
+        return "Organize carpenter's workshop";
       case TaskType.setupGranary:
-        return "Preparing granary storage";
+        return "Prepare granary storage";
       case TaskType.collectIngredients:
-        return "Collecting supplies";
+        return "Collect supplies";
       case TaskType.spyOnNeighbor:
-        return "Spying on neighbor";
+        return "Spy on neighbor";
       case TaskType.deprivationStudy:
-        return "Conducting deprivation study";
+        return "Conduct deprivation study";
       case TaskType.clinicalTrial:
-        return "Administering clinical trials";
+        return "Administer clinical trials";
       case TaskType.puzzleStudy:
-        return "Conducting cognitive puzzle study";
+        return "Conduct cognitive puzzle study";
       case TaskType.vivisection:
-        return "Performing vivisection";
+        return "Perform vivisection";
       case TaskType.breedingAttempt:
-        return "Managing breeding attempt";
+        return "Manage breeding attempt";
       case TaskType.surgicalOperation:
-        return "Performing surgical operation";
+        return "Perform surgical operation";
       case TaskType.surgery:
-        return "Performing delicate surgery";
+        return "Perform delicate surgery";
       case TaskType.careForInjured:
-        return "Caring for the injured";
+        return "Care for the injured";
       case TaskType.careForSick:
-        return "Tending to the sick";
+        return "Tend to the sick";
       case TaskType.stopBleeding:
-        return "Stopping blood loss";
+        return "Stop blood loss";
       case TaskType.diagnoseIllness:
-        return "Diagnosing a strange illness";
+        return "Diagnose a strange illness";
       case TaskType.treatIllness:
-        return "Treating a persistent illness";
+        return "Treat a persistent illness";
       case TaskType.checkBedridden:
-        return "Checking on the bed-ridden";
+        return "Check on the bed-ridden";
       case TaskType.prepareMeals:
-        return "Preparing a hearty meal";
+        return "Prepare a hearty meal";
       case TaskType.butcherAnimals:
-        return "Butchering animals for meat";
+        return "Butcher animals for meat";
       case TaskType.refineFood:
-        return "Refining ingredients into delicacies";
+        return "Refine ingredients into delicacies";
       case TaskType.plantCrops:
-        return "Planting seedlings in the soil";
+        return "Sow seedlings in the soil";
       case TaskType.waterCrops:
-        return "Watering thirsty crops";
+        return "Water thirsty crops";
       case TaskType.tillSoil:
-        return "Tilling the garden soil";
+        return "Till the field";
       case TaskType.fertilizeSoil:
-        return "Fertilizing the fields";
+        return "Fertilize the field";
       case TaskType.careForCrops:
-        return "Caring for growing plants";
+        return "Tend to growing crops";
       case TaskType.harvestCrops:
-        return "Harvesting agricultural bounty";
+        return "Harvest agricultural yield";
       case TaskType.refinePlantFungus:
-        return "Refining horticultural specimens";
+        return "Refine horticultural specimens";
       case TaskType.hauling:
-        return "Hauling heavy goods";
+        return "Haul heavy goods";
       case TaskType.construction:
-        return "Working on construction";
+        return "Work on construction";
       case TaskType.mining:
-        return "Mining for minerals";
+        return "Mine for minerals";
       case TaskType.strengthLabor:
-        return "Performing arduous labor";
+        return "Perform arduous labor";
       case TaskType.restoreRoom:
-        return "Restoring a dilapidated room";
+        return "Restore a dilapidated room";
       case TaskType.blacksmithing:
-        return "Toiling at the forge";
+        return "Toil at the forge";
       case TaskType.manufacturing:
-        return "Manufacturing goods";
+        return "Manufacture goods";
       case TaskType.refineNonLiving:
-        return "Refining non-living materials";
+        return "Refine non-living materials";
       case TaskType.discardSpoiledFood:
-        return "Discarding spoiled provisions";
+        return "Discard spoiled provisions";
       case TaskType.discardTrash:
-        return "Clearing out accumulated trash";
+        return "Clear out accumulated trash";
       case TaskType.invention:
-        return "Working on a new invention";
+        return "Work on a new invention";
       case TaskType.refineLifeForm:
-        return "Refining biological specimens";
+        return "Refine biological specimens";
       case TaskType.cleanDish:
-        return "Cleaning a dirty dish";
+        return "Clean a dirty dish";
       case TaskType.useToilet:
-        return "Using the toilet";
+        return "Use the toilet";
       case TaskType.wash:
-        return "Washing up";
+        return "Wash up";
       case TaskType.extinguishFire:
-        return "Fighting a blaze";
+        return "Fight a blaze";
       case TaskType.recombineSpecimen:
-        return "Containing a loose specimen";
+        return "Contain a loose specimen";
       case TaskType.defendManor:
-        return "Defending the manor from intruders";
+        return "Defend the manor from intruders";
       case TaskType.trainCreature:
-        return "Training a creature for combat";
+        return "Train a creature for combat";
       case TaskType.surgicalCombination:
-        return "Combining specimens via specialized surgery";
+        return "Combine specimens via specialized surgery";
       case TaskType.study:
-        return "Studying";
+        return "Study";
       case TaskType.experiment:
-        return "Experimenting";
+        return "Experiment";
       case TaskType.operation:
-        return "Performing operation";
+        return "Perform operation";
+      case TaskType.relax:
+        return "Relax and restore focus";
     }
   }
 }

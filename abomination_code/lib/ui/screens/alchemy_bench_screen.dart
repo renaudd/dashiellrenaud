@@ -133,7 +133,7 @@ class AlchemyBench extends StatelessWidget {
     );
   }
 
-  Widget _resourceDisplay(String label, int value) {
+  Widget _resourceDisplay(String label, num value) {
     return Column(
       children: [
         Text(
@@ -145,7 +145,7 @@ class AlchemyBench extends StatelessWidget {
           ),
         ),
         Text(
-          value.toString(),
+          value.round().toString(),
           style: GoogleFonts.oldStandardTt(
             color: const Color(0xFFE5D5B0),
             fontSize: 20,
@@ -161,12 +161,12 @@ class AlchemyBench extends StatelessWidget {
     GameState state,
     String name,
     String desc,
-    Map<String, int> requirements,
+    Map<String, num> requirements,
     String product,
   ) {
     bool canCraft = true;
     requirements.forEach((res, amount) {
-      if ((state.resources[res] ?? 0) < amount) canCraft = false;
+      if ((state.resources[res] ?? 0).round() < amount.round()) canCraft = false;
     });
 
     return Container(
@@ -209,7 +209,7 @@ class AlchemyBench extends StatelessWidget {
                           (e) => Padding(
                             padding: const EdgeInsets.only(right: 16.0),
                             child: Text(
-                              '${e.key.toUpperCase()}: ${e.value}',
+                              '${e.key.toUpperCase()}: ${e.value.round()}',
                               style: GoogleFonts.oldStandardTt(
                                 color: (state.resources[e.key] ?? 0) >= e.value
                                     ? const Color(0xFFC4B89B)

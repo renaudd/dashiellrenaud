@@ -3,11 +3,11 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"flutter_bootstrap.js": "5ccf96875855c904a4bca172a5d3ad98",
+const RESOURCES = {"flutter_bootstrap.js": "72786637a8996a7c8c46a99c73e81826",
 "version.json": "36e6b44befd40d46fd20534f6d40fb57",
 "index.html": "7207596afd2592c65ccf2a79432e29b6",
 "/": "7207596afd2592c65ccf2a79432e29b6",
-"main.dart.js": "4223a24b340c7f518a52b606457a86c3",
+"main.dart.js": "cef3a3fcfaaa1e84e8031a0c100446c4",
 "flutter.js": "24bc71911b75b5f8135c949e27a2984e",
 "favicon.png": "5dcef449791fa27946b3d35ad8803796",
 "icons/Icon-192.png": "ac9a721a12bbc803b44f645561ecb1e1",
@@ -22,7 +22,7 @@ const RESOURCES = {"flutter_bootstrap.js": "5ccf96875855c904a4bca172a5d3ad98",
 "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
 "assets/shaders/stretch_effect.frag": "40d68efbbf360632f614c731219e95f0",
 "assets/AssetManifest.bin": "f32d2cace8d9dd1a1d1964e291c1e712",
-"assets/fonts/MaterialIcons-Regular.otf": "75b2c4fb6d2e7ece35d52701cc16aa1f",
+"assets/fonts/MaterialIcons-Regular.otf": "12d34198a91c90dc0e6e56bb9b075b0b",
 "assets/assets/images/Carl_Spitzweg_-_Der_Maler_im_Garten.jpg": "87828e3c97ee6c1cbbfa3e8e04b4aa67",
 "assets/assets/images/hamlet.jpg": "14288e2af41b5a8ba9535fbe8ea77932",
 "canvaskit/skwasm.js": "8060d46e9a4901ca9991edd3a26be4f0",

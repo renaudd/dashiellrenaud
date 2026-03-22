@@ -15,7 +15,7 @@ class PrepareJourneyDialog extends StatefulWidget {
 
 class _PrepareJourneyDialogState extends State<PrepareJourneyDialog> {
   String? _selectedNpcId;
-  final Map<String, int> _selectedResources = {
+  final Map<String, num> _selectedResources = {
     'funds': 0,
     'meat': 0,
     'cabbage': 0,
@@ -324,7 +324,7 @@ class _PrepareJourneyDialogState extends State<PrepareJourneyDialog> {
               ),
             ),
             Text(
-              "${_selectedResources[res]} / $maxAvailable",
+              "${_selectedResources[res]?.round()} / ${maxAvailable.round()}",
               style: GoogleFonts.oldStandardTt(
                 color: const Color(0xFFC4B89B),
                 fontSize: 11,
@@ -346,7 +346,7 @@ class _PrepareJourneyDialogState extends State<PrepareJourneyDialog> {
             max: maxAvailable.toDouble() > 0 ? maxAvailable.toDouble() : 1,
             onChanged: maxAvailable > 0
                 ? (val) {
-                    setState(() => _selectedResources[res] = val.toInt());
+                    setState(() => _selectedResources[res] = val.round());
                   }
                 : null,
           ),

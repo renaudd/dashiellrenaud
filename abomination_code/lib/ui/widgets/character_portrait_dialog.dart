@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:collection/collection.dart';
 import '../../models/npc.dart';
 import '../../models/npc_intent.dart';
-import '../../models/room.dart';
 import '../../models/relationship.dart';
 import '../../services/social_service.dart';
 import '../../state/game_state.dart';
@@ -15,16 +15,16 @@ class CharacterPortraitDialog extends StatelessWidget {
 
   const CharacterPortraitDialog({super.key, required this.npc});
 
-  String _getMoodDescription() {
-    if (npc.satisfaction < 30) return "ANGRY";
-    if (npc.satisfaction < 60) return "DISCONTENT";
-    if (npc.energy < 30) return "EXHAUSTED";
-    if (npc.hunger > 70) return "FAMISHED";
+  String _getMoodDescription(NPC liveNpc) {
+    if (liveNpc.satisfaction < 30) return "ANGRY";
+    if (liveNpc.satisfaction < 60) return "DISCONTENT";
+    if (liveNpc.energy < 30) return "EXHAUSTED";
+    if (liveNpc.hunger >= 90) return "FAMISHED";
     return "CONTENT";
   }
 
-  Color _getMoodColor() {
-    final mood = _getMoodDescription();
+  Color _getMoodColor(NPC liveNpc) {
+    final mood = _getMoodDescription(liveNpc);
     if (mood == "ANGRY" || mood == "FAMISHED") return Colors.redAccent;
     if (mood == "DISCONTENT" || mood == "EXHAUSTED") return Colors.orangeAccent;
     return const Color(0xFFC4B89B);
@@ -32,142 +32,176 @@ class CharacterPortraitDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: const Color(0xFF1E1A15),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      child: DefaultTabController(
-        length: 3,
-        child: Container(
-          width: 450,
-          height: 600,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFC4B89B), width: 1),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header with Portrait and Basic Info
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Consumer<GameState>(
+      builder: (context, state, child) {
+        final liveNpc = state.npcs.firstWhere((n) => n.id == npc.id, orElse: () => npc);
+        final mood = _getMoodDescription(liveNpc);
+        final moodColor = _getMoodColor(liveNpc);
+
+        return Dialog(
+          backgroundColor: const Color(0xFF1E1A15),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          child: DefaultTabController(
+            length: 3,
+            child: Container(
+              width: 450,
+              height: 600,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFC4B89B), width: 1),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 100,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: const Color(0xFFC4B89B).withValues(alpha: 0.5),
+                  // Header with Portrait and Basic Info
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: const Color(0xFFC4B89B).withValues(alpha: 0.5),
+                          ),
+                          color: Colors.black26,
+                        ),
+                        child: Center(
+                          child: CharacterBlobRenderer(
+                            npc: liveNpc,
+                            size: 80,
+                            isIdle: true,
+                          ),
+                        ),
                       ),
-                      color: Colors.black26,
-                    ),
-                    child: Center(
-                      child: CharacterBlobRenderer(
-                        npc: npc,
-                        size: 80,
-                        isIdle: true,
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              liveNpc.name.toUpperCase(),
+                              style: GoogleFonts.playfairDisplay(
+                                color: const Color(0xFFE5D5B0),
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                            Text(
+                              liveNpc.status == NPCStatus.zombie
+                                  ? "${liveNpc.role} (REANIMATED)".toUpperCase()
+                                  : liveNpc.role.toUpperCase(),
+                              style: GoogleFonts.oldStandardTt(
+                                color: liveNpc.status == NPCStatus.zombie
+                                    ? const Color(0xFF7A9E7E)
+                                    : const Color(
+                                        0xFFC4B89B,
+                                      ).withValues(alpha: 0.7),
+                                fontSize: 12,
+                                letterSpacing: 1,
+                                fontWeight: liveNpc.status == NPCStatus.zombie
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: moodColor.withValues(alpha: 0.5),
+                                ),
+                                color: moodColor.withValues(alpha: 0.1),
+                              ),
+                              child: Text(
+                                mood,
+                                style: GoogleFonts.outfit(
+                                  color: moodColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 24),
+                  const SizedBox(height: 24),
+                  TabBar(
+                    indicatorColor: const Color(0xFFC4B89B),
+                    labelColor: const Color(0xFFE5D5B0),
+                    unselectedLabelColor: Colors.white24,
+                    labelStyle: GoogleFonts.playfairDisplay(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                    tabs: const [
+                      Tab(text: "STATUS"),
+                      Tab(text: "BIO"),
+                      Tab(text: "SOCIAL"),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: TabBarView(
                       children: [
-                        Text(
-                          npc.name.toUpperCase(),
-                          style: GoogleFonts.playfairDisplay(
-                            color: const Color(0xFFE5D5B0),
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        Text(
-                          npc.status == NPCStatus.zombie
-                              ? "${npc.role} (REANIMATED)".toUpperCase()
-                              : npc.role.toUpperCase(),
-                          style: GoogleFonts.oldStandardTt(
-                            color: npc.status == NPCStatus.zombie
-                                ? const Color(0xFF7A9E7E)
-                                : const Color(
-                                    0xFFC4B89B,
-                                  ).withValues(alpha: 0.7),
-                            fontSize: 12,
-                            letterSpacing: 1,
-                            fontWeight: npc.status == NPCStatus.zombie
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                        ),
+                        _buildStatusTab(context, liveNpc, state),
+                        _buildBioTab(context, liveNpc, state),
+                        _buildSocialTab(context, liveNpc, state),
                       ],
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TabBar(
-                indicatorColor: const Color(0xFFC4B89B),
-                labelColor: const Color(0xFFE5D5B0),
-                unselectedLabelColor: Colors.white24,
-                labelStyle: GoogleFonts.playfairDisplay(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
-                ),
-                tabs: const [
-                  Tab(text: "STATUS"),
-                  Tab(text: "BIO"),
-                  Tab(text: "SOCIAL"),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    _buildStatusTab(context),
-                    _buildBioTab(context),
-                    _buildSocialTab(context),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  "CLOSE",
-                  style: GoogleFonts.oldStandardTt(
-                    color: const Color(0xFFC4B89B),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      "CLOSE",
+                      style: GoogleFonts.oldStandardTt(
+                        color: const Color(0xFFC4B89B),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildStatusTab(BuildContext context) {
+  Widget _buildStatusTab(BuildContext context, NPC liveNpc, GameState state) {
     return ListView(
       children: [
         _buildStatBar(
           "ENERGY / EXHAUSTION",
-          npc.energy / 100,
+          liveNpc.energy / 100,
           Colors.blueAccent,
         ),
         const SizedBox(height: 12),
         _buildStatBar(
           "DIGESTION",
-          npc.digestion / 100,
+          liveNpc.digestion / 100,
           Colors.deepOrangeAccent,
         ),
         const SizedBox(height: 12),
-        _buildStatBar("FULLNESS", (100 - npc.hunger) / 100, Colors.greenAccent),
+        _buildStatBar(
+          "FULLNESS",
+          (100 - liveNpc.hunger) / 100,
+          Colors.greenAccent,
+        ),
         const SizedBox(height: 12),
         _buildStatBar(
           "SATISFACTION",
-          npc.satisfaction / 100,
+          liveNpc.satisfaction / 100,
           Colors.amberAccent,
         ),
         const SizedBox(height: 24),
@@ -176,12 +210,14 @@ class CharacterPortraitDialog extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              border: Border.all(color: _getMoodColor().withValues(alpha: 0.3)),
+              border: Border.all(
+                color: _getMoodColor(liveNpc).withValues(alpha: 0.3),
+              ),
             ),
             child: Text(
-              _getMoodDescription(),
+              _getMoodDescription(liveNpc),
               style: GoogleFonts.playfairDisplay(
-                color: _getMoodColor(),
+                color: _getMoodColor(liveNpc),
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
               ),
@@ -189,220 +225,398 @@ class CharacterPortraitDialog extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        _buildActivitySection(context),
+        _buildActivitySection(context, liveNpc, state),
         const SizedBox(height: 24),
-        _buildUpcomingSection(),
+        _buildUpcomingSection(liveNpc, state),
         const SizedBox(height: 24),
-        _buildHousingSection(context),
+        _buildHousingSection(context, liveNpc, state),
       ],
     );
   }
 
-  Widget _buildBioTab(BuildContext context) {
+  Widget _buildBioTab(BuildContext context, NPC liveNpc, GameState state) {
     return ListView(
       children: [
-        _buildInfoText("HOMETOWN", npc.hometown),
-        _buildInfoText("BACKGROUND", npc.background),
-        _buildInfoText("AGE", "${npc.age} YEARS"),
-        _buildInfoText("GENDER", npc.gender),
-        _buildInfoText("ORIENTATION", npc.sexualOrientation.name.toUpperCase()),
-        _buildInfoText("RELIGION", npc.religion),
-        const SizedBox(height: 16),
+        _sectionHeader("PERSONAL FILE"),
+        const SizedBox(height: 12),
+        _buildInfoText("FULL NAME", liveNpc.name.toUpperCase()),
+        _buildInfoText("PROFESSION", liveNpc.role.toUpperCase()),
+        _buildInfoText("INTELLECT", "${liveNpc.stats['intelligence'] ?? 10}"),
+        _buildInfoText("STRENGTH", "${liveNpc.stats['strength'] ?? 10}"),
+        _buildInfoText("PRECISION", "${liveNpc.stats['precision'] ?? 10}"),
+        _buildInfoText("MORALITY", "${liveNpc.stats['morality'] ?? 10}"),
+        const SizedBox(height: 24),
+        _sectionHeader("BIOGRAPHY"),
+        const SizedBox(height: 12),
         Text(
-          "BIOGRAPHY",
+          liveNpc.bio.isEmpty ? "No records available." : liveNpc.bio,
           style: GoogleFonts.oldStandardTt(
-            color: const Color(0xFFC4B89B),
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1,
+            color: const Color(0xFFC4B89B).withValues(alpha: 0.8),
+            fontSize: 13,
+            height: 1.6,
           ),
         ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(12),
-          color: Colors.black26,
-          child: Text(
-            npc.bio.isEmpty ? "No records available." : npc.bio,
-            style: GoogleFonts.oldStandardTt(
-              color: Colors.white70,
-              fontSize: 12,
-              height: 1.5,
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildInteractionSection(context),
       ],
     );
   }
 
-  Widget _buildInteractionSection(BuildContext context) {
-    if (npc.isPlayer) return const SizedBox.shrink();
+  Widget _buildSocialTab(BuildContext context, NPC liveNpc, GameState state) {
+    if (liveNpc.isPlayer) {
+      return Center(
+        child: Text(
+          "YOU ARE MASTER OF THIS DOMAIN.",
+          style: GoogleFonts.playfairDisplay(
+            color: const Color(0xFFC4B89B),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.5,
+          ),
+        ),
+      );
+    }
 
-    final state = Provider.of<GameState>(context, listen: false);
-    final player = state.npcs.firstWhere((n) => n.isPlayer, orElse: () => npc);
+    return ListView(
+      children: [
+        _sectionHeader("RELATIONSHIP WITH YOU"),
+        const SizedBox(height: 16),
+        _buildInteractionSection(context, liveNpc, state),
+        const SizedBox(height: 24),
+        _sectionHeader("OTHER BONDS"),
+        const SizedBox(height: 12),
+        ...state.npcs.where((n) => n.id != liveNpc.id && !n.isPlayer).map((n) {
+          final rel = liveNpc.relationships[n.id] ?? Relationship();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  n.name.toUpperCase(),
+                  style: GoogleFonts.oldStandardTt(
+                    color: const Color(0xFFE5D5B0),
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _buildMiniRelStat("ADM", rel.admiration, Colors.pinkAccent),
+                    const SizedBox(width: 8),
+                    _buildMiniRelStat("RES", rel.respect, Colors.cyanAccent),
+                    const SizedBox(width: 8),
+                    _buildMiniRelStat("FEAR", rel.fear, Colors.deepPurpleAccent),
+                    const SizedBox(width: 8),
+                    _buildMiniRelStat("ATTR", rel.attraction, Colors.redAccent),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildInteractionSection(
+    BuildContext context,
+    NPC liveNpc,
+    GameState state,
+  ) {
+    final player = state.npcs.firstWhere((n) => n.isPlayer);
+    final rel = liveNpc.relationships[player.id] ?? Relationship();
 
     // Only allow interaction if they are in the same room
-    if (player.currentRoomId != npc.currentRoomId || player.id == npc.id) {
-      return const SizedBox.shrink();
-    }
+    final bool canInteract = player.currentRoomId == liveNpc.currentRoomId;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "MANUAL INTERACTION",
-          style: GoogleFonts.oldStandardTt(
+          "RELATIONSHIP: ${(rel.loyalty * 20).toStringAsFixed(0)}% LOYALTY",
+          style: GoogleFonts.outfit(
             color: const Color(0xFFC4B89B),
             fontSize: 10,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w900,
             letterSpacing: 1,
           ),
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _buildInteractButton(context, "CHAT", InteractionType.chat),
-            _buildInteractButton(context, "PRAISE", InteractionType.praise),
-            _buildInteractButton(context, "ARGUE", InteractionType.argument),
-            _buildInteractButton(context, "THREATEN", InteractionType.threaten),
-          ],
+        LinearProgressIndicator(
+          value: rel.loyalty / 5.0,
+          backgroundColor: Colors.white12,
+          color: rel.loyalty >= 2.5 ? Colors.greenAccent : Colors.redAccent,
+          minHeight: 4,
         ),
+        const SizedBox(height: 24),
+        if (canInteract)
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _buildInteractButton(state, liveNpc, InteractionType.chat, Icons.chat_bubble_outline),
+              _buildInteractButton(state, liveNpc, InteractionType.praise, Icons.thumb_up_outlined),
+              _buildInteractButton(state, liveNpc, InteractionType.argument, Icons.gavel_outlined),
+              _buildInteractButton(state, liveNpc, InteractionType.threaten, Icons.security),
+              _buildInteractButton(state, liveNpc, InteractionType.workTogether, Icons.handshake_outlined),
+            ],
+          )
+        else
+          Text(
+            "YOU MUST BE IN THE SAME ROOM TO INTERACT.",
+            style: GoogleFonts.oldStandardTt(
+              color: Colors.white24,
+              fontSize: 10,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
       ],
     );
   }
 
   Widget _buildInteractButton(
-    BuildContext context,
-    String label,
+    GameState state,
+    NPC liveNpc,
     InteractionType type,
+    IconData icon,
   ) {
-    final state = Provider.of<GameState>(context, listen: false);
-    return OutlinedButton(
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Color(0xFFC4B89B)),
-        foregroundColor: const Color(0xFFC4B89B),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      ),
-      onPressed: () {
-        state.interactWithNpc(npc.id, type);
-      },
-      child: Text(
-        label,
-        style: GoogleFonts.oldStandardTt(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
+    return InkWell(
+      onTap: () => state.interactWithNpc(liveNpc.id, type),
+      child: Container(
+        width: 80,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFC4B89B).withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: const Color(0xFFC4B89B), size: 18),
+            const SizedBox(height: 4),
+            Text(
+              type.name.toUpperCase(),
+              style: GoogleFonts.outfit(fontSize: 8, color: const Color(0xFFC4B89B)),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSocialTab(BuildContext context) {
-    final state = Provider.of<GameState>(context);
-    final residents = state.npcs.where((n) => n.id != npc.id).toList();
+  Widget _buildActivitySection(BuildContext context, NPC liveNpc, GameState state) {
+    final activeTask = liveNpc.activeTaskId != null 
+        ? state.activeTasks.firstWhereOrNull((t) => t.id == liveNpc.activeTaskId) 
+        : null;
+    final targetRoom = state.rooms.firstWhereOrNull((r) => r.id == liveNpc.targetRoomId);
 
-    if (residents.isEmpty) {
-      return Center(
-        child: Text(
-          "No other residents known.",
-          style: GoogleFonts.oldStandardTt(color: Colors.white24, fontSize: 12),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: residents.length,
-      itemBuilder: (context, index) {
-        final other = residents[index];
-        final rel = npc.relationships[other.id] ?? Relationship();
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.black12,
-            border: Border.all(color: Colors.white10),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                other.name.toUpperCase(),
-                style: GoogleFonts.playfairDisplay(
-                  color: const Color(0xFFE5D5B0),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _buildMiniRelBar("ADMIRATION", rel.admiration, Colors.pinkAccent),
-              const SizedBox(height: 6),
-              _buildMiniRelBar("RESPECT", rel.respect, Colors.cyanAccent),
-              const SizedBox(height: 6),
-              _buildMiniRelBar("FEAR", rel.fear, Colors.deepPurpleAccent),
-              const SizedBox(height: 6),
-              _buildMiniRelBar("ATTRACTION", rel.attraction, Colors.redAccent),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMiniRelBar(String label, double value, Color color) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 80,
-          child: Text(
-            label,
+        _sectionHeader("CURRENT ACTIVITY"),
+        const SizedBox(height: 12),
+        if (activeTask != null)
+          _buildTaskTile(state, activeTask, liveNpc)
+        else
+          Text(
+            "NO ACTIVE ASSIGNMENT",
             style: GoogleFonts.oldStandardTt(
-              color: Colors.white24,
-              fontSize: 8,
+              color: const Color(0xFFC4B89B).withValues(alpha: 0.5),
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
             ),
           ),
-        ),
-        Expanded(
-          child: LinearProgressIndicator(
-            value: value / 5.0,
-            backgroundColor: Colors.white10,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              color.withValues(alpha: 0.4),
+        if (targetRoom != null && liveNpc.currentRoomId != liveNpc.targetRoomId)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.map_outlined,
+                  size: 14,
+                  color: Color(0xFFC4B89B),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  "EN ROUTE TO ${targetRoom.name.toUpperCase()}",
+                  style: GoogleFonts.oldStandardTt(
+                    color: const Color(0xFFC4B89B),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
-            minHeight: 2,
           ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          value.toStringAsFixed(2),
-          style: GoogleFonts.oldStandardTt(color: color, fontSize: 8),
-        ),
       ],
     );
   }
 
-  Widget _buildInfoText(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
+  Widget _buildUpcomingSection(NPC liveNpc, GameState state) {
+    final activeTask = liveNpc.activeTaskId != null 
+        ? state.activeTasks.firstWhereOrNull((t) => t.id == liveNpc.activeTaskId) 
+        : null;
+    final activeIntentId = activeTask?.intentId;
+    
+    // Upcoming assignments (excluding active task)
+    final allUpcoming = liveNpc.intentQueue.where((i) => i.id != liveNpc.activeTaskId && i.id != activeIntentId).toList();
+    final manualUpcoming = allUpcoming.where((i) => i.isManual || i.priority.index >= IntentPriority.normal.index).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader("PRIMARY MISSIONS"),
+        const SizedBox(height: 12),
+        if (manualUpcoming.isEmpty)
           Text(
-            label,
+            "WAITING FOR ORDERS",
             style: GoogleFonts.oldStandardTt(
-              color: const Color(0xFFC4B89B),
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
+              color: const Color(0xFFC4B89B).withValues(alpha: 0.5),
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          )
+        else
+          SizedBox(
+            height: 200,
+            child: ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: true,
+              itemCount: manualUpcoming.length,
+              itemBuilder: (context, index) {
+                return _buildIntentTile(manualUpcoming[index], state, liveNpc.id, index, isManual: true);
+              },
+              onReorder: (oldIndex, newIndex) {
+                 state.reorderIntentQueue(liveNpc.id, oldIndex, newIndex, isFiltered: true);
+              },
             ),
           ),
-          Text(
-            value.toUpperCase(),
-            style: GoogleFonts.oldStandardTt(
-              color: Colors.white70,
-              fontSize: 10,
+      ],
+    );
+  }
+
+  Widget _buildIntentTile(NPCIntent intent, GameState state, String npcId, int index, {required bool isManual}) {
+    final room = state.rooms.firstWhereOrNull((r) => r.id == intent.targetRoomId);
+    final roomName = room?.name ?? "Mansion";
+    
+    String actionName = intent.action.displayName;
+    if (intent.action == TaskType.cook && intent.recipeId != null) {
+      actionName = "COOK ${intent.recipeId!.replaceAll('_', ' ')}";
+    } else if (intent.action == TaskType.butcherAnimals && intent.targetName != null) {
+      actionName = "BUTCHER ${intent.targetName}";
+    }
+
+    String displayDesc = (intent.action == TaskType.restoreRoom)
+      ? "RESTORE $roomName".toUpperCase()
+      : "$actionName IN $roomName".toUpperCase();
+
+    return Padding(
+      key: ValueKey(intent.id),
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isManual ? const Color(0xFFC4B89B).withValues(alpha: 0.05) : Colors.black26,
+          border: Border.all(
+            color: isManual 
+              ? const Color(0xFFC4B89B).withValues(alpha: 0.3)
+              : const Color(0xFFC4B89B).withValues(alpha: 0.1),
+          ),
+        ),
+        child: Row(
+          children: [
+            Text(
+              "${index + 1}.",
+              style: GoogleFonts.oswald(
+                color: const Color(0xFFC4B89B).withValues(alpha: 0.5),
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              intent.priority.index >= IntentPriority.urgent.index
+                  ? Icons.priority_high
+                  : Icons.calendar_today,
+              size: 14,
+              color: intent.priority.index >= IntentPriority.urgent.index
+                  ? Colors.redAccent
+                  : const Color(0xFFC4B89B),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                displayDesc,
+                style: GoogleFonts.oldStandardTt(
+                  fontSize: 11,
+                  color: const Color(0xFFE5D5B0),
+                ),
+              ),
+            ),
+            if (isManual)
+              ReorderableDragStartListener(
+                index: index,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Icon(Icons.drag_handle, color: Colors.white10, size: 18),
+                ),
+              ),
+            IconButton(
+              onPressed: () => state.cancelEnqueuedIntent(npcId, intent.id),
+              icon: const Icon(Icons.close, color: Colors.redAccent, size: 14),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              tooltip: 'CANCEL ASSIGNMENT',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaskTile(GameState state, GameTask task, NPC liveNpc) {
+    final room = state.rooms.firstWhereOrNull((r) => r.id == task.targetId);
+    final roomName = room?.name ?? "Mansion";
+    
+    final description = (task.type == TaskType.restoreRoom)
+      ? "RESTORE $roomName".toUpperCase()
+      : "${task.type.displayName} IN $roomName".toUpperCase();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFC4B89B).withValues(alpha: 0.05),
+        border: Border.all(
+          color: const Color(0xFFC4B89B).withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC4B89B)),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  description,
+                  style: GoogleFonts.oldStandardTt(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                    color: const Color(0xFFE5D5B0),
+                  ),
+                ),
+                Text(
+                  task.type == TaskType.rest ? "UNTIL WAKEFUL" : "${task.minutesRemaining} MINUTES REMAINING",
+                  style: GoogleFonts.outfit(
+                    fontSize: 9,
+                    color: const Color(0xFFC4B89B).withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -410,43 +624,70 @@ class CharacterPortraitDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildHousingSection(BuildContext context) {
-    final state = Provider.of<GameState>(context, listen: false);
-    final currentRoom = state.rooms.firstWhere(
-      (r) => r.id == npc.currentRoomId,
-      orElse: () => Room.initial('na', 'na', RoomType.unused, Floor.ground),
-    );
-    bool inBedroom = currentRoom.type == RoomType.bedroom;
-    bool isHome = npc.assignedRoomId == currentRoom.id;
+  Widget _buildHousingSection(BuildContext context, NPC liveNpc, GameState state) {
+    final assignedRoom = state.rooms.where((r) => r.id == liveNpc.assignedRoomId).firstOrNull;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (npc.assignedRoomId != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: Text(
-              "HOME: ${state.rooms.firstWhere((r) => r.id == npc.assignedRoomId).name.toUpperCase()}",
+        _sectionHeader("DOMICILE"),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            const Icon(
+              Icons.king_bed_outlined,
+              size: 16,
+              color: Color(0xFFC4B89B),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              assignedRoom?.name.toUpperCase() ?? "NO ASSIGNED QUARTERS",
               style: GoogleFonts.oldStandardTt(
-                color: Colors.white54,
-                fontSize: 10,
+                color: const Color(0xFFE5D5B0),
+                fontSize: 12,
               ),
             ),
-          ),
-        if (inBedroom && !isHome)
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFC4B89B),
-              foregroundColor: Colors.black,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.zero,
-              ),
-            ),
-            onPressed: () {
-              state.updateNpc(npc.copyWith(assignedRoomId: currentRoom.id));
-            },
-            child: const Text("ASSIGN AS HOME"),
-          ),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _sectionHeader(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.playfairDisplay(
+        color: const Color(0xFFC4B89B),
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 2,
+      ),
+    );
+  }
+
+  Widget _buildInfoText(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.outfit(
+              color: const Color(0xFFC4B89B).withValues(alpha: 0.5),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.oldStandardTt(
+              color: const Color(0xFFE5D5B0),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -459,10 +700,11 @@ class CharacterPortraitDialog extends StatelessWidget {
           children: [
             Text(
               label,
-              style: GoogleFonts.oldStandardTt(
+              style: GoogleFonts.outfit(
                 color: const Color(0xFFC4B89B),
-                fontSize: 10,
+                fontSize: 9,
                 fontWeight: FontWeight.bold,
+                letterSpacing: 1,
               ),
             ),
             Text(
@@ -477,285 +719,33 @@ class CharacterPortraitDialog extends StatelessWidget {
         const SizedBox(height: 4),
         LinearProgressIndicator(
           value: progress,
-          backgroundColor: Colors.white10,
-          valueColor: AlwaysStoppedAnimation<Color>(
-            color.withValues(alpha: 0.6),
-          ),
-          minHeight: 4,
+          backgroundColor: Colors.white.withValues(alpha: 0.05),
+          valueColor: AlwaysStoppedAnimation<Color>(color),
+          minHeight: 2,
         ),
       ],
     );
   }
 
-  Widget _buildActivitySection(BuildContext context) {
-    final state = Provider.of<GameState>(context, listen: false);
-    final activeTask = state.activeTasks.cast<dynamic>().firstWhere(
-      (t) => t.npcId == npc.id,
-      orElse: () => null,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "CURRENT ACTIVITY",
-          style: GoogleFonts.oldStandardTt(
-            color: const Color(0xFFC4B89B),
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.black38,
-            border: Border.all(color: Colors.white10),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                activeTask != null
-                    ? state.getTaskDescription(activeTask).toUpperCase()
-                    : "IDLE / AT POST",
-                style: GoogleFonts.playfairDisplay(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (activeTask != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  "${activeTask.minutesRemaining} MINUTES REMAINING",
-                  style: GoogleFonts.oldStandardTt(
-                    color: Colors.white54,
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUpcomingSection() {
-    return Consumer<GameState>(
-      builder: (context, state, child) {
-        final List<NPCIntent> enqueuedIntents = npc.intentQueue;
-
-        // The first intent in the queue is usually the one being worked on,
-        // but let's check activeTasks to be sure of progress.
-        final activeTask = state.taskService.activeTasks.firstWhere(
-          (t) => t.npcId == npc.id,
-          orElse: () => GameTask(
-            id: 'none',
-            npcId: npc.id,
-            type: TaskType.idle,
-            minutesRemaining: 0,
-          ),
-        );
-
-        // Intents that aren't the current active task (indices 1+)
-        final upcomingIntents = enqueuedIntents.length > 1
-            ? enqueuedIntents.sublist(1)
-            : <NPCIntent>[];
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _sectionHeader("WORK QUEUE"),
-                Text(
-                  "${enqueuedIntents.length} TASKS",
-                  style: GoogleFonts.oldStandardTt(
-                    color: const Color(0xFFC4B89B).withValues(alpha: 0.4),
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (activeTask.id != 'none') ...[
-              _buildTaskTile(state, activeTask: activeTask, isActive: true),
-              if (upcomingIntents.isNotEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(color: Colors.white10, height: 1),
-                ),
-            ],
-            if (enqueuedIntents.isEmpty && activeTask.id == 'none')
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Text(
-                    "NO TASKS ASSIGNED",
-                    style: GoogleFonts.oldStandardTt(
-                      color: Colors.white12,
-                      fontSize: 10,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              )
-            else
-              SizedBox(
-                height: upcomingIntents.length * 52.0, // Fixed height per item
-                child: ReorderableListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: upcomingIntents.length,
-                  onReorder: (oldIndex, newIndex) {
-                    // Reordering intents (offset by 1 because index 0 is active)
-                    state.reorderIntentQueue(
-                      npc.id,
-                      oldIndex + 1,
-                      newIndex + 1,
-                    );
-                  },
-                  itemBuilder: (context, index) {
-                    final intent = upcomingIntents[index];
-                    return _buildIntentTile(
-                      state,
-                      intent,
-                      key: ValueKey(intent.id),
-                      index: index,
-                    );
-                  },
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _sectionHeader(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.oldStandardTt(
-        color: const Color(0xFFC4B89B),
-        fontSize: 10,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 1,
-      ),
-    );
-  }
-
-  Widget _buildTaskTile(
-    GameState state, {
-    required GameTask activeTask,
-    Key? key,
-    bool isActive = true,
-  }) {
-    return Container(
-      key: key,
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFC4B89B).withValues(alpha: 0.1),
-        border: Border.all(
-          color: const Color(0xFFC4B89B).withValues(alpha: 0.4),
-        ),
-      ),
-      child: Row(
+  Widget _buildMiniRelStat(String label, double value, Color color) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.play_circle, color: Color(0xFFC4B89B), size: 16),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  state.taskService
-                      .getTaskDescription(activeTask)
-                      .toUpperCase(),
-                  style: GoogleFonts.oldStandardTt(
-                    color: const Color(0xFFE5D5B0),
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  "${activeTask.minutesRemaining} MIN REMAINING",
-                  style: GoogleFonts.oldStandardTt(
-                    color: Colors.white38,
-                    fontSize: 8,
-                  ),
-                ),
-              ],
+          Text(
+            label,
+            style: GoogleFonts.outfit(
+              color: color.withValues(alpha: 0.6),
+              fontSize: 7,
+              fontWeight: FontWeight.bold,
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIntentTile(
-    GameState state,
-    NPCIntent intent, {
-    Key? key,
-    int? index,
-  }) {
-    // We create a temporary GameTask to use getTaskDescription helper
-    final tempTask = GameTask(
-      id: intent.id,
-      npcId: npc.id,
-      type: intent.action,
-      targetId: intent.targetRoomId,
-      recipeId: intent.recipeId,
-      minutesRemaining: intent.minutesRemaining ?? intent.expectedDurationMin,
-    );
-
-    return Container(
-      key: key,
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.4),
-        border: Border.all(
-          color: const Color(0xFFC4B89B).withValues(alpha: 0.15),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.drag_indicator, color: Colors.white24, size: 16),
-          const SizedBox(width: 8),
-          const Icon(Icons.schedule, color: Colors.white24, size: 16),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  state.taskService.getTaskDescription(tempTask).toUpperCase(),
-                  style: GoogleFonts.oldStandardTt(
-                    color: Colors.white70,
-                    fontSize: 11,
-                  ),
-                ),
-                Text(
-                  "${intent.priority.name.toUpperCase()} PRIORITY",
-                  style: GoogleFonts.oldStandardTt(
-                    color: Colors.white38,
-                    fontSize: 8,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.redAccent, size: 14),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () => state.cancelEnqueuedIntent(npc.id, intent.id),
+          const SizedBox(height: 2),
+          LinearProgressIndicator(
+            value: value / 5.0,
+            backgroundColor: Colors.white.withValues(alpha: 0.05),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 2,
           ),
         ],
       ),

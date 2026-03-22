@@ -208,7 +208,7 @@ class NPC {
   final List<String> movementPath;
 
   // Journey & Travel
-  final Map<String, int> journeyInventory;
+  final Map<String, num> journeyInventory;
   final List<String> escortIds;
   final List<String> lastEscortIds; // Persist deck
   final String? worldDestinationId; // 'hamlet', 'manor'
@@ -227,7 +227,9 @@ class NPC {
   final List<NPCIntent> intentQueue;
   final int? lastScheduledHour;
   final int minutesStaying;
+  final Map<String, dynamic> metadata;
   final Map<ResponsibilityCategory, int> responsibilities;
+  final int? lastMealHour;
 
   // Bio and Relationships
   final List<String> taskQueue; // IDs of enqueued tasks
@@ -245,6 +247,7 @@ class NPC {
   final List<Ability> abilities;
   final double specialCharge; // 0.0 to 1.0
   final bool isTrained; // For creatures
+  final bool isReserved;
 
   NPC({
     required this.id,
@@ -283,7 +286,6 @@ class NPC {
     this.breakStartTime,
     this.breakDuration,
     this.hygiene = 100.0,
-
     this.movementPath = const [],
     this.journeyInventory = const {},
     this.escortIds = const [],
@@ -312,6 +314,9 @@ class NPC {
     this.abilities = const [],
     this.specialCharge = 0.0,
     this.isTrained = false,
+    this.isReserved = false,
+    this.metadata = const {},
+    this.lastMealHour,
   }) : chefStats = chefStats ?? ChefSkills();
 
   Map<String, int> get effectiveStats {
@@ -363,7 +368,7 @@ class NPC {
     double? hygiene,
 
     List<String>? movementPath,
-    Map<String, int>? journeyInventory,
+    Map<String, num>? journeyInventory,
     List<String>? escortIds,
     List<String>? lastEscortIds,
     String? worldDestinationId,
@@ -392,10 +397,14 @@ class NPC {
     double? specialCharge,
     List<String>? taskQueue,
     bool? isTrained,
+    bool? isReserved,
+    Map<String, dynamic>? metadata,
     bool clearTarget = false,
     bool clearWorldDestination = false,
     bool clearThought = false,
     bool clearAssignedRoom = false,
+    bool clearActiveTask = false,
+    int? lastMealHour,
   }) {
     return NPC(
       id: id ?? this.id,
@@ -414,7 +423,7 @@ class NPC {
       currentRoomId: currentRoomId ?? this.currentRoomId,
       targetRoomId: clearTarget ? null : (targetRoomId ?? this.targetRoomId),
       movementProgress: movementProgress ?? this.movementProgress,
-      activeTaskId: activeTaskId ?? this.activeTaskId,
+      activeTaskId: clearActiveTask ? null : (activeTaskId ?? this.activeTaskId),
       pendingTaskId: pendingTaskId ?? this.pendingTaskId,
       currentThought: clearThought
           ? null
@@ -470,6 +479,9 @@ class NPC {
       specialCharge: specialCharge ?? this.specialCharge,
       taskQueue: taskQueue ?? this.taskQueue,
       isTrained: isTrained ?? this.isTrained,
+      isReserved: isReserved ?? this.isReserved,
+      metadata: metadata ?? this.metadata,
+      lastMealHour: lastMealHour ?? this.lastMealHour,
     );
   }
 
@@ -616,7 +628,10 @@ class NPC {
     'specialCharge': specialCharge,
     'taskQueue': taskQueue,
     'isTrained': isTrained,
+    'isReserved': isReserved,
     'specimenType': specimenType,
+    'metadata': metadata,
+    'lastMealHour': lastMealHour,
   };
 
   factory NPC.fromJson(Map<String, dynamic> json) => NPC(
@@ -664,7 +679,7 @@ class NPC {
             ?.map((e) => e as String)
             .toList() ??
         [],
-    journeyInventory: Map<String, int>.from(
+    journeyInventory: Map<String, num>.from(
       json['journeyInventory'] as Map? ?? {},
     ),
     escortIds: List<String>.from(json['escortIds'] as List? ?? []),
@@ -722,5 +737,8 @@ class NPC {
     specialCharge: (json['specialCharge'] as num? ?? 0.0).toDouble(),
     taskQueue: List<String>.from(json['taskQueue'] as List? ?? []),
     isTrained: json['isTrained'] as bool? ?? false,
+    isReserved: json['isReserved'] as bool? ?? false,
+    metadata: Map<String, dynamic>.from(json['metadata'] as Map? ?? {}),
+    lastMealHour: json['lastMealHour'] as int?,
   );
 }

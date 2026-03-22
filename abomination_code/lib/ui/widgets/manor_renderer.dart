@@ -94,7 +94,7 @@ class ManorRenderer extends StatelessWidget {
                       onAcceptWithDetails: (details) {
                         final npc = details.data;
                         final state = context.read<GameState>();
-                        state.tryScheduleNpcTask(
+                        state.enqueueNpcTask(
                           npc.id,
                           room.defaultAction,
                           room.id,
@@ -124,6 +124,9 @@ class ManorRenderer extends StatelessWidget {
                               ),
                               child: RoomTile(
                                 room: room,
+                                occupants: npcs
+                                    .where((n) => n.currentRoomId == room.id)
+                                    .toList(),
                                 onTap: () => onRoomTap(room),
                               ),
                             ),

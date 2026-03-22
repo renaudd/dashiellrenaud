@@ -235,7 +235,7 @@ class _HamletScreenState extends State<HamletScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'FUNDS: ${state.npcs.firstWhere((n) => n.worldDestinationId == 'hamlet' && n.worldTravelProgress >= 1.0).journeyInventory['funds']} CHF',
+                    'FUNDS: ${state.npcs.firstWhere((n) => n.worldDestinationId == 'hamlet' && n.worldTravelProgress >= 1.0).journeyInventory['funds']?.round()} CHF',
                     style: GoogleFonts.oldStandardTt(
                       color: const Color(0xFFC4B89B),
                       fontSize: 14,
@@ -282,7 +282,7 @@ class _HamletScreenState extends State<HamletScreen> {
                   ),
                 ),
                 Text(
-                  'In Stock: $count',
+                  'In Stock: ${count.round()}',
                   style: GoogleFonts.oldStandardTt(
                     color: Colors.white38,
                     fontSize: 10,
@@ -360,7 +360,7 @@ class _HamletScreenState extends State<HamletScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'FUNDS: ${state.npcs.firstWhere((n) => n.worldDestinationId == 'hamlet' && n.worldTravelProgress >= 1.0).journeyInventory['funds']} CHF',
+                    'FUNDS: ${state.npcs.firstWhere((n) => n.worldDestinationId == 'hamlet' && n.worldTravelProgress >= 1.0).journeyInventory['funds']?.round()} CHF',
                     style: GoogleFonts.oldStandardTt(
                       color: const Color(0xFFC4B89B),
                       fontSize: 14,

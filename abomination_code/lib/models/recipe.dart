@@ -1,8 +1,8 @@
 class Recipe {
   final String id;
   final String name;
-  final Map<String, int> inputs;
-  final Map<String, int> outputs;
+  final Map<String, num> inputs;
+  final Map<String, num> outputs;
   final int requiredLevel;
   final String description;
 

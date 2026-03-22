@@ -40,8 +40,9 @@ class ChickenCoopScreen extends StatelessWidget {
   }
 
   Widget _buildFoxThreatBanner(GameState state) {
-    final foxPop = state.estateFoxes;
-    final isWipedOut = foxPop.isWipedOut;
+    final foxCount =
+        state.npcs.where((n) => n.specimenType.toLowerCase() == 'fox').length;
+    final isWipedOut = foxCount == 0;
 
     return Container(
       width: double.infinity,
@@ -70,7 +71,7 @@ class ChickenCoopScreen extends StatelessWidget {
                 Text(
                   isWipedOut
                       ? "The local fox population has been decimated. No raids expected."
-                      : "A pack of ${foxPop.currentCount} foxes is active in the woods. Night guards recommended.",
+                      : "A pack of $foxCount foxes is active in the woods. Night guards recommended.",
                   style: GoogleFonts.oldStandardTt(
                     color: Colors.white70,
                     fontSize: 12,

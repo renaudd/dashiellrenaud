@@ -8,6 +8,7 @@ enum ExperimentType {
   puzzle,
   breeding,
   operation,
+  reanimationSmall,
 }
 
 class Experiment {
@@ -56,6 +57,9 @@ class Experiment {
         break;
       case ExperimentType.operation:
         duration = 120;
+        break;
+      case ExperimentType.reanimationSmall:
+        duration = 120; // 2 hours for small creatures
         break;
     }
 

@@ -10,6 +10,7 @@ enum ItemCategory {
   utility,
   knowledge,
   resource,
+  corpse,
 }
 
 enum ItemShape { circle, square, triangle, diamond, hexagon, pill }
@@ -23,7 +24,10 @@ class GameItem {
   final double quality; // 0.0 to 2.0
   final ItemShape shape;
   final Color color;
+  final double weight; // in kilograms
+  final int value; // base value in funds
   final Map<String, dynamic> metadata;
+  bool get isReserved => metadata['isReserved'] == true;
 
   GameItem({
     required this.id,
@@ -34,6 +38,8 @@ class GameItem {
     this.quality = 1.0,
     required this.shape,
     this.color = Colors.grey,
+    this.weight = 0.1,
+    this.value = 1,
     this.metadata = const {},
   });
 
@@ -43,6 +49,8 @@ class GameItem {
     required ItemCategory category,
     int quantity = 1,
     double quality = 1.0,
+    double? weight,
+    int? value,
     ItemShape? shape,
     Color? color,
     Map<String, dynamic> metadata = const {},
@@ -62,8 +70,30 @@ class GameItem {
       quality: quality,
       shape: shape ?? defShape,
       color: color ?? defColor,
+      weight: weight ?? _getDefaultWeightForType(type, category),
+      value: value ?? _getDefaultValueForType(type, category),
       metadata: metadata,
     );
+  }
+
+  static double _getDefaultWeightForType(String type, ItemCategory category) {
+    if (type.contains('egg')) return 0.05;
+    if (type.contains('rat')) return 0.3;
+    if (type.contains('cabbage')) return 0.5;
+    if (type.contains('meat')) return 1.0;
+    if (type.contains('grain')) return 0.1;
+    if (type.contains('timber')) return 5.0;
+    return 0.1;
+  }
+
+  static int _getDefaultValueForType(String type, ItemCategory category) {
+    if (type.contains('egg')) return 1;
+    if (type.contains('rat')) return 2;
+    if (type.contains('cabbage')) return 3;
+    if (type.contains('meat')) return 5;
+    if (type.contains('funds')) return 1;
+    if (type.contains('timber')) return 8;
+    return 1;
   }
 
   static (ItemShape, Color) _getVisualsForType(
@@ -91,6 +121,9 @@ class GameItem {
     if (type.contains('medicine')) {
       return (ItemShape.pill, Colors.pink.shade300);
     }
+    if (type.contains('corpse')) {
+      return (ItemShape.circle, const Color(0xFF4A1A1A)); // Deep dried blood red
+    }
 
     // Fallsbacks by category
     switch (category) {
@@ -113,6 +146,8 @@ class GameItem {
     double? quality,
     ItemShape? shape,
     Color? color,
+    double? weight,
+    int? value,
     Map<String, dynamic>? metadata,
   }) {
     return GameItem(
@@ -124,6 +159,8 @@ class GameItem {
       quality: quality ?? this.quality,
       shape: shape ?? this.shape,
       color: color ?? this.color,
+      weight: weight ?? this.weight,
+      value: value ?? this.value,
       metadata: metadata ?? this.metadata,
     );
   }
@@ -137,6 +174,8 @@ class GameItem {
     'quality': quality,
     'shape': shape.index,
     'color': color.toARGB32(),
+    'weight': weight,
+    'value': value,
     'metadata': metadata,
   };
 
@@ -149,6 +188,8 @@ class GameItem {
     quality: (json['quality'] as num).toDouble(),
     shape: ItemShape.values[json['shape'] as int? ?? 0],
     color: Color(json['color'] as int? ?? Colors.grey.toARGB32()),
+    weight: (json['weight'] as num? ?? 0.1).toDouble(),
+    value: json['value'] as int? ?? 1,
     metadata: json['metadata'] as Map<String, dynamic>? ?? {},
   );
 }

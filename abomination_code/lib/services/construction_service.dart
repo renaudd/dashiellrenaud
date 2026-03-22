@@ -6,7 +6,7 @@ class ConstructionBlueprint {
   final RoomType type;
   final Floor floor;
   final double width;
-  final Map<String, int> cost;
+  final Map<String, num> cost;
   final int durationMinutes;
   final String description;
 
@@ -39,31 +39,59 @@ class ConstructionBlueprint {
         type: RoomType.values[json['type']],
         floor: Floor.values[json['floor']],
         width: (json['width'] as num).toDouble(),
-        cost: Map<String, int>.from(json['cost']),
+        cost: Map<String, num>.from(json['cost']),
         durationMinutes: json['durationMinutes'],
         description: json['description'],
       );
 }
 
 class ConstructionProject {
+  final String id;
   final ConstructionBlueprint blueprint;
   int minutesRemaining;
+  double progress; // 0.0 to 1.0
+  bool isStarted;
 
   ConstructionProject({
+    required this.id,
     required this.blueprint,
     required this.minutesRemaining,
+    this.progress = 0.0,
+    this.isStarted = false,
   });
 
   Map<String, dynamic> toJson() => {
+    'id': id,
     'blueprint': blueprint.toJson(),
     'minutesRemaining': minutesRemaining,
+    'progress': progress,
+    'isStarted': isStarted,
   };
 
   factory ConstructionProject.fromJson(Map<String, dynamic> json) =>
       ConstructionProject(
+        id: json['id'] as String,
         blueprint: ConstructionBlueprint.fromJson(json['blueprint']),
         minutesRemaining: json['minutesRemaining'],
+        progress: (json['progress'] as num?)?.toDouble() ?? 0.0,
+        isStarted: json['isStarted'] as bool? ?? false,
       );
+
+  ConstructionProject copyWith({
+    String? id,
+    ConstructionBlueprint? blueprint,
+    int? minutesRemaining,
+    double? progress,
+    bool? isStarted,
+  }) {
+    return ConstructionProject(
+      id: id ?? this.id,
+      blueprint: blueprint ?? this.blueprint,
+      minutesRemaining: minutesRemaining ?? this.minutesRemaining,
+      progress: progress ?? this.progress,
+      isStarted: isStarted ?? this.isStarted,
+    );
+  }
 }
 
 class ConstructionService {

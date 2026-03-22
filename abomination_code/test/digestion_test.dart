@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:abomination/models/room.dart';
 import 'package:abomination/state/game_state.dart';
 import 'package:abomination/services/task_service.dart';
+import 'package:abomination/models/npc_intent.dart';
 
 void main() {
   late GameState gameState;
@@ -92,6 +93,7 @@ void main() {
       final task = GameTask(
         id: 'test_toilet',
         npcId: npc.id,
+        priority: IntentPriority.normal,
         type: TaskType.useToilet,
         targetId: bathroom.id,
         minutesRemaining: 1,

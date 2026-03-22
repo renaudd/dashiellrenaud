@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:collection/collection.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../state/game_state.dart';
 import '../../models/room.dart';
 import '../../services/task_service.dart';
-import '../../services/construction_service.dart';
 import '../widgets/manor_renderer.dart';
 import '../widgets/character_portrait_dialog.dart';
+import '../widgets/room_ledger.dart';
+import '../widgets/bed_assignment_widget.dart';
 import 'calendar_screen.dart';
 import 'study_screen.dart';
 import 'kitchen_screen.dart';
 import 'library_screen.dart';
 import 'laboratory_screen.dart';
 import 'chicken_coop_screen.dart';
+import '../widgets/journal_dialog.dart';
 import 'world_map_screen.dart';
 import 'responsibility_grid_screen.dart';
 import '../widgets/time_speed_controls.dart';
-import '../widgets/journal_dialog.dart';
-import '../widgets/bed_assignment_widget.dart';
 import 'residents_panel.dart';
 import '../widgets/save_load_dialogs.dart';
 import 'combat_screen.dart';
@@ -210,34 +211,25 @@ class _ManorScreenState extends State<ManorScreen> {
             children: [
               _resourceItem(
                 Icons.payments,
-                state.resources['funds']?.toString() ?? '0',
+                (state.resources['funds'] ?? 0).round().toString(),
               ),
               _resourceItem(
                 Icons.forest,
-                state.resources['wood']?.toString() ?? '0',
+                (state.resources['wood'] ?? 0).round().toString(),
               ),
               _resourceItem(
                 Icons.restaurant,
-                state.resources['meat']?.toString() ?? '0',
+                (state.resources['meat'] ?? 0).round().toString(),
               ),
               _resourceItem(
                 Icons.egg,
-                state.resources['eggs']?.toString() ?? '0',
+                (state.resources['eggs'] ?? 0).round().toString(),
               ),
               _resourceItem(
                 Icons.grass,
-                state.resources['cabbage']?.toString() ?? '0',
+                (state.resources['cabbage'] ?? 0).round().toString(),
               ),
               const VerticalDivider(color: Colors.white10),
-              IconButton(
-                icon: const Icon(
-                  Icons.architecture,
-                  size: 18,
-                  color: Color(0xFFC4B89B),
-                ),
-                onPressed: () => _showConstructionMenu(context),
-                tooltip: 'Manor Expansion',
-              ),
               Consumer<GameState>(
                 builder: (context, state, child) {
                   return Badge(
@@ -517,9 +509,15 @@ class _ManorScreenState extends State<ManorScreen> {
       builder: (context) {
         return Consumer<GameState>(
           builder: (context, state, child) {
+            final liveRoom = state.rooms.firstWhere(
+              (r) => r.id == room.id,
+              orElse: () => room,
+            );
+            final roomQueue = state.getRoomTaskQueue(liveRoom.id);
             final activeTask = state.activeTasks
-                .where((t) => t.targetId == room.id)
+                .where((t) => t.targetId == liveRoom.id)
                 .firstOrNull;
+            final displayQueue = roomQueue.where((q) => q.intentId != activeTask?.intentId && q.intentId != activeTask?.id).toList();
 
             return Container(
               padding: const EdgeInsets.all(24.0),
@@ -536,7 +534,7 @@ class _ManorScreenState extends State<ManorScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      room.name.toUpperCase(),
+                      liveRoom.name.toUpperCase(),
                       style: GoogleFonts.outfit(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -546,7 +544,7 @@ class _ManorScreenState extends State<ManorScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      room.isRestored
+                      liveRoom.isRestored
                           ? 'RESTORED AND FUNCTIONAL.'
                           : 'THIS ROOM IS IN DISREPAIR AND REQUIRES RESTORATION.',
                       style: GoogleFonts.oldStandardTt(
@@ -576,16 +574,25 @@ class _ManorScreenState extends State<ManorScreen> {
                               size: 18,
                             ),
                             const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                "${state.npcs.firstWhere((n) => n.id == activeTask.npcId, orElse: () => state.npcs.first).name.toUpperCase()} IS CURRENTLY ${state.getTaskDescription(activeTask).toUpperCase()} (${(activeTask.minutesRemaining ~/ 60)}H ${activeTask.minutesRemaining % 60}M REMAINING)",
-                                style: GoogleFonts.oldStandardTt(
-                                  color: const Color(0xFFE5D5B0),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
+                      Expanded(
+                        child: Text(
+                          "${state.npcs.firstWhereOrNull((n) => n.id == activeTask.npcId)?.name.toUpperCase() ?? "WORKER"} IS CURRENTLY ${state.getTaskDescription(activeTask).toUpperCase()}",
+                          style: GoogleFonts.oldStandardTt(
+                            color: const Color(0xFFE5D5B0),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        activeTask.type == TaskType.rest ? "UNTIL WAKEFUL" : "${(activeTask.minutesRemaining ~/ 60)}H ${activeTask.minutesRemaining % 60}M",
+                        style: GoogleFonts.oswald(
+                          color: const Color(0xFFC4B89B),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                             IconButton(
                               onPressed: () => state.cancelTask(activeTask.id),
                               icon: const Icon(
@@ -602,48 +609,154 @@ class _ManorScreenState extends State<ManorScreen> {
                       ),
                     const SizedBox(height: 16),
                     Text(
-                      room.description,
+                      liveRoom.description,
                       style: GoogleFonts.oldStandardTt(
-                        fontSize: 13,
-                        color: const Color(0xFFC4B89B).withValues(alpha: 0.8),
+                        fontSize: 14,
+                        color: const Color(0xFFE5D5B0).withValues(alpha: 0.8),
                         height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 24),
-                    if (room.isRestored &&
-                        (room.type == RoomType.study ||
-                            room.type == RoomType.kitchen ||
-                            room.type == RoomType.laboratory ||
-                            room.type == RoomType.chickenCoop ||
-                            room.type == RoomType.library))
+
+                    // ROOM TASK QUEUE (Dynamic view of NPC intents)
+                    if (displayQueue.isNotEmpty) ...[
+                      Text(
+                        'ENQUEUED TASKS',
+
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFFC4B89B),
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...displayQueue.map(
+                        (task) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  "• ${task.description.toUpperCase()}",
+                                  style: GoogleFonts.oldStandardTt(
+                                    fontSize: 12,
+                                    color: const Color(
+                                      0xFFE5D5B0,
+                                    ).withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 24.0),
+                                child: IconButton(
+                                  onPressed: () => state.cancelEnqueuedIntent(task.npcId, task.intentId),
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: Colors.redAccent,
+                                    size: 16,
+                                  ),
+                                  tooltip: 'CANCEL TASK',
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // BUILDING & CONVERSION OPTIONS
+                    if (liveRoom.type == RoomType.unused) ...[
+                      // Spare Bedroom (Ground Floor Unused)
+                      if (liveRoom.floor == Floor.ground)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: _buildExpandButton(
+                            context,
+                            'CONVERT TO SPARE BEDROOM',
+                            'Establish a quiet dwelling for residents (250 Wood, 500 Funds)',
+                            Icons.king_bed,
+                            () => state.convertUnusedToBedroom(liveRoom.id),
+                          ),
+                        ),
+
+                      // Greenhouse (Garden Lot)
+                      if (liveRoom.id == 'garden_lot')
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: _buildExpandButton(
+                            context,
+                            'BUILD GREENHOUSE',
+                            'Construct a glass enclosure for rare botanicals (100 Wood, 200 Funds)',
+                            Icons.eco,
+                            () => state.buildGreenhouse(liveRoom.id),
+                          ),
+                        ),
+
+                      // Tenement (Empty Lot)
+                      if (liveRoom.id == 'empty_lot')
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: _buildExpandButton(
+                            context,
+                            'BUILD TENEMENT',
+                            'Communal housing for additional labor (200 Wood, 400 Funds)',
+                            Icons.domain,
+                            () => state.buildTenement(liveRoom.id),
+                          ),
+                        ),
+
+                      // Laboratory (Attic/Basement)
+                      if (liveRoom.floor == Floor.attic ||
+                          liveRoom.floor == Floor.basement)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: _buildExpandButton(
+                            context,
+                            'CONVERT TO LABORATORY',
+                            'Outfit this secluded room for experimentation (50 Wood, 1000 Funds)',
+                            Icons.biotech,
+                            () => state.convertRoomToLaboratory(liveRoom.id),
+                          ),
+                        ),
+                    ],
+                    if (liveRoom.isRestored &&
+                        (liveRoom.type == RoomType.study ||
+                            liveRoom.type == RoomType.kitchen ||
+                            liveRoom.type == RoomType.laboratory ||
+                            liveRoom.type == RoomType.chickenCoop ||
+                            liveRoom.type == RoomType.library))
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
                           onPressed: () {
                             Navigator.pop(context);
-                            if (room.type == RoomType.study) {
+                            if (liveRoom.type == RoomType.study) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const StudyScreen(),
                                 ),
                               );
-                            } else if (room.type == RoomType.kitchen) {
+                            } else if (liveRoom.type == RoomType.kitchen) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const KitchenScreen(),
                                 ),
                               );
-                            } else if (room.type == RoomType.laboratory) {
+                            } else if (liveRoom.type == RoomType.laboratory) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) =>
-                                      LaboratoryScreen(room: room),
+                                      LaboratoryScreen(room: liveRoom),
                                 ),
                               );
-                            } else if (room.type == RoomType.chickenCoop) {
+                            } else if (liveRoom.type == RoomType.chickenCoop) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -651,12 +764,12 @@ class _ManorScreenState extends State<ManorScreen> {
                                       const ChickenCoopScreen(),
                                 ),
                               );
-                            } else if (room.type == RoomType.library) {
+                            } else if (liveRoom.type == RoomType.library) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) =>
-                                      LibraryScreen(room: room),
+                                      LibraryScreen(room: liveRoom),
                                 ),
                               );
                             }
@@ -676,7 +789,7 @@ class _ManorScreenState extends State<ManorScreen> {
                             color: Color(0xFFE5D5B0),
                           ),
                           label: Text(
-                            'ENTER ${room.name.toUpperCase()}',
+                            'ENTER ${liveRoom.name.toUpperCase()}',
                             style: GoogleFonts.playfairDisplay(
                               color: const Color(0xFFE5D5B0),
                               fontWeight: FontWeight.bold,
@@ -685,14 +798,35 @@ class _ManorScreenState extends State<ManorScreen> {
                           ),
                         ),
                       ),
-                    if (room.type == RoomType.field ||
-                        room.type == RoomType.garden)
-                      _buildFieldStatus(context, state, room),
-                    ...room.availableTasks.where((taskType) {
+                    if (liveRoom.type == RoomType.kitchen ||
+                        liveRoom.type == RoomType.study ||
+                        liveRoom.type == RoomType.library ||
+                        liveRoom.type == RoomType.chickenCoop) ...[
+                      const SizedBox(height: 24),
+                      const Divider(color: Colors.white10),
+                      const SizedBox(height: 24),
+                      Text(
+                        'ROOM LEDGER',
+                        style: GoogleFonts.playfairDisplay(
+                          color: const Color(0xFFE5D5B0),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      RoomLedger(room: liveRoom, state: state),
+                      const SizedBox(height: 32),
+                    ],
+                    if (liveRoom.type == RoomType.field ||
+                        liveRoom.type == RoomType.garden)
+                      _buildFieldStatus(context, state, liveRoom),
+                    ...liveRoom.availableTasks
+                        .where((taskType) {
                       // Only show available tasks. If it's a one-time task and someone is already doing it,
                       // it will be caught by _isTaskAvailable logic or assignNpcToTask.
                       // For now, let's keep it simple: always show if available.
-                      return _isTaskAvailable(state, room, taskType);
+                          return _isTaskAvailable(state, liveRoom, taskType);
                     }).map((taskType) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 8.0),
@@ -703,20 +837,22 @@ class _ManorScreenState extends State<ManorScreen> {
                           () => _handleTaskInteraction(
                             context,
                             state,
-                            room,
+                                liveRoom,
                             taskType,
                           ),
                         ),
                       );
                     }),
-                    if (room.isRestored &&
-                        (room.type == RoomType.bedroom ||
-                            room.type == RoomType.butlerQuarters ||
-                            room.type == RoomType.attic ||
-                            room.type == RoomType.basement))
-                      BedAssignmentWidget(room: room),
+                    if (liveRoom.isRestored &&
+                        (liveRoom.type == RoomType.bedroom ||
+                            liveRoom.type == RoomType.butlerQuarters ||
+                            liveRoom.type == RoomType.attic ||
+                            liveRoom.type == RoomType.basement))
+                      BedAssignmentWidget(room: liveRoom),
                     const SizedBox(height: 24),
-                    if (state.npcs.any((n) => n.currentRoomId == room.id)) ...[
+                    if (state.npcs.any(
+                      (n) => n.currentRoomId == liveRoom.id,
+                    )) ...[
                       Text(
                         "OCCUPANTS:",
                         style: GoogleFonts.playfairDisplay(
@@ -729,7 +865,7 @@ class _ManorScreenState extends State<ManorScreen> {
                       Wrap(
                         spacing: 8,
                         children: state.npcs
-                            .where((n) => n.currentRoomId == room.id)
+                            .where((n) => n.currentRoomId == liveRoom.id)
                             .map(
                               (npc) => InkWell(
                                 onTap: () {
@@ -929,7 +1065,7 @@ class _ManorScreenState extends State<ManorScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      "COST: ${metadata.requirements.entries.map((e) => "${e.value} ${e.key.toUpperCase()}").join(", ")}",
+                      "COST: ${metadata.requirements.entries.map((e) => "${e.value.round()} ${e.key.toUpperCase()}").join(", ")}",
                       style: GoogleFonts.oswald(
                         fontSize: 9,
                         letterSpacing: 1,
@@ -1245,7 +1381,7 @@ class _ManorScreenState extends State<ManorScreen> {
                         if (isHousing) {
                           state.assignHousing(npc.id, room.id);
                         } else if (type != null) {
-                          state.assignNpcToTask(
+                          state.tryScheduleNpcTask(
                             npc.id,
                             type,
                             room.id,
@@ -1305,157 +1441,57 @@ class _ManorScreenState extends State<ManorScreen> {
     );
   }
 
-  void _showConstructionMenu(BuildContext context) {
-    final blueprints = ConstructionService.getAvailableBlueprints();
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E1A15),
-      builder: (context) {
-        return Consumer<GameState>(
-          builder: (context, state, child) {
-            return Container(
-              padding: const EdgeInsets.all(24),
+  Widget _buildExpandButton(
+    BuildContext context,
+    String title,
+    String description,
+    IconData icon,
+    VoidCallback onPressed,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: () {
+          onPressed();
+          Navigator.pop(context);
+        },
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Color(0xFFC4B89B)),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          backgroundColor: const Color(0xFFC4B89B).withValues(alpha: 0.1),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFFE5D5B0), size: 20),
+            const SizedBox(width: 16),
+            Expanded(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'ESTATE EXPANSION BLUEPRINTS',
+                    title,
                     style: GoogleFonts.playfairDisplay(
-                      fontSize: 20,
+                      color: const Color(0xFFE5D5B0),
                       fontWeight: FontWeight.bold,
                       letterSpacing: 2,
-                      color: const Color(0xFFE5D5B0),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Flexible(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: blueprints.length,
-                      itemBuilder: (context, index) {
-                        final bp = blueprints[index];
-                        final isBuilding = state.activeConstruction.any(
-                          (p) => p.blueprint.id == bp.id,
-                        );
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: const Color(
-                                0xFFC4B89B,
-                              ).withValues(alpha: 0.2),
-                            ),
-                            color: Colors.black.withValues(alpha: 0.2),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    bp.name.toUpperCase(),
-                                    style: GoogleFonts.playfairDisplay(
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFFE5D5B0),
-                                    ),
-                                  ),
-                                  Text(
-                                    "${bp.durationMinutes ~/ 60}H",
-                                    style: GoogleFonts.oldStandardTt(
-                                      color: const Color(0xFFC4B89B),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                bp.description,
-                                style: GoogleFonts.oldStandardTt(
-                                  color: Colors.white54,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  ...bp.cost.entries.map(
-                                    (e) => Padding(
-                                      padding: const EdgeInsets.only(right: 12),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            _getResourceIcon(e.key),
-                                            size: 12,
-                                            color: const Color(0xFFC4B89B),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            "${e.value}",
-                                            style: GoogleFonts.oldStandardTt(
-                                              color: const Color(0xFFE5D5B0),
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  if (isBuilding)
-                                    Text(
-                                      "BUILDING...",
-                                      style: GoogleFonts.playfairDisplay(
-                                        color: Colors.amber,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  else
-                                    TextButton(
-                                      onPressed: () {
-                                        state.startConstruction(bp);
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(
-                                        "COMMENCE",
-                                        style: GoogleFonts.playfairDisplay(
-                                          color: const Color(0xFFC4B89B),
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: GoogleFonts.oldStandardTt(
+                      color: const Color(0xFFC4B89B).withValues(alpha: 0.6),
+                      fontSize: 10,
                     ),
                   ),
                 ],
               ),
-            );
-          },
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
-  }
-
-  IconData _getResourceIcon(String res) {
-    switch (res) {
-      case 'funds':
-        return Icons.payments;
-      case 'wood':
-        return Icons.forest;
-      default:
-        return Icons.category;
-    }
   }
 
   IconData _getTaskIcon(TaskType type) {

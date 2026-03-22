@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:abomination/state/game_state.dart';
 import 'package:abomination/services/task_service.dart';
+import 'package:abomination/models/npc_intent.dart';
 
 void main() {
   late GameState gameState;
@@ -36,6 +37,7 @@ void main() {
       final gardenTask = GameTask(
         id: 'garden_task',
         npcId: 'player',
+        priority: IntentPriority.normal,
         type: TaskType.rest,
         targetId: 'vegetable_garden',
         minutesRemaining: 60,
@@ -71,6 +73,7 @@ void main() {
       final kitchenTask = GameTask(
         id: 'kitchen_task',
         npcId: 'player',
+        priority: IntentPriority.normal,
         type: TaskType.eat,
         targetId: 'kitchen',
         minutesRemaining: 30,

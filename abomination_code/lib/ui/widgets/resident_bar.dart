@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:collection/collection.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../models/npc.dart';
@@ -207,67 +208,109 @@ class _ResidentBarState extends State<ResidentBar> {
   }
 
   Widget _buildTaskInfoColumn(Color inkColor) {
-    final activeIntent = widget.npc.intentQueue.isNotEmpty
-        ? widget.npc.intentQueue.first
-        : null;
-    final nextIntent = widget.npc.intentQueue.length > 1
-        ? widget.npc.intentQueue[1]
-        : null;
-
+    final intents = widget.npc.intentQueue;
     final state = Provider.of<GameState>(context, listen: false);
-    final activeRoom = activeIntent?.targetRoomId != null
-        ? state.rooms.firstWhere((r) => r.id == activeIntent!.targetRoomId, orElse: () => state.rooms.first).name
-        : null;
-    final nextRoom = nextIntent?.targetRoomId != null
-        ? state.rooms.firstWhere((r) => r.id == nextIntent!.targetRoomId, orElse: () => state.rooms.first).name
+    final activeTask = widget.npc.activeTaskId != null 
+        ? state.activeTasks.firstWhereOrNull((t) => t.id == widget.npc.activeTaskId) 
         : null;
 
-    final remaining =
-        activeIntent?.minutesRemaining ??
-        activeIntent?.expectedDurationMin ??
-        0;
+    if (intents.isEmpty && activeTask == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            "IDLE",
+            style: GoogleFonts.playfairDisplay(
+              color: inkColor,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "NO PENDING TASKS",
+            style: GoogleFonts.oldStandardTt(
+              color: inkColor.withValues(alpha: 0.4),
+              fontSize: 10,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      );
+    }
+
+    int remaining = 0;
+    String topLabel = "";
+    String roomName = "";
+    
+    if (activeTask != null) {
+      remaining = activeTask.minutesRemaining;
+      topLabel = activeTask.type.displayName;
+      final tRoom = state.rooms.firstWhereOrNull((r) => r.id == activeTask.targetId);
+      roomName = tRoom?.name ?? "Manor";
+    } else {
+      final activeIntent = intents.first;
+      remaining = (activeIntent.minutesRemaining ?? activeIntent.expectedDurationMin).toInt();
+      topLabel = activeIntent.action.displayName;
+      final tRoom = state.rooms.firstWhereOrNull((r) => r.id == activeIntent.targetRoomId);
+      roomName = tRoom?.name ?? "Manor";
+    }
+
     final hours = remaining ~/ 60;
     final mins = remaining % 60;
     final durationText = hours > 0 ? "$hours HR $mins MIN" : "$mins MIN";
 
-    final activeActionText = activeIntent?.action.displayName.toUpperCase() ?? "WAITING AT ENTRY";
-    final activeDisplay = activeRoom != null ? "$activeActionText ($activeRoom)" : activeActionText;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          durationText,
-          style: GoogleFonts.oldStandardTt(
-            color: inkColor.withValues(alpha: 0.6),
-            fontSize: 11, // Smaller for density
-            fontWeight: FontWeight.bold,
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            "CURRENTLY",
+            style: GoogleFonts.oldStandardTt(
+              color: inkColor.withValues(alpha: 0.4),
+              fontSize: 8,
+              fontStyle: FontStyle.italic,
+            ),
           ),
-        ),
-        Text(
-          activeDisplay,
-          style: GoogleFonts.playfairDisplay(
-            color: inkColor,
-            fontSize: 14, // Smaller for density
-            fontWeight: FontWeight.w700,
+          Text(
+            durationText,
+            style: GoogleFonts.oldStandardTt(
+              color: inkColor.withValues(alpha: 0.6),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        _buildActionLabel(
-          "Present Task:",
-          activeIntent?.action.displayName ?? "Idle",
-          activeRoom,
-          inkColor,
-        ),
-        _buildActionLabel(
-          "Upcoming Task:",
-          nextIntent?.action.displayName ?? "Pending",
-          nextRoom,
-          inkColor,
-          isDim: true,
-        ),
-      ],
+          const SizedBox(height: 8),
+          if (activeTask != null)
+            _buildActionLabel(
+              (widget.npc.currentRoomId != activeTask.targetId && widget.npc.targetRoomId != null) ? "Traveling to:" : "Active Task:",
+              topLabel,
+              roomName,
+              inkColor,
+              isDim: false,
+            )
+          else if (intents.isNotEmpty)
+            _buildActionLabel(
+              (widget.npc.currentRoomId != intents.first.targetRoomId && widget.npc.targetRoomId != null) ? "Traveling to:" : "Pending Task:",
+              topLabel,
+              roomName,
+              inkColor,
+              isDim: false,
+            ),
+          ...intents.where((i) => activeTask == null || activeTask.intentId != i.id).map((intent) {
+            final room = state.rooms.firstWhereOrNull((r) => r.id == intent.targetRoomId);
+            return _buildActionLabel(
+              "Enqueued:",
+              intent.action.displayName,
+              room?.name ?? "Manor",
+              inkColor,
+              isDim: true,
+            );
+          }),
+        ],
+      ),
     );
   }
 
@@ -876,11 +919,16 @@ class _ResidentBarState extends State<ResidentBar> {
                                 fontSize: 9,
                               ),
                             )
-                          : ListView.builder(
+                          : ReorderableListView.builder(
+                              onReorder: (oldIndex, newIndex) {
+                                // GameState handle the index logic
+                                state.reorderIntentQueue(widget.npc.id, oldIndex, newIndex);
+                              },
                               itemCount: widget.npc.intentQueue.length,
                               itemBuilder: (context, idx) {
                                 final intent = widget.npc.intentQueue[idx];
                                 return Padding(
+                                  key: ValueKey(intent.id),
                                   padding: const EdgeInsets.only(bottom: 6),
                                   child: Row(
                                     children: [
@@ -895,21 +943,32 @@ class _ResidentBarState extends State<ResidentBar> {
                                       ),
                                       const SizedBox(width: 4),
                                       Expanded(
-                                        child: Text(
-                                          intent.action.name.toUpperCase(),
-                                          style: GoogleFonts.playfairDisplay(
-                                            color: idx == 0
-                                                ? inkColor
-                                                : inkColor.withValues(
-                                                    alpha: 0.3,
-                                                  ),
-                                            fontSize: 10,
-                                            fontWeight: idx == 0
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                          ),
+                                        child: Builder(
+                                          builder: (context) {
+                                            final room = state.rooms.firstWhereOrNull((r) => r.id == intent.targetRoomId);
+                                            final roomName = room?.name ?? "Mansion";
+                                            final displayDesc = (intent.action == TaskType.restoreRoom)
+                                                ? "RESTORE $roomName".toUpperCase()
+                                                : "${intent.action.displayName} IN $roomName".toUpperCase();
+                                                
+                                            return Text(
+                                              displayDesc,
+                                              style: GoogleFonts.playfairDisplay(
+                                                color: idx == 0
+                                                    ? inkColor
+                                                    : inkColor.withValues(
+                                                        alpha: 0.3,
+                                                      ),
+                                                fontSize: 10,
+                                                fontWeight: idx == 0
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                              ),
+                                            );
+                                          }
                                         ),
                                       ),
+                                      const Icon(Icons.drag_handle, size: 12, color: Colors.black12),
                                     ],
                                   ),
                                 );
