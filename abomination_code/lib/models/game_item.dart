@@ -83,6 +83,7 @@ class GameItem {
     if (type.contains('meat')) return 1.0;
     if (type.contains('grain')) return 0.1;
     if (type.contains('timber')) return 5.0;
+    if (type.contains('franc') || type.contains('funds')) return 0.01;
     return 0.1;
   }
 
@@ -123,6 +124,9 @@ class GameItem {
     }
     if (type.contains('corpse')) {
       return (ItemShape.circle, const Color(0xFF4A1A1A)); // Deep dried blood red
+    }
+    if (type.contains('franc') || type.contains('funds')) {
+      return (ItemShape.circle, Colors.amber.shade300); // Gold coin representation
     }
 
     // Fallsbacks by category

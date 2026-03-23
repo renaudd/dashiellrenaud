@@ -246,8 +246,9 @@ class NPC {
   final CombatStats? combatStats;
   final List<Ability> abilities;
   final double specialCharge; // 0.0 to 1.0
-  final bool isTrained; // For creatures
+  final bool isTrained;
   final bool isReserved;
+  final List<Map<String, dynamic>> consumptionLog;
 
   NPC({
     required this.id,
@@ -308,6 +309,7 @@ class NPC {
     this.background = 'Commoner',
     this.relationships = const {},
     this.responsibilities = const {},
+    this.consumptionLog = const [],
     this.statusEffects = const [],
     this.records = const [],
     this.combatStats,
@@ -399,6 +401,7 @@ class NPC {
     bool? isTrained,
     bool? isReserved,
     Map<String, dynamic>? metadata,
+    List<Map<String, dynamic>>? consumptionLog,
     bool clearTarget = false,
     bool clearWorldDestination = false,
     bool clearThought = false,
@@ -482,6 +485,7 @@ class NPC {
       isReserved: isReserved ?? this.isReserved,
       metadata: metadata ?? this.metadata,
       lastMealHour: lastMealHour ?? this.lastMealHour,
+      consumptionLog: consumptionLog ?? this.consumptionLog,
     );
   }
 
@@ -632,6 +636,7 @@ class NPC {
     'specimenType': specimenType,
     'metadata': metadata,
     'lastMealHour': lastMealHour,
+    'consumptionLog': consumptionLog,
   };
 
   factory NPC.fromJson(Map<String, dynamic> json) => NPC(
@@ -740,5 +745,8 @@ class NPC {
     isReserved: json['isReserved'] as bool? ?? false,
     metadata: Map<String, dynamic>.from(json['metadata'] as Map? ?? {}),
     lastMealHour: json['lastMealHour'] as int?,
+    consumptionLog: (json['consumptionLog'] as List? ?? [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList(),
   );
 }

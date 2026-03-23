@@ -247,12 +247,18 @@ class _ResidentBarState extends State<ResidentBar> {
     if (activeTask != null) {
       remaining = activeTask.minutesRemaining;
       topLabel = activeTask.type.displayName;
+      if (activeTask.type == TaskType.eat && activeTask.targetName != null) {
+        topLabel = "EAT ${activeTask.targetName}";
+      }
       final tRoom = state.rooms.firstWhereOrNull((r) => r.id == activeTask.targetId);
       roomName = tRoom?.name ?? "Manor";
     } else {
       final activeIntent = intents.first;
       remaining = (activeIntent.minutesRemaining ?? activeIntent.expectedDurationMin).toInt();
       topLabel = activeIntent.action.displayName;
+      if (activeIntent.action == TaskType.eat && activeIntent.targetName != null) {
+        topLabel = "EAT ${activeIntent.targetName}";
+      }
       final tRoom = state.rooms.firstWhereOrNull((r) => r.id == activeIntent.targetRoomId);
       roomName = tRoom?.name ?? "Manor";
     }
@@ -303,7 +309,9 @@ class _ResidentBarState extends State<ResidentBar> {
             final room = state.rooms.firstWhereOrNull((r) => r.id == intent.targetRoomId);
             return _buildActionLabel(
               "Enqueued:",
-              intent.action.displayName,
+              intent.action == TaskType.eat && intent.targetName != null 
+                ? "EAT ${intent.targetName}" 
+                : intent.action.displayName,
               room?.name ?? "Manor",
               inkColor,
               isDim: true,
@@ -321,7 +329,9 @@ class _ResidentBarState extends State<ResidentBar> {
     Color inkColor, {
     bool isDim = false,
   }) {
-    final displayValue = roomName != null ? "$value ($roomName)" : value;
+    final displayValue = (value.startsWith("EAT") || value == "EAT") 
+        ? value 
+        : (roomName != null ? "$value ($roomName)" : value);
     return Padding(
       padding: const EdgeInsets.only(bottom: 4.0),
       child: Column(
@@ -869,8 +879,9 @@ class _ResidentBarState extends State<ResidentBar> {
                       inkColor,
                     ),
                     const SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     Text(
-                      "DAILY CONSUMPTION",
+                      "DAILY CONSUMPTION LOG",
                       style: GoogleFonts.oswald(
                         color: inkColor.withValues(alpha: 0.4),
                         fontSize: 8,
@@ -878,18 +889,35 @@ class _ResidentBarState extends State<ResidentBar> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    ...widget.npc.diet.dailyRequirements.entries.map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: Text(
-                          "• ${e.value}x ${e.key.name.toUpperCase()}",
-                          style: GoogleFonts.oldStandardTt(
-                            color: inkColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                    Expanded(
+                      child: widget.npc.consumptionLog.isEmpty
+                          ? Text(
+                              "No records available.",
+                              style: GoogleFonts.oldStandardTt(
+                                color: inkColor.withValues(alpha: 0.2),
+                                fontSize: 9,
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: EdgeInsets.zero,
+                              itemCount: widget.npc.consumptionLog.length,
+                              itemBuilder: (context, idx) {
+                                final log = widget.npc.consumptionLog[widget.npc.consumptionLog.length - 1 - idx];
+                                final itemName = log['itemName'] as String? ?? 'Meal';
+                                final timestamp = log['timestamp'] as String? ?? '';
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 2),
+                                  child: Text(
+                                    "• $timestamp $itemName",
+                                    style: GoogleFonts.oldStandardTt(
+                                      color: inkColor,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                     ),
                   ],
                 ),

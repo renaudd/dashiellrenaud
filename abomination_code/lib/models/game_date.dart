@@ -135,4 +135,30 @@ class GameDate {
   DateTime toDateTime() {
     return DateTime(year, month, day, hour, minute);
   }
+
+  GameDate copy() {
+    return GameDate(
+      minute: minute,
+      hour: hour,
+      day: day,
+      month: month,
+      year: year,
+    );
+  }
+
+  GameDate copyWith({
+    int? minute,
+    int? hour,
+    int? day,
+    int? month,
+    int? year,
+  }) {
+    return GameDate(
+      minute: minute ?? this.minute,
+      hour: hour ?? this.hour,
+      day: day ?? this.day,
+      month: month ?? this.month,
+      year: year ?? this.year,
+    );
+  }
 }

@@ -65,21 +65,7 @@ class GameState extends ChangeNotifier {
   final List<NPC> _npcs = [];
   final List<NPC> _availableHamletNpcs = [];
   final List<Room> _rooms = [];
-  final Map<String, num> _resources = {
-    'funds': 100,
-    'wood': 100,
-    'meat': 5,
-    'cabbage': 5,
-    'eggs': 0,
-    'meals': 2,
-    'grain': 0,
-    'ale': 0,
-    'spirits': 0,
-    'timber': 0,
-    'herbs': 0,
-    'fertilizer': 10,
-  };
-  final List<GameItem> _inventory = [];
+  // Resources and Inventory are now dynamically computed from Rooms.
 
   final TaskService _taskService = TaskService();
   final MarketService _marketService = MarketService();
@@ -130,7 +116,7 @@ class GameState extends ChangeNotifier {
       },
     );
 
-    _inventory.add(corpse);
+    _addPhysicalItem(corpse);
     _npcs.removeAt(index);
     
     _announcementHistory.insert(
@@ -158,8 +144,6 @@ class GameState extends ChangeNotifier {
     'npcs': _npcs.map((n) => n.toJson()).toList(),
     'availableHamletNpcs': _availableHamletNpcs.map((n) => n.toJson()).toList(),
     'rooms': _rooms.map((r) => r.toJson()).toList(),
-    'resources': _resources,
-    'inventory': _inventory.map((i) => i.toJson()).toList(),
     'butlerRoomId': _butlerRoomId,
     'activeConstruction': _activeConstruction.map((c) => c.toJson()).toList(),
     'activeExperiments': _activeExperiments.map((e) => e.toJson()).toList(),
@@ -214,14 +198,8 @@ class GameState extends ChangeNotifier {
     _rooms.addAll(
       (json['rooms'] as List).map((r) => Room.fromJson(r)).toList(),
     );
-
-    _resources.clear();
-    _resources.addAll(Map<String, num>.from(json['resources']));
-
-    _inventory.clear();
-    _inventory.addAll(
-      (json['inventory'] as List).map((i) => GameItem.fromJson(i)).toList(),
-    );
+    
+    // Legacy resources and inventory were removed. They are now computed from _rooms and implicitly part of room save data.
 
     _butlerRoomId = json['butlerRoomId'] as String?;
 
@@ -331,7 +309,7 @@ class GameState extends ChangeNotifier {
     final List<Map<String, dynamic>> targets = [];
 
     // Items
-    for (var item in _inventory.where(
+    for (var item in inventory.where(
       (i) =>
           i.category == ItemCategory.specimen &&
           i.type == type &&
@@ -366,7 +344,7 @@ class GameState extends ChangeNotifier {
     }
 
     // 2. Specimens from inventory (individual, as they have unique stats)
-    for (var item in _inventory.where(
+    for (var item in inventory.where(
       (i) => i.category == ItemCategory.specimen && !i.isReserved,
     )) {
       targets.add({'id': item.id, 'name': item.name});
@@ -408,7 +386,22 @@ class GameState extends ChangeNotifier {
   }
   List<NPC> get availableHamletNpcs => List.unmodifiable(_availableHamletNpcs);
   List<Room> get rooms => List.unmodifiable(_rooms);
-  Map<String, num> get resources => Map.unmodifiable(_resources);
+  Map<String, num> get resources {
+    final Map<String, num> totals = {};
+    for (var room in _rooms) {
+      for (var item in room.inventory) {
+        if (item.type == 'franc' || item.type == 'funds') {
+          totals['funds'] = (totals['funds'] ?? 0) + item.quantity;
+        } else {
+          totals[item.type] = (totals[item.type] ?? 0) + item.quantity;
+        }
+      }
+    }
+    // Also include implicit global ones if needed or legacy support
+    totals['eggs'] = _uncollectedEggs;
+    totals['meals'] = _pantry.length;
+    return totals;
+  }
 
   static bool isIndivisibleResource(String key) {
     return const [
@@ -422,7 +415,13 @@ class GameState extends ChangeNotifier {
       'fertilizer',
     ].contains(key);
   }
-  List<GameItem> get inventory => List.unmodifiable(_inventory);
+  List<GameItem> get inventory {
+    final List<GameItem> allItems = [];
+    for (var room in _rooms) {
+      allItems.addAll(room.inventory);
+    }
+    return List.unmodifiable(allItems);
+  }
   Map<ResponsibilityCategory, List<TaskType>> get categoryPriorities =>
       Map.unmodifiable(_categoryPriorities);
   Map<ResponsibilityCategory, int> get categoryDividers =>
@@ -486,33 +485,32 @@ class GameState extends ChangeNotifier {
 
   void _consumeScienceIngredients(Map<String, num> ingredients) {
     ingredients.forEach((ing, count) {
-      // Handle resources (sugar, coffee, etc)
-      if (_resources.containsKey(ing)) {
-        _resources[ing] = (_resources[ing] ?? 0) - count;
-      } else {
-        // Handle inventory items (specimens, documents)
-        for (int i = 0; i < count; i++) {
-          final itemIdx = _inventory.indexWhere((item) {
-            if (ing == 'meat') {
-              return item.type.contains('meat');
-            }
-            if (ing == 'specimen') {
-              return item.category == ItemCategory.specimen;
-            }
-            return item.type == ing;
-          });
-          if (itemIdx != -1) {
-            if (_inventory[itemIdx].quantity > 1) {
-              _inventory[itemIdx] = _inventory[itemIdx].copyWith(
-                quantity: _inventory[itemIdx].quantity - 1,
-              );
-            } else {
-              _inventory.removeAt(itemIdx);
-            }
-          }
-        }
+      for (int i = 0; i < count; i++) {
+        _consumeSingleItem(ing);
       }
     });
+  }
+
+  bool _consumeSingleItem(String typeOrCategory) {
+    for (int rIndex = 0; rIndex < _rooms.length; rIndex++) {
+      var room = _rooms[rIndex];
+      final itemIdx = room.inventory.indexWhere((item) {
+        if (typeOrCategory == 'meat') return item.type.contains('meat');
+        if (typeOrCategory == 'specimen') return item.category == ItemCategory.specimen;
+        return item.type == typeOrCategory || (typeOrCategory == 'funds' && item.type == 'franc');
+      });
+      if (itemIdx != -1) {
+        final List<GameItem> newInv = List.from(room.inventory);
+        if (newInv[itemIdx].quantity > 1) {
+          newInv[itemIdx] = newInv[itemIdx].copyWith(quantity: newInv[itemIdx].quantity - 1);
+        } else {
+          newInv.removeAt(itemIdx);
+        }
+        _rooms[rIndex] = room.copyWith(inventory: newInv);
+        return true;
+      }
+    }
+    return false;
   }
 
   void updateCategoryPriority(
@@ -553,13 +551,18 @@ class GameState extends ChangeNotifier {
     }
 
     // Check Inventory Items
-    final itemIdx = _inventory.indexWhere((i) => i.id == id);
-    if (itemIdx != -1) {
-      final meta = Map<String, dynamic>.from(_inventory[itemIdx].metadata);
-      meta['isReserved'] = reserved;
-      _inventory[itemIdx] = _inventory[itemIdx].copyWith(metadata: meta);
-      notifyListeners();
-      return;
+    for (int rIndex = 0; rIndex < _rooms.length; rIndex++) {
+      var room = _rooms[rIndex];
+      final itemIdx = room.inventory.indexWhere((i) => i.id == id);
+      if (itemIdx != -1) {
+        final List<GameItem> newInv = List.from(room.inventory);
+        final meta = Map<String, dynamic>.from(newInv[itemIdx].metadata);
+        meta['isReserved'] = reserved;
+        newInv[itemIdx] = newInv[itemIdx].copyWith(metadata: meta);
+        _rooms[rIndex] = room.copyWith(inventory: newInv);
+        notifyListeners();
+        return;
+      }
     }
   }
 
@@ -595,14 +598,14 @@ class GameState extends ChangeNotifier {
       for (var id in reservedEntityIds) {
         setReservation(id, true);
       }
-    } else if (_inventory.any((i) => i.id == itemId)) {
+    } else if (inventory.any((i) => i.id == itemId)) {
       // Auto-reserve if it's a specific item from inventory
       setReservation(itemId, true);
     }
 
     if (!_researchQueue.contains(entry)) {
       _researchQueue.add(entry);
-      final item = _inventory.firstWhereOrNull((i) => i.id == itemId);
+      final item = inventory.firstWhereOrNull((i) => i.id == itemId);
       _announcementHistory.insert(
         0,
         "[${_currentDate.formattedTime}] Enqueued ${item?.name.toUpperCase() ?? itemId.toUpperCase()} for research.",
@@ -688,15 +691,83 @@ class GameState extends ChangeNotifier {
   }
 
   void updateResource(String resource, num amount) {
-    _resources[resource] = (_resources[resource] ?? 0) + amount;
+    if (amount > 0) {
+      _addPhysicalResource(resource, amount.toInt());
+    } else {
+      int count = (-amount).toInt();
+      for (int i = 0; i < count; i++) {
+        _consumeSingleItem(resource);
+      }
+    }
     notifyListeners();
+  }
+
+  void _clearResource(String resource) {
+    for (int rIndex = 0; rIndex < _rooms.length; rIndex++) {
+      var room = _rooms[rIndex];
+      final List<GameItem> newInv = room.inventory.where((item) => item.type != resource && (resource != 'funds' || item.type != 'franc')).toList();
+      if (newInv.length != room.inventory.length) {
+         _rooms[rIndex] = room.copyWith(inventory: newInv);
+      }
+    }
+  }
+
+  void _removePhysicalItem(String itemId) {
+    for (int r = 0; r < _rooms.length; r++) {
+       var idx = _rooms[r].inventory.indexWhere((i) => i.id == itemId);
+       if(idx != -1) {
+          final newInv = List<GameItem>.from(_rooms[r].inventory);
+          newInv.removeAt(idx);
+          _rooms[r] = _rooms[r].copyWith(inventory: newInv);
+          notifyListeners();
+          return;
+       }
+    }
+  }
+
+  
+
+  void _addPhysicalItem(GameItem item) {
+    String roomId = 'workshop';
+    if (item.category == ItemCategory.food || item.type.contains('meat') || item.type.contains('egg')) {
+      roomId = 'kitchen';
+    } else if (item.category == ItemCategory.knowledge) {
+      roomId = 'library';
+    } else if (item.category == ItemCategory.resource || item.type == 'franc') {
+      roomId = 'study';
+    }
+
+    if (_rooms.indexWhere((r) => r.id == roomId) == -1) return;
+    addItemToRoom(roomId, item);
+  }
+
+  void _addPhysicalResource(String type, int amount) {
+    String roomId = 'workshop';
+    ItemCategory cat = ItemCategory.material;
+    String name = type.toUpperCase();
+    
+    if (type == 'funds' || type == 'franc') {
+      roomId = 'study';
+      cat = ItemCategory.resource;
+      name = 'Franc';
+      type = 'franc';
+    } else if (type.contains('meat') || type == 'cabbage' || type.contains('flour') || type == 'rice' || type.contains('beans') || type == 'milk' || type == 'salt' || type == 'pepper' || type == 'potato' || type == 'carrots' || type == 'beets' || type == 'water' || type == 'yeast' || type == 'sugar' || type == 'chocolate' || type == 'coffee' || type == 'eggs') {
+      roomId = 'kitchen';
+      cat = ItemCategory.food;
+    } else if (type.contains('seeds')) {
+      roomId = 'workshop';
+    }
+
+    if (_rooms.indexWhere((r) => r.id == roomId) == -1) return;
+
+    // Based on user feedback: currency and commodities act as quantitative stacks, not individual instantiated memory objects!
+    addItemToRoom(roomId, GameItem.create(name: name, type: type, category: cat, quantity: amount));
   }
 
   void addResources(Map<String, num> resources) {
     resources.forEach((key, value) {
-      _resources[key] = (_resources[key] ?? 0) + value;
+      updateResource(key, value);
     });
-    notifyListeners();
   }
 
   void addItemToRoom(String roomId, GameItem item) {
@@ -741,7 +812,10 @@ class GameState extends ChangeNotifier {
   }
 
   void setResource(String id, num amount) {
-    _resources[id] = amount;
+    _clearResource(id);
+    if (amount > 0) {
+      _addPhysicalResource(id, amount.toInt());
+    }
     notifyListeners();
   }
 
@@ -773,28 +847,25 @@ class GameState extends ChangeNotifier {
     _npcs.clear();
     _activeExperiments.clear();
     _activeConstruction.clear();
-    _inventory.clear();
-    _resources.clear();
     _researchPoints.clear();
-    _resources.addAll({
+    final Map<String, num> initialResources = {
       'funds': 100,
-      'wood': 10,
+      'wood': 50,
       'meat': 5,
       'cabbage': 5,
-      'eggs': 0,
-      'meals': 2,
+      'eggs': 10,
       'dirty_dishes': 0,
-      'flour_spelt': 10,
-      'flour_durum': 10,
+      'flour_spelt': 15,
+      'flour_durum': 15,
       'rice': 10,
       'green_beans': 10,
       'faba_beans': 10,
       'cattle_carcass': 1,
-      'meat_beef': 5,
-      'meat_chicken': 5,
+      'meat_beef': 15,
+      'meat_chicken': 15,
       'milk': 5,
-      'salt': 5,
-      'pepper': 5,
+      'salt': 100,
+      'pepper': 50,
       'potato': 10,
       'carrots': 10,
       'beets': 10,
@@ -807,7 +878,7 @@ class GameState extends ChangeNotifier {
       'seeds_potato': 10,
       'seeds_carrot': 10,
       'seeds_grain': 20,
-    });
+    };
 
     // 5 days of prepared meals for Giles and Frankenstein (30 meals total)
     // Spoil in 4 days (96 hours)
@@ -817,7 +888,7 @@ class GameState extends ChangeNotifier {
       _pantry.add(
         Dish(
           id: const Uuid().v4(),
-          name: i % 2 == 0 ? 'Hearty Stew' : 'Baked Bread',
+          name: i % 2 == 0 ? 'Beef & Root Stew' : 'Spelt Bread',
           type: i % 2 == 0 ? DishType.protein : DishType.cereal,
           quality: DishQuality.decent,
           cookedAt: now,
@@ -835,22 +906,27 @@ class GameState extends ChangeNotifier {
       {'name': 'Grains', 'type': 'grain', 'qty': 30},
     ];
 
+    _initializeManor();
+
+    // Now that rooms are created, distribute starting physical items.
+    addResources(initialResources);
     for (var mat in rawMaterials) {
-      _inventory.add(
-        GameItem.create(
-          name: mat['name'],
-          type: mat['type'],
-          category: ItemCategory.food,
-          quantity: mat['qty'],
-          metadata: {
-            'addedAt': now.toIso8601String(),
-            'shelfLifeDays': 10,
-          },
-        ),
-      );
+      if (_rooms.indexWhere((r) => r.id == 'kitchen') != -1) {
+        addItemToRoom('kitchen',
+          GameItem.create(
+            name: mat['name'],
+            type: mat['type'],
+            category: ItemCategory.food,
+            quantity: mat['qty'],
+            metadata: {
+              'addedAt': now.toIso8601String(),
+              'shelfLifeDays': 10,
+            },
+          ),
+        );
+      }
     }
 
-    _initializeManor();
     _initializeStartingCharacters();
     _initializeObjectives();
     notifyListeners();
@@ -1239,7 +1315,8 @@ class GameState extends ChangeNotifier {
 
     // Initialize 5 individual Foxes
     for (int i = 0; i < 5; i++) {
-      _npcs.add(FoxGenerator.createFox("fox_${i}_${DateTime.now().millisecondsSinceEpoch}"));
+      final fox = FoxGenerator.createFox("fox_${i}_${DateTime.now().millisecondsSinceEpoch}");
+      _npcs.add(fox.copyWith(isResident: false));
     }
 
     // Initial Combat Unit Pool - Giles is already added as the butler.
@@ -1254,7 +1331,7 @@ class GameState extends ChangeNotifier {
     
     try {
 
-    _processDishes();
+    // _processDishes();
     _processSpoilage();
 
     _processDiscreteSocialEvents();
@@ -1265,6 +1342,15 @@ class GameState extends ChangeNotifier {
 
     // History and Byproduct Logic (once per day or hour)
     if (_currentDate.hour == 23 && _currentDate.minute == 59) {
+      // Daily Random Events (e.g., Twice a year lightning/candle fire)
+      if (Random().nextDouble() < (2.0 / 365.0)) { // roughly twice a year
+        // Pick a random room
+        final possibleRooms = _rooms.where((r) => r.isRestored).toList();
+        if (possibleRooms.isNotEmpty) {
+           _triggerManorFire(possibleRooms[Random().nextInt(possibleRooms.length)].id);
+        }
+      }
+
       // End of day: update chicken histories
       for (int i = 0; i < _chickens.length; i++) {
         final chicken = _chickens[i];
@@ -1405,30 +1491,8 @@ class GameState extends ChangeNotifier {
       }
     }
 
-    // [FIX] Physiological auto-completion for Rest/Eat
-    final satiatedTasks = <GameTask>[];
-    for (var npc in _npcs) {
-      if (npc.activeTaskId != null) {
-        final task = _taskService.activeTasks.firstWhereOrNull((t) => t.id == npc.activeTaskId);
-        if (task != null && !task.isCompleted) {
-          bool isSatiated = false;
-          if (task.type == TaskType.rest && npc.energy >= 100.0) isSatiated = true;
-          if (task.type == TaskType.eat && npc.hunger <= 0.0) isSatiated = true;
-
-          if (isSatiated) {
-            task.isCompleted = true;
-            satiatedTasks.add(task);
-          }
-        }
-      }
-    }
-
-    final allCompleted = [...completedTasks, ...satiatedTasks];
-
-    // Clean up satiated tasks from TaskService if they weren't already removed
-    for (var task in satiatedTasks) {
-      _taskService.removeTask(task.id);
-    }
+    final allCompleted = [...completedTasks];
+    
 
     for (var task in allCompleted) {
       _handleTaskCompletion(task);
@@ -1644,14 +1708,14 @@ class GameState extends ChangeNotifier {
 
   void _processAutonomousCooking() {
     // Threshold increased to 10 meals (Resource + Pantry) to avoid redundant cooking
-    final currentMeals = (_resources['meals'] ?? 0) + _pantry.length;
+    final currentMeals = (resources['meals'] ?? 0) + _pantry.length;
     if (currentMeals >= 10 || _cookingQueue.length >= 3) return;
 
     // Try to queue the most basic meal first (Mystery Stew)
     // Ingredients: 1 meat, 1 potato, 1 salt
-    final hasMeat = (_resources['meat'] ?? 0) >= 1;
-    final hasPotato = (_resources['potato'] ?? 0) >= 1;
-    final hasSalt = (_resources['salt'] ?? 0) >= 1;
+    final hasMeat = (resources['meat'] ?? 0) >= 1;
+    final hasPotato = (resources['potato'] ?? 0) >= 1;
+    final hasSalt = (resources['salt'] ?? 0) >= 1;
 
     if (hasMeat && hasPotato && hasSalt) {
       _cookingQueue.add('protein_mistery_stew');
@@ -1659,14 +1723,14 @@ class GameState extends ChangeNotifier {
     }
 
     // Fallback: Bread (1 flour_spelt, 1 salt)
-    final hasFlour = (_resources['flour_spelt'] ?? 0) >= 1;
+    final hasFlour = (resources['flour_spelt'] ?? 0) >= 1;
     if (hasFlour && hasSalt) {
       _cookingQueue.add('staple_bread');
       return;
     }
 
     // Fallback: Generic Meat Fry (1 meat, 1 pepper)
-    final hasPepper = (_resources['pepper'] ?? 0) >= 1;
+    final hasPepper = (resources['pepper'] ?? 0) >= 1;
     if (hasMeat && hasPepper) {
       _cookingQueue.add('fried_generic_meat');
     }
@@ -1678,13 +1742,13 @@ class GameState extends ChangeNotifier {
     
     // Low chance per hour per room
     if (hasLivestockRoom && Random().nextDouble() < 0.3) {
-      _resources['fertilizer'] = (_resources['fertilizer'] ?? 0) + 1;
+      updateResource('fertilizer', 1);
     }
     
     // Even if no specific room yet, chickens produce a tiny bit
     if (_chickens.isNotEmpty && Random().nextDouble() < 0.1) {
-      _resources['fertilizer'] = ((_resources['fertilizer'] ?? 0) + 0.5)
-          .round();
+      setResource('fertilizer', ((resources['fertilizer'] ?? 0) + 0.5)
+          .round());
     }
   }
 
@@ -1755,16 +1819,16 @@ class GameState extends ChangeNotifier {
     final isFullTilled = room.tilledAmount >= 0.9;
     double seedConsumption = isFullTilled ? 10.0 : 5.0;
 
-    if ((_resources[seedId] ?? 0) < seedConsumption) {
+    if ((resources[seedId] ?? 0) < seedConsumption) {
       _lastAnnouncement =
           "Need ${seedConsumption.toInt()} $seedId to plant in ${room.name}.";
       notifyListeners();
       return false;
     }
     
-    _resources[seedId] = ((_resources[seedId] ?? 0) - seedConsumption)
+    setResource(seedId, ((resources[seedId] ?? 0) - seedConsumption)
         .round()
-        .toDouble();
+        .toDouble());
     
     // Yield based on preparation: full preparation = 4, partial = 2 (plus fertilizer bonuses)
     final baseYield = isFullTilled ? 4 : 2;
@@ -1809,7 +1873,7 @@ class GameState extends ChangeNotifier {
       // Award wood for first-time tilling of fields A, B, and C
       if (!room.hasBeenTilledForReward && newAmount >= 1.0) {
         if (roomId == 'field_2' || roomId == 'field_3' || roomId == 'field_4') {
-          _resources['wood'] = (_resources['wood'] ?? 0) + 50;
+          updateResource('wood', 50);
           rewardGranted = true;
           _announcementHistory.insert(
             0,
@@ -2133,8 +2197,8 @@ class GameState extends ChangeNotifier {
 
   void buyChicken(ChickenBreedType type) {
     final breed = ChickenBreed.getByTyped(type);
-    if ((_resources['funds'] ?? 0) >= breed.basePrice) {
-      _resources['funds'] = _resources['funds']! - breed.basePrice;
+    if ((resources['funds'] ?? 0) >= breed.basePrice) {
+      updateResource('funds', -(breed.basePrice));
       _chickens.add(Chicken.create(
         type,
         _currentDate,
@@ -2148,10 +2212,10 @@ class GameState extends ChangeNotifier {
   void buildGreenhouse(String roomId) {
     const costFunds = 200.0;
     const costWood = 100.0;
-    if ((_resources['funds'] ?? 0) >= costFunds &&
-        (_resources['wood'] ?? 0) >= costWood) {
-      _resources['funds'] = _resources['funds']! - costFunds;
-      _resources['wood'] = _resources['wood']! - costWood;
+    if ((resources['funds'] ?? 0) >= costFunds &&
+        (resources['wood'] ?? 0) >= costWood) {
+      updateResource('funds', -(costFunds));
+      updateResource('wood', -(costWood));
 
       final index = _rooms.indexWhere((r) => r.id == roomId);
       if (index != -1) {
@@ -2174,10 +2238,10 @@ class GameState extends ChangeNotifier {
   void buildTenement(String roomId) {
     const costFunds = 400.0;
     const costWood = 200.0;
-    if ((_resources['funds'] ?? 0) >= costFunds &&
-        (_resources['wood'] ?? 0) >= costWood) {
-      _resources['funds'] = _resources['funds']! - costFunds;
-      _resources['wood'] = _resources['wood']! - costWood;
+    if ((resources['funds'] ?? 0) >= costFunds &&
+        (resources['wood'] ?? 0) >= costWood) {
+      updateResource('funds', -(costFunds));
+      updateResource('wood', -(costWood));
 
       final index = _rooms.indexWhere((r) => r.id == roomId);
       if (index != -1) {
@@ -2217,10 +2281,10 @@ class GameState extends ChangeNotifier {
 
     const costFunds = 1000.0;
     const costWood = 50.0;
-    if ((_resources['funds'] ?? 0) >= costFunds &&
-        (_resources['wood'] ?? 0) >= costWood) {
-      _resources['funds'] = _resources['funds']! - costFunds;
-      _resources['wood'] = _resources['wood']! - costWood;
+    if ((resources['funds'] ?? 0) >= costFunds &&
+        (resources['wood'] ?? 0) >= costWood) {
+      updateResource('funds', -(costFunds));
+      updateResource('wood', -(costWood));
 
       _rooms[index] = _rooms[index].copyWith(
         type: RoomType.laboratory,
@@ -2253,10 +2317,10 @@ class GameState extends ChangeNotifier {
 
     const costFunds = 500.0;
     const costWood = 250.0;
-    if ((_resources['funds'] ?? 0) >= costFunds &&
-        (_resources['wood'] ?? 0) >= costWood) {
-      _resources['funds'] = _resources['funds']! - costFunds;
-      _resources['wood'] = _resources['wood']! - costWood;
+    if ((resources['funds'] ?? 0) >= costFunds &&
+        (resources['wood'] ?? 0) >= costWood) {
+      updateResource('funds', -(costFunds));
+      updateResource('wood', -(costWood));
 
       _rooms[index] = _rooms[index].copyWith(
         type: RoomType.bedroom,
@@ -2330,7 +2394,7 @@ class GameState extends ChangeNotifier {
 
       final Map<String, num> gains = result['resources'] as Map<String, num>;
       gains.forEach((key, value) {
-        _resources[key] = (_resources[key] ?? 0) + value;
+        updateResource(key, value);
       });
 
       final List<String> logs = result['logs'] as List<String>;
@@ -2455,16 +2519,16 @@ class GameState extends ChangeNotifier {
 
         // Apply Rewards
         if (objective.id == 'manor_restoration') {
-          _resources['funds'] = (_resources['funds'] ?? 0) + 1000;
+          updateResource('funds', 1000);
           _lastAnnouncement =
               "THE MANOR IS RESTORED. A BOUNTY OF 1000 FUNDS HAS BEEN AWARDED.";
         } else if (objective.id == 'farming_tutorial_5') {
-          _resources['funds'] = (_resources['funds'] ?? 0) + 100;
-          _resources['wood'] = (_resources['wood'] ?? 0) + 100;
+          updateResource('funds', 100);
+          updateResource('wood', 100);
           _lastAnnouncement =
               "HARVEST COMPLETE. YOU HAVE BEEN REWARDED WITH 100 FUNDS AND 100 WOOD.";
         } else if (objective.id == 'build_laboratory') {
-          _resources['funds'] = (_resources['funds'] ?? 0) + 200;
+          updateResource('funds', 200);
           _lastAnnouncement =
               "LABORATORY ESTABLISHED. RESEARCH GRANTS OF 200 FUNDS HAVE BEEN DISBURSED.";
         }
@@ -2700,15 +2764,15 @@ class GameState extends ChangeNotifier {
   }
 
   void startConstruction(ConstructionBlueprint blueprint) {
-    num availableFunds = (_resources['funds'] ?? 0);
+    num availableFunds = (resources['funds'] ?? 0);
     num neededFunds = (blueprint.cost['funds'] ?? 0);
-    num availableWood = (_resources['wood'] ?? 0);
+    num availableWood = (resources['wood'] ?? 0);
     num neededWood = (blueprint.cost['wood'] ?? 0);
 
     if (availableFunds.round() >= neededFunds.round() &&
         availableWood.round() >= neededWood.round()) {
-      _resources['funds'] = (availableFunds - neededFunds).round();
-      _resources['wood'] = (availableWood - neededWood).round();
+      setResource('funds', (availableFunds - neededFunds).round());
+      setResource('wood', (availableWood - neededWood).round());
 
       _activeConstruction.add(
         ConstructionProject(
@@ -2939,20 +3003,27 @@ class GameState extends ChangeNotifier {
       // Spoil pantry dishes (48h default, meals in prompt are preserved for 4 days)
       _pantry.removeWhere((d) => d.isSpoiled(now));
 
-      // Spoil inventory items (Raw materials spoil in 10 days)
-      _inventory.removeWhere((item) {
-        if (item.category == ItemCategory.resource || item.category == ItemCategory.food) {
-          final addedAtStr = item.metadata['addedAt'] as String?;
-          if (addedAtStr != null) {
-            final addedAt = DateTime.parse(addedAtStr);
-            final shelfLifeDays = (item.metadata['shelfLifeDays'] as num? ?? 10).toDouble();
-            if (now.difference(addedAt).inDays >= shelfLifeDays) {
-              return true; // Item spoiled
+      // Spoil inventory items across all rooms
+      for (int i = 0; i < _rooms.length; i++) {
+        final room = _rooms[i];
+        final newInv = List<GameItem>.from(room.inventory);
+        newInv.removeWhere((item) {
+          if (item.category == ItemCategory.resource || item.category == ItemCategory.food) {
+            final addedAtStr = item.metadata['addedAt'] as String?;
+            if (addedAtStr != null) {
+              final addedAt = DateTime.parse(addedAtStr);
+              final shelfLifeDays = (item.metadata['shelfLifeDays'] as num? ?? 10).toDouble();
+              if (now.difference(addedAt).inDays >= shelfLifeDays) {
+                return true; // Item spoiled
+              }
             }
           }
+          return false;
+        });
+        if (newInv.length != room.inventory.length) {
+          _rooms[i] = room.copyWith(inventory: newInv);
         }
-        return false;
-      });
+      }
     }
   }
 
@@ -2963,7 +3034,7 @@ class GameState extends ChangeNotifier {
     if (npcSnapshot.status == NPCStatus.dead) return;
 
     // Base drains
-    double dHunger = (5.0 / 60.0); // 5 hunger per hour base
+    double dHunger = (4.0 / 60.0); // 4 hunger per hour base
     double dEnergy = 0.0;
     double dSatisf = -(2.0 / 60.0); // 2 satisfaction per hour base
     double dDigestion = (100.0 / 1440.0); // ~1 day to full
@@ -3364,7 +3435,6 @@ class GameState extends ChangeNotifier {
         movementPath: newPath,
         movementProgress: 0.0,
       );
-      return;
     }
 
     if (npc.targetRoomId == null || npc.currentRoomId == npc.targetRoomId) {
@@ -3690,6 +3760,20 @@ class GameState extends ChangeNotifier {
       targetId: task.targetId,
     );
 
+    // Fire Risk Assessment
+    final bool isRiskyRoutine = task.type == TaskType.cook || 
+                                task.type == TaskType.experiment || 
+                                task.type == TaskType.operation || 
+                                task.type == TaskType.surgicalOperation ||
+                                task.type == TaskType.surgicalCombination ||
+                                task.type == TaskType.vivisection;
+    if (isRiskyRoutine && result.quality < 0.6) {
+        // failed or low performance action -> small chance of fire
+        if (Random().nextDouble() < 0.1) {
+            _triggerManorFire(task.targetId ?? 'manor_kitchen');
+        }
+    }
+
     if (result.quality > 1.5) {
       triggerJoy(worker.id, task.type.name);
       // Re-fetch worker to include new status effect if we use it later
@@ -3709,14 +3793,14 @@ class GameState extends ChangeNotifier {
         (task.type == TaskType.research || task.type == TaskType.dissect)) {
       yieldMultiplier = 0.5; // Butler is bad at science
       // Waste resources
-      _resources['funds'] = (_resources['funds'] ?? 0) - 5;
+      updateResource('funds', -(5));
       _lastAnnouncement =
           "${worker.name} wasted materials while attempting ${task.type.name}!";
     }
 
     if (task.type == TaskType.collectEggs) {
       if (_uncollectedEggs > 0) {
-        _resources['eggs'] = (_resources['eggs'] ?? 0) + _uncollectedEggs;
+        updateResource('eggs', _uncollectedEggs);
         _lastAnnouncement =
             "${worker.name} collected $_uncollectedEggs eggs from the coop.";
         _uncollectedEggs = 0;
@@ -3743,7 +3827,7 @@ class GameState extends ChangeNotifier {
           _crops.removeWhere((c) => c.id == crop.id);
           // Gained specific crop type
           String resId = crop.type.name;
-          _resources[resId] = (_resources[resId] ?? 0) + y;
+          updateResource(resId, y);
         }
         _lastAnnouncement =
             "${worker.name} harvested crops from the garden.";
@@ -3753,7 +3837,7 @@ class GameState extends ChangeNotifier {
       }
     } else if (task.type == TaskType.butcherAnimals) {
       if (task.targetId == 'rat_specimen' || task.targetId == 'bat_specimen') {
-        _resources[task.targetId!] = (_resources[task.targetId!] ?? 0) - 1;
+        updateResource(task.targetId!, -(1));
         final meat = GameItem.create(
           name: task.targetId == 'rat_specimen' ? "Rat Meat" : "Bat Meat",
           type: 'meat_small',
@@ -3761,8 +3845,8 @@ class GameState extends ChangeNotifier {
           quantity: 1,
           quality: 0.8,
         );
-        _inventory.add(meat);
-        _resources['meat_small'] = (_resources['meat_small'] ?? 0) + 1;
+        _addPhysicalItem(meat);
+        updateResource('meat_small', 1);
         
         // Add to room inventory for ledger visibility
         if (task.targetId != null) {
@@ -3787,8 +3871,8 @@ class GameState extends ChangeNotifier {
             quantity: yield,
             quality: 1.0,
           );
-          _inventory.add(poultry);
-          _resources['meat_chicken'] = (_resources['meat_chicken'] ?? 0) + yield;
+          _addPhysicalItem(poultry);
+          updateResource('meat_chicken', yield);
           _chickens.removeAt(chickenIndex);
 
           // Add to room inventory for ledger visibility
@@ -3801,11 +3885,11 @@ class GameState extends ChangeNotifier {
           _lastAnnouncement = "${worker.name} butchered the chicken and collected $yield units of poultry.";
         } else {
           // Check if it's an NPC or other item
-          final itemIndex = _inventory.indexWhere((i) => i.id == task.targetId);
+          final itemIndex = inventory.indexWhere((i) => i.id == task.targetId);
           if (itemIndex != -1) {
-            final item = _inventory[itemIndex];
+            final item = inventory[itemIndex];
             final itemName = item.name;
-            _inventory.removeAt(itemIndex);
+            _removePhysicalItem(item.id);
             
             final yield = (item.weight * 0.6).clamp(1.0, 50.0).toInt();
             final resKey = item.type.contains('cow') || item.type.contains('cattle') ? 'meat_beef' : 'meat_generic';
@@ -3816,8 +3900,8 @@ class GameState extends ChangeNotifier {
               quantity: yield,
               quality: 0.9,
             );
-            _inventory.add(meat);
-            _resources[resKey] = (_resources[resKey] ?? 0) + yield;
+            _addPhysicalItem(meat);
+            updateResource(resKey, yield);
 
             // Add to room inventory for ledger visibility
             final roomIndex = _rooms.indexWhere((r) => r.id == 'kitchen');
@@ -3842,8 +3926,8 @@ class GameState extends ChangeNotifier {
                 quantity: yield,
                 quality: 0.7,
               );
-              _inventory.add(meat);
-              _resources['meat_generic'] = (_resources['meat_generic'] ?? 0) + yield;
+              _addPhysicalItem(meat);
+              updateResource('meat_generic', yield);
 
               // Add to room inventory for ledger visibility
               final roomIndex = _rooms.indexWhere((r) => r.id == 'kitchen');
@@ -3864,13 +3948,23 @@ class GameState extends ChangeNotifier {
     } else if (task.type == TaskType.eat) {
       // 1. Try to find a dish in the pantry first (high quality satisfaction)
       int? bestDishIndex;
-      final neededTypes = worker.diet.dailyRequirements.keys.toList();
-      for (int j = 0; j < _pantry.length; j++) {
-        final dish = _pantry[j];
-        if (neededTypes.contains(dish.type)) {
-          if (bestDishIndex == null ||
-              _pantry[bestDishIndex].quality.index > dish.quality.index) {
+      if (task.targetName != null) {
+        for (int j = 0; j < _pantry.length; j++) {
+          if (_pantry[j].name.toLowerCase() == task.targetName!.toLowerCase()) {
             bestDishIndex = j;
+            break;
+          }
+        }
+      }
+      if (bestDishIndex == null) {
+        final neededTypes = worker.diet.dailyRequirements.keys.toList();
+        for (int j = 0; j < _pantry.length; j++) {
+          final dish = _pantry[j];
+          if (neededTypes.contains(dish.type)) {
+            if (bestDishIndex == null ||
+                _pantry[bestDishIndex].quality.index > dish.quality.index) {
+              bestDishIndex = j;
+            }
           }
         }
       }
@@ -3878,6 +3972,7 @@ class GameState extends ChangeNotifier {
       String mealSource = "supplies";
       String mealName = "a simple meal";
       double satBonus = 20.0;
+      double hungerRestore = 0.0;
       bool mealConsumed = false;
 
       if (bestDishIndex != null) {
@@ -3885,40 +3980,58 @@ class GameState extends ChangeNotifier {
         mealSource = "the pantry";
         mealName = dish.name;
         satBonus = 30.0; // Pantry food is better
+        hungerRestore = 50.0; // 50% fullness for prepared meals
         mealConsumed = true;
-      } else if ((_resources['meals'] ?? 0) > 0) {
-        _resources['meals'] = _resources['meals']! - 1;
-        mealSource = "the kitchen supplies";
-        mealName = "a saved meal";
-        satBonus = 20.0;
-        mealConsumed = true;
-      } else if ((_resources['meat'] ?? 0) > 0 || (_resources['cabbage'] ?? 0) > 0) {
-        // Scavenge raw ingredients if no meals exist
-        if ((_resources['meat'] ?? 0) > 0) {
-          _resources['meat'] = _resources['meat']! - 1;
-        } else {
-          _resources['cabbage'] = _resources['cabbage']! - 1;
+      } else {
+        // Scavenge raw ingredients: vegetables > eggs > raw meat > flour
+        final priorityKeys = ['cabbage', 'potato', 'carrots', 'beets', 'green_beans', 'faba_beans', 'eggs', 'meat_beef', 'meat_chicken', 'meat_generic', 'flour_spelt', 'flour_durum'];
+        String? foundKey;
+        for (var key in priorityKeys) {
+            if ((resources[key] ?? 0) > 0) {
+                foundKey = key;
+                break;
+            }
         }
-        mealSource = "raw ingredients";
-        mealName = "scavenged food";
-        satBonus = 5.0; // Low satisfaction from raw/emergency food
-        mealConsumed = true;
+        
+        if (foundKey != null) {
+            _consumeSingleItem(foundKey); // Deducts it globally across room inventories
+            mealSource = "raw ingredients";
+            mealName = "raw $foundKey".replaceAll('_', ' ');
+            satBonus = 5.0; // Low satisfaction from raw/emergency food
+            hungerRestore = 30.0; // 30% fullness for raw ingredients
+            mealConsumed = true;
+        } else {
+            // Nothing to eat!!
+            _announcementHistory.insert(0, "[${_currentDate.formattedTime}] SURVIVAL: ${worker.name} found nothing to eat in the manor!");
+            newThought = "There is literally no food left in this manor. We will starve.";
+            newSatisfaction = (newSatisfaction - 15.0).clamp(0.0, 100.0);
+        }
       }
 
+      List<Map<String, dynamic>>? newLog;
       if (mealConsumed) {
-        // Each meal restores 60 hunger (roughly 14 hours of decay at 0.07/min)
-        newHunger = (newHunger - 60.0).clamp(0.0, 100.0);
+        final logEntry = {
+          'itemName': mealName,
+          'source': mealSource,
+          'timestamp': '[${_currentDate.formattedTime}]',
+          'minutes': _currentDate.totalMinutes,
+        };
+        newLog = List<Map<String, dynamic>>.from(worker.consumptionLog);
+        newLog.add(logEntry);
+        newLog.removeWhere((e) => (_currentDate.totalMinutes - (e['minutes'] as int? ?? 0)) > 4320);
+
+        newHunger = (newHunger - hungerRestore).clamp(0.0, 100.0);
         newSatisfaction = (newSatisfaction + satBonus).clamp(0.0, 100.0);
         newThought = "That $mealName from $mealSource was exactly what I needed.";
-        _resources['dirty_dishes'] = (_resources['dirty_dishes'] ?? 0) + 1;
+        if (hungerRestore > 40.0) {
+            updateResource('dirty_dishes', 1); // Only dirty a dish if we ate a real meal
+        }
         
         _lastAnnouncement = "${worker.name} finished consuming $mealName from $mealSource.";
-
-        // Track meal timing to prevent immediate loops
-        _npcs[npcIndex] = _npcs[npcIndex].copyWith(lastMealHour: _currentDate.hour);
+        _announcementHistory.insert(0, "[${_currentDate.formattedTime}] NUTRITION: ${worker.name} consumed $mealName from $mealSource.");
 
         // Optional: Resident cleanup duty
-        if (worker.isResident) {
+        if (worker.isResident && hungerRestore > 40.0) {
           final cleanupIntent = NPCIntent(
             id: 'cleanish_${worker.id}_${DateTime.now().millisecondsSinceEpoch}',
             priority: IntentPriority.normal,
@@ -3943,6 +4056,14 @@ class GameState extends ChangeNotifier {
         newQueue.removeWhere((i) => i.id == 'high_priority_hunger_${worker.id}');
         newQueue.add(cooldownIntent);
       }
+
+      // Track meal timing to prevent immediate loops (even for starvation)
+      _npcs[npcIndex] = _npcs[npcIndex].copyWith(
+        lastMealHour: _currentDate.hour,
+        hunger: newHunger,
+        satisfaction: newSatisfaction,
+        consumptionLog: newLog,
+      );
     } else if (task.type == TaskType.plantCrops) {
       CropType type = CropType.cabbage;
       if (task.recipeId != null) {
@@ -4023,16 +4144,15 @@ class GameState extends ChangeNotifier {
 
     // 2. Process Items Found
     for (var item in result.itemsFound) {
-      _inventory.add(item);
+      _addPhysicalItem(item);
     }
 
     // 3. Process Resources Gained (Loot)
     for (var entry in result.resourcesGained.entries) {
       final key = entry.key;
       final value = entry.value;
-      _resources[key] =
-          ((_resources[key] ?? 0) + (value * yieldMultiplier))
-          .round();
+      setResource(key, ((resources[key] ?? 0) + (value * yieldMultiplier))
+          .round());
     }
 
     // 4. Process Specialized Task Types
@@ -4051,11 +4171,11 @@ class GameState extends ChangeNotifier {
 
             // 1. Take from global inventory
             for (
-              int i = _inventory.length - 1;
+              int i = inventory.length - 1;
               i >= 0 && stillNeeded > 0;
               i--
             ) {
-              final item = _inventory[i];
+              final item = inventory[i];
               bool matches = false;
               if (key == 'meat') {
                 matches =
@@ -4078,19 +4198,19 @@ class GameState extends ChangeNotifier {
                   ),
                 );
                 if (item.quantity > toTake) {
-                  _inventory[i] = item.copyWith(
+                  inventory[i] = item.copyWith(
                     quantity: (item.quantity - toTake).toInt(),
                   );
                 } else {
-                  _inventory.removeAt(i);
+                  inventory.removeAt(i);
                 }
                 stillNeeded -= toTake;
               }
             }
 
             // 2. Take from resources
-            num toTake = min(_resources[key] ?? 0, stillNeeded);
-              _resources[key] = (_resources[key] ?? 0) - toTake;
+            num toTake = min(resources[key] ?? 0, stillNeeded);
+              updateResource(key, -(toTake));
               workerInv.add(
                 GameItem.create(
                   name: key.toUpperCase(),
@@ -4142,7 +4262,7 @@ class GameState extends ChangeNotifier {
 
         int availableInRoom = 0;
         int availableInWorker = 0;
-        int availableInResources = (_resources[ing] ?? 0).toInt();
+        int availableInResources = (resources[ing] ?? 0).toInt();
 
         if (ing == 'meat') {
           // Special case for generic meat
@@ -4224,8 +4344,8 @@ class GameState extends ChangeNotifier {
             remainingToDeduct -= taken;
           }
           if (remainingToDeduct > 0) {
-            _resources[ing] = ((_resources[ing] ?? 0) - remainingToDeduct)
-                .round();
+            setResource(ing, ((resources[ing] ?? 0) - remainingToDeduct)
+                .round());
           }
         }
 
@@ -4402,9 +4522,9 @@ class GameState extends ChangeNotifier {
 
           // From global
           if (task.targetId == 'library' || task.targetId == 'study') {
-            for (int i = _inventory.length - 1; i >= 0; i--) {
-              if (_inventory[i].category == ItemCategory.knowledge) {
-                roomInv.add(_inventory.removeAt(i));
+            for (int i = inventory.length - 1; i >= 0; i--) {
+              if (inventory[i].category == ItemCategory.knowledge) {
+                roomInv.add(inventory.removeAt(i));
                 processedCount++;
               }
             }
@@ -4490,7 +4610,7 @@ class GameState extends ChangeNotifier {
        if (_announcementHistory.length > 50) _announcementHistory.removeLast();
     }
 
-    _inventory.addAll(result.itemsFound);
+    for (var i in result.itemsFound) { _addPhysicalItem(i); }
     _lastAnnouncement = result.message;
 
     // Room Type Conversion for Industrials
@@ -4576,7 +4696,7 @@ class GameState extends ChangeNotifier {
         
         final displayName = "${creatureId == 'rat_specimen' ? 'Brown Rat' : 'Leathery Bat'} (${isMale ? 'Male' : 'Female'}, $ageWks wks, ${weightG}g)";
         
-        _inventory.add(GameItem.create(
+        inventory.add(GameItem.create(
           name: displayName,
           type: creatureId,
           category: ItemCategory.specimen,
@@ -4620,7 +4740,7 @@ class GameState extends ChangeNotifier {
         },
       );
 
-      _inventory.add(note);
+      _addPhysicalItem(note);
       _announcementHistory.insert(
         0,
         "[${_currentDate.formattedTime}] DISCOVERY: Found discarded research notes on $discipline.",
@@ -4791,7 +4911,7 @@ class GameState extends ChangeNotifier {
     final metadata = TaskService.getMetadata(type);
     if (metadata.requirements.isNotEmpty) {
       for (var req in metadata.requirements.entries) {
-        final has = _resources[req.key] ?? 0;
+        final has = resources[req.key] ?? 0;
         if (has < req.value) {
           _lastAnnouncement =
               "Insufficient ${req.key.toUpperCase()} for ${type.displayName}. Need ${req.value}, have $has.";
@@ -4801,8 +4921,8 @@ class GameState extends ChangeNotifier {
       }
 
       for (var req in metadata.requirements.entries) {
-        _resources[req.key] = (_resources[req.key] ?? 0) - req.value;
-        debugPrint("NPC_RESOURCE_CONSUME: ${npc.name} used ${req.value} ${req.key}. Remaining: ${_resources[req.key]}");
+        updateResource(req.key, -(req.value));
+        debugPrint("NPC_RESOURCE_CONSUME: ${npc.name} used ${req.value} ${req.key}. Remaining: ${resources[req.key]}");
       }
     }
 
@@ -4882,7 +5002,7 @@ class GameState extends ChangeNotifier {
             assignedRecipeId = recipe.id;
             duration = recipe.durationMinutes;
             for (var entry in recipe.ingredients.entries) {
-              _resources[entry.key] = (_resources[entry.key] ?? 0) - entry.value;
+              updateResource(entry.key, -(entry.value));
             }
           } else {
             assignedType = TaskType.research;
@@ -5080,8 +5200,8 @@ class GameState extends ChangeNotifier {
 
     // Deduct from manor, add to NPC
     for (var entry in resources.entries) {
-      if ((_resources[entry.key] ?? 0) >= entry.value) {
-        _resources[entry.key] = _resources[entry.key]! - entry.value;
+      if ((resources[entry.key] ?? 0) >= entry.value) {
+        updateResource(entry.key, -(entry.value));
       }
     }
 
@@ -5149,7 +5269,7 @@ class GameState extends ChangeNotifier {
 
     // Merge items back
     for (var entry in npc.journeyInventory.entries) {
-      _resources[entry.key] = (_resources[entry.key] ?? 0) + entry.value;
+      updateResource(entry.key, entry.value);
     }
 
     final hour = _currentDate.hour;
@@ -5190,7 +5310,7 @@ class GameState extends ChangeNotifier {
     if (!isPrepared) {
       // Check ingredients
       for (var entry in recipe.ingredients.entries) {
-        if ((_resources[entry.key] ?? 0) < entry.value) {
+        if ((resources[entry.key] ?? 0) < entry.value) {
           _lastAnnouncement = "NOT ENOUGH ${entry.key.toUpperCase()}!";
           notifyListeners();
           return;
@@ -5199,13 +5319,13 @@ class GameState extends ChangeNotifier {
 
       // Consume ingredients
       for (var entry in recipe.ingredients.entries) {
-        _resources[entry.key] = (_resources[entry.key] ?? 0) - entry.value;
+        updateResource(entry.key, -(entry.value));
       }
     }
 
     // Create Dishes or handle special results
     if (recipe.id == 'butcher_cattle') {
-      _resources['meat_beef'] = (_resources['meat_beef'] ?? 0) + recipe.yield;
+      updateResource('meat_beef', recipe.yield);
     } else {
       for (int i = 0; i < recipe.yield; i++) {
         _pantry.add(
@@ -5282,22 +5402,7 @@ class GameState extends ChangeNotifier {
   void resetState() {
     _npcs.clear();
     _rooms.clear();
-    _resources.clear();
-    _resources.addAll({
-      'gold': 500,
-      'meat': 10,
-      'eggs': 6,
-      'cabbage': 8,
-      'wood': 20,
-      'meals': 2,
-      'grain': 0,
-      'ale': 0,
-      'spirits': 0,
-      'timber': 0,
-      'herbs': 0,
-    });
     _taskStagnationCounters.clear();
-    _inventory.clear();
     _activeConstruction.clear();
     _activeExperiments.clear();
     _announcementHistory.clear();
@@ -5323,14 +5428,14 @@ class GameState extends ChangeNotifier {
   void craftItem(String name, Map<String, num> requirements, String product) {
     bool canCraft = true;
     requirements.forEach((res, amount) {
-      if ((_resources[res] ?? 0) < amount) canCraft = false;
+      if ((resources[res] ?? 0) < amount) canCraft = false;
     });
 
     if (canCraft) {
       requirements.forEach((res, amount) {
-        _resources[res] = (_resources[res] ?? 0) - amount;
+        updateResource(res, -(amount));
       });
-      _inventory.add(
+      inventory.add(
         GameItem.create(
           name: product,
           type: product.toLowerCase().replaceAll(' ', '_'),
@@ -5370,8 +5475,8 @@ class GameState extends ChangeNotifier {
     const cost = 5;
 
     // Check manor funds first
-    if ((_resources['funds'] ?? 0) >= cost) {
-      _resources['funds'] = (_resources['funds'] ?? 0) - cost;
+    if ((resources['funds'] ?? 0) >= cost) {
+      updateResource('funds', -(cost));
       _refreshHamletNpcsLogic();
       return;
     }
@@ -5787,9 +5892,15 @@ class GameState extends ChangeNotifier {
     // 0. Dead/Fainted/Broken - Stop processing
     if (npc.status == NPCStatus.dead ||
         npc.status == NPCStatus.fainted ||
-        npc.status == NPCStatus.broken ||
-        npc.status == NPCStatus.sleeping) { 
+        npc.status == NPCStatus.broken) { 
       return;
+    }
+    if (npc.status == NPCStatus.sleeping) {
+      final criticalNeeds = npc.digestion >= 90.0;
+      final hasWakefulIntent = npc.intentQueue.any((i) => i.priority == IntentPriority.high || i.action == TaskType.useToilet);
+      if (!criticalNeeds && !hasWakefulIntent) {
+        return;
+      }
     }
 
     final activeTask = npc.activeTaskId != null 
@@ -5858,7 +5969,7 @@ class GameState extends ChangeNotifier {
         _npcs[index] = npc = npc.copyWith(activeTaskId: null);
       }
 
-      final success = assignNpcToTask(npc.id, intent.action, intent.targetRoomId, recipeId: intent.recipeId, intentId: intent.id, priority: intent.priority, silent: true);
+      final success = assignNpcToTask(npc.id, intent.action, intent.targetRoomId, recipeId: intent.recipeId, targetName: intent.targetName, intentId: intent.id, priority: intent.priority, silent: true);
       
       if (success) {
         if (!npc.intentQueue.any((i) => i.id == intent.id)) {
@@ -5909,7 +6020,29 @@ class GameState extends ChangeNotifier {
     bool addedHighPri = false;
     
     if (npc.hunger > 89 && !mutableQueue.any((i) => i.id == 'high_priority_hunger_${npc.id}')) {
-       mutableQueue.add(NPCIntent(id: 'high_priority_hunger_${npc.id}', action: TaskType.eat, targetRoomId: 'kitchen', priority: IntentPriority.high, expectedDurationMin: 60));
+       String? mealName;
+       if (_pantry.isNotEmpty) {
+           final neededTypes = npc.diet.dailyRequirements.keys.toList();
+           int? bestIndex;
+           for (int j = 0; j < _pantry.length; j++) {
+               if (neededTypes.contains(_pantry[j].type)) {
+                   if (bestIndex == null || _pantry[bestIndex].quality.index < _pantry[j].quality.index) {
+                       bestIndex = j;
+                   }
+               }
+           }
+           mealName = bestIndex != null ? _pantry[bestIndex].name : _pantry.first.name;
+       } else {
+           final priorityKeys = ['cabbage', 'potato', 'carrots', 'beets', 'green_beans', 'faba_beans', 'eggs', 'meat_beef', 'meat_chicken', 'meat_generic', 'flour_spelt', 'flour_durum'];
+           String? foundKey;
+           for (var key in priorityKeys) {
+               if ((resources[key] ?? 0) > 0) { foundKey = key; break; }
+           }
+            if (foundKey != null) {
+                mealName = "raw ${foundKey.replaceAll('_', ' ')}";
+            }
+       }
+       mutableQueue.add(NPCIntent(id: 'high_priority_hunger_${npc.id}', action: TaskType.eat, targetRoomId: 'kitchen', priority: IntentPriority.high, expectedDurationMin: 60, targetName: mealName));
        addedHighPri = true;
     }
     if (npc.energy < 11 && !mutableQueue.any((i) => i.id == 'high_priority_energy_${npc.id}')) {
@@ -5943,8 +6076,8 @@ class GameState extends ChangeNotifier {
     }
 
     final highPriQueue = npc.intentQueue.where((i) => i.priority == IntentPriority.high).toList();
-    if (highPriQueue.isNotEmpty) {
-      if (tryAssign(highPriQueue.first)) return;
+    for (var intent in highPriQueue) {
+      if (tryAssign(intent)) return;
     }
 
     // --- PHASE 2: SCHEDULE BRANCHES ---
@@ -5957,15 +6090,82 @@ class GameState extends ChangeNotifier {
     } 
     
     if (activity == ScheduleActivity.eat) { // EAT BLOCK
-       if (currentTask != null && (currentTask.type == TaskType.cook || currentTask.type == TaskType.eat)) return;
-       final eatIntent = NPCIntent(id: 'sched_eat_${npc.id}_$hourIndex', action: TaskType.eat, targetRoomId: 'kitchen', priority: IntentPriority.high, expectedDurationMin: 60);
+       if (currentTask != null && (currentTask.type == TaskType.cook || currentTask.type == TaskType.eat || currentTask.type == TaskType.butcherAnimals || currentTask.type == TaskType.collectEggs || currentTask.type == TaskType.harvestCrops)) return;
+       if (npc.lastMealHour == _currentDate.hour) return; // Already ate this block
+       if (npc.hunger < 15.0) return; // Not really hungry enough to consume a full meal!
+
+       TaskType mappedAction = TaskType.eat; // default
+       String targetRoom = 'kitchen';
+       int expectedDur = 30;
+
+       String? mealName;
+       if (_pantry.isNotEmpty) {
+           mappedAction = TaskType.eat;
+           expectedDur = 30;
+           final neededTypes = npc.diet.dailyRequirements.keys.toList();
+           int? bestIndex;
+           for (int j = 0; j < _pantry.length; j++) {
+               if (neededTypes.contains(_pantry[j].type)) {
+                   if (bestIndex == null || _pantry[bestIndex].quality.index < _pantry[j].quality.index) {
+                       bestIndex = j;
+                   }
+               }
+           }
+           mealName = bestIndex != null ? _pantry[bestIndex].name : _pantry.first.name;
+       } else if (_cookingQueue.isNotEmpty && (resources['meals'] ?? 0) < 10) {
+           mappedAction = TaskType.cook;
+           expectedDur = 45;
+       } else {
+           final priorityKeys = ['cabbage', 'potato', 'carrots', 'beets', 'green_beans', 'faba_beans', 'eggs', 'meat_beef', 'meat_chicken', 'meat_generic', 'flour_spelt', 'flour_durum'];
+           String? foundKey;
+           for (var key in priorityKeys) {
+               if ((resources[key] ?? 0) > 0) {
+                   foundKey = key;
+                   break;
+               }
+           }
+           if (foundKey != null) {
+               mappedAction = TaskType.eat;
+               expectedDur = 15;
+               mealName = "raw ${foundKey.replaceAll('_', ' ')}";
+           } else {
+               if ((resources['uncollected_eggs'] ?? 0) > 0 || _uncollectedEggs > 0) {
+                   mappedAction = TaskType.collectEggs;
+                   targetRoom = 'chicken_coop';
+                   expectedDur = 15;
+               } else if (_chickens.isNotEmpty) {
+                   mappedAction = TaskType.butcherAnimals;
+                   targetRoom = 'chicken_coop';
+                   expectedDur = 45;
+               } else {
+                   mappedAction = TaskType.eat;
+                   expectedDur = 5;
+               }
+           }
+       }
+       
+       final eatIntent = NPCIntent(
+         id: 'sched_eat_${npc.id}_$hourIndex', 
+         action: mappedAction, 
+         targetRoomId: targetRoom, 
+         priority: IntentPriority.high, 
+         expectedDurationMin: expectedDur,
+         targetName: mealName,
+       );
        tryAssign(eatIntent);
        return;
     }
 
     if (activity == ScheduleActivity.work || activity == ScheduleActivity.cleanRoom || activity == ScheduleActivity.cook || activity == ScheduleActivity.guardCoop || activity == ScheduleActivity.study) { // WORK BLOCK
        final normalQueue = npc.intentQueue.where((i) => i.priority == IntentPriority.normal).toList();
-       if (normalQueue.isNotEmpty && tryAssign(normalQueue.first)) return;
+       bool assignedNormal = false;
+       for (var intent in normalQueue) {
+         if (tryAssign(intent)) {
+           assignedNormal = true;
+           break;
+         }
+       }
+       if (assignedNormal) return;
 
        final mappedTask = _mapActivityToTask(activity, npc);
        final workRoom = _getAutonomousTargetForTask(mappedTask, npc) ?? npc.assignedRoomId ?? 'entryway';
@@ -5994,7 +6194,7 @@ class GameState extends ChangeNotifier {
         dirtyRooms.sort((a, b) => b.dirtiness.compareTo(a.dirtiness));
         return dirtyRooms.first.id;
       case TaskType.cook:
-        final currentMeals = (_resources['meals'] ?? 0) + _pantry.length;
+        final currentMeals = (resources['meals'] ?? 0) + _pantry.length;
         return (currentMeals < 10 && _cookingQueue.isNotEmpty) ? 'kitchen' : null;
       case TaskType.tillSoil:
         final untilliedFields = _rooms
@@ -6023,7 +6223,7 @@ class GameState extends ChangeNotifier {
         // Check for any seeds
         bool hasSeeds = false;
         for (var type in CropType.values) {
-          if ((_resources['seeds_${type.name}'] ?? 0) > 0) {
+          if ((resources['seeds_${type.name}'] ?? 0) > 0) {
             hasSeeds = true;
             break;
           }
@@ -6060,7 +6260,7 @@ class GameState extends ChangeNotifier {
       case TaskType.clinicalTrial:
       case TaskType.transcribeNotes:
       case TaskType.archiveResearch:
-        final hasKnowledgeInGlobal = _inventory.any(
+        final hasKnowledgeInGlobal = inventory.any(
           (i) => i.category == ItemCategory.knowledge,
         );
         final hasKnowledgeOnPerson = npc.inventory.any(
@@ -6279,7 +6479,7 @@ class GameState extends ChangeNotifier {
           return false;
         }
 
-        avail += _inventory
+        avail += inventory
             .where((i) => matches(i.type))
             .fold<num>(0, (sum, i) => sum + i.quantity);
         avail += roomInv
@@ -6288,7 +6488,7 @@ class GameState extends ChangeNotifier {
         avail += worker.inventory
             .where((i) => matches(i.type))
             .fold<num>(0, (sum, i) => sum + i.quantity);
-        avail += (_resources[key] ?? 0);
+        avail += (resources[key] ?? 0);
 
         if (avail < entry.value) {
           hasAll = false;
@@ -6351,14 +6551,14 @@ class GameState extends ChangeNotifier {
 
           // Deduct from global inventory
           if (remaining > 0) {
-            for (int i = _inventory.length - 1; i >= 0 && remaining > 0; i--) {
-              if (matches(_inventory[i].type)) {
-                num toTake = min(_inventory[i].quantity, remaining);
-                num newQty = _inventory[i].quantity - toTake;
+            for (int i = inventory.length - 1; i >= 0 && remaining > 0; i--) {
+              if (matches(inventory[i].type)) {
+                num toTake = min(inventory[i].quantity, remaining);
+                num newQty = inventory[i].quantity - toTake;
                 if (newQty <= 0) {
-                  _inventory.removeAt(i);
+                  inventory.removeAt(i);
                 } else {
-                  _inventory[i] = _inventory[i].copyWith(
+                  inventory[i] = inventory[i].copyWith(
                     quantity: newQty.toInt(),
                   );
                 }
@@ -6369,7 +6569,7 @@ class GameState extends ChangeNotifier {
 
           // Deduct from resources
           if (remaining > 0) {
-            _resources[key] = (_resources[key] ?? 0) - remaining.toInt();
+            updateResource(key, -(remaining.toInt()));
           }
         }
 
@@ -6388,7 +6588,7 @@ class GameState extends ChangeNotifier {
           quantity: 1,
           metadata: {'discipline': activity.discipline, 'pages': noteCount},
         );
-        _inventory.add(notes);
+        _addPhysicalItem(notes);
 
         // Dissection/Vivisection meat yield
         if (activity.type == TaskType.dissect ||
@@ -6399,7 +6599,7 @@ class GameState extends ChangeNotifier {
             category: ItemCategory.food,
             quantity: 2,
           );
-          _inventory.add(meat);
+          _addPhysicalItem(meat);
         }
 
         // Move notes to room inventory immediately to update knowledge points
@@ -6407,7 +6607,7 @@ class GameState extends ChangeNotifier {
           final List<GameItem> roomInv = List.from(_rooms[roomIndex].inventory);
           roomInv.add(notes);
           _rooms[roomIndex] = _rooms[roomIndex].copyWith(inventory: roomInv);
-          _inventory.removeLast(); // Remove from global as it's now in room
+          // inventory.removeLast(); // Remove from global as it's now in room
         }
 
         _announcementHistory.insert(
@@ -6442,7 +6642,7 @@ class GameState extends ChangeNotifier {
 
       // Check worker inventory first (since they might have gathered it)
       int workerItemIndex = worker.inventory.indexWhere((i) => i.id == itemId);
-      int globalItemIndex = _inventory.indexWhere((i) => i.id == itemId);
+      int globalItemIndex = inventory.indexWhere((i) => i.id == itemId);
 
       GameItem? itemToStudy;
       if (workerItemIndex != -1) {
@@ -6452,8 +6652,8 @@ class GameState extends ChangeNotifier {
         worker = worker.copyWith(inventory: newInv);
         _npcs[npcIndex] = worker;
       } else if (globalItemIndex != -1) {
-        itemToStudy = _inventory[globalItemIndex];
-        _inventory.removeAt(globalItemIndex);
+        itemToStudy = inventory[globalItemIndex];
+        inventory.removeAt(globalItemIndex);
       }
 
       if (itemToStudy != null) {
@@ -6474,7 +6674,7 @@ class GameState extends ChangeNotifier {
             'pages': notesGenerated,
           },
         );
-        _inventory.add(study);
+        _addPhysicalItem(study);
 
         // Move analysis to room inventory immediately
         final roomIndex = _rooms.indexWhere((r) => r.id == task.targetId);
@@ -6482,7 +6682,7 @@ class GameState extends ChangeNotifier {
           final List<GameItem> roomInv = List.from(_rooms[roomIndex].inventory);
           roomInv.add(study);
           _rooms[roomIndex] = _rooms[roomIndex].copyWith(inventory: roomInv);
-          _inventory.removeLast();
+          inventory.removeLast();
         }
 
         _announcementHistory.insert(
@@ -6517,7 +6717,7 @@ class GameState extends ChangeNotifier {
         roomInv.add(notes);
         _rooms[roomIndex] = _rooms[roomIndex].copyWith(inventory: roomInv);
       } else {
-        _inventory.add(notes);
+        _addPhysicalItem(notes);
       }
 
       _announcementHistory.insert(
@@ -6718,6 +6918,21 @@ class GameState extends ChangeNotifier {
     );
 
     applyStatusEffect(npcId, hateEffect);
+  }
+
+  void _triggerManorFire(String roomId) {
+      if (_crises.any((c) => c.type == ManorCrisisType.fire && c.roomId == roomId)) return;
+      
+      final crisis = ManorCrisis(
+          type: ManorCrisisType.fire,
+          roomId: roomId,
+          severity: 0.2, // Starts small // User wanted fires
+          discoveryDate: _currentDate.toDateTime(),
+      );
+      
+      _crises.add(crisis);
+      _announcementHistory.insert(0, "[${_currentDate.formattedTime}] WARNING: FIRE detected in ${roomId.toUpperCase().replaceAll('_', ' ')}!");
+      notifyListeners();
   }
 
   void triggerJoy(String npcId, String cause) {

@@ -33,7 +33,7 @@ class RoomLedger extends StatelessWidget {
     required this.state,
   });
 
-  List<LedgerItem> _getLedgerItems() {
+  List<LedgerItem> getLedgerItems() {
     final List<LedgerItem> items = [];
 
     // 1. GameItems from room inventory
@@ -120,7 +120,7 @@ class RoomLedger extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = _getLedgerItems();
+    final items = getLedgerItems();
 
     if (items.isEmpty) {
       return Center(

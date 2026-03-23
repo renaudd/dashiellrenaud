@@ -478,7 +478,7 @@ class CharacterPortraitDialog extends StatelessWidget {
             child: ReorderableListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: true,
+              buildDefaultDragHandles: false,
               itemCount: manualUpcoming.length,
               itemBuilder: (context, index) {
                 return _buildIntentTile(manualUpcoming[index], state, liveNpc.id, index, isManual: true);
@@ -501,11 +501,15 @@ class CharacterPortraitDialog extends StatelessWidget {
       actionName = "COOK ${intent.recipeId!.replaceAll('_', ' ')}";
     } else if (intent.action == TaskType.butcherAnimals && intent.targetName != null) {
       actionName = "BUTCHER ${intent.targetName}";
+    } else if (intent.action == TaskType.eat && intent.targetName != null) {
+      actionName = "EAT ${intent.targetName}";
     }
 
     String displayDesc = (intent.action == TaskType.restoreRoom)
       ? "RESTORE $roomName".toUpperCase()
-      : "$actionName IN $roomName".toUpperCase();
+      : (intent.action == TaskType.eat)
+          ? "$actionName".toUpperCase()
+          : "$actionName IN $roomName".toUpperCase();
 
     return Padding(
       key: ValueKey(intent.id),
@@ -574,9 +578,16 @@ class CharacterPortraitDialog extends StatelessWidget {
     final room = state.rooms.firstWhereOrNull((r) => r.id == task.targetId);
     final roomName = room?.name ?? "Mansion";
     
+    String actionName = task.type.displayName;
+    if (task.type == TaskType.eat && task.targetName != null) {
+      actionName = "EAT ${task.targetName}";
+    }
+    
     final description = (task.type == TaskType.restoreRoom)
       ? "RESTORE $roomName".toUpperCase()
-      : "${task.type.displayName} IN $roomName".toUpperCase();
+      : (task.type == TaskType.eat)
+          ? "$actionName".toUpperCase()
+          : "$actionName IN $roomName".toUpperCase();
 
     return Container(
       padding: const EdgeInsets.all(12),

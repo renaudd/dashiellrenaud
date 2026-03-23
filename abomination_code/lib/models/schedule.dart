@@ -164,7 +164,7 @@ class NPCSchedule {
             preferredRoomId: 'butler_quarters',
           ),
         );
-      } else if (hourOfDay == 7 || hourOfDay == 12 || hourOfDay == 18) {
+      } else if (hourOfDay == 12 || hourOfDay == 19) {
         blocks.add(
           ScheduleBlock(
             hourIndex: i,
@@ -172,8 +172,8 @@ class NPCSchedule {
             preferredRoomId: 'kitchen',
           ),
         );
-      } else if ((hourOfDay >= 8 && hourOfDay < 12) ||
-          (hourOfDay >= 13 && hourOfDay < 18)) {
+      } else if ((hourOfDay >= 6 && hourOfDay < 12) ||
+          (hourOfDay >= 13 && hourOfDay < 19)) {
         blocks.add(
           ScheduleBlock(
             hourIndex: i,

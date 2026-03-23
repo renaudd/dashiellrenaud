@@ -29,7 +29,7 @@ class KitchenService {
       Recipe(
         id: 'staple_bread',
         name: 'Spelt Bread',
-        ingredients: {'flour_spelt': 1, 'salt': 1},
+        ingredients: {'flour_spelt': 1, 'salt': 10},
         yield: 2,
         baseQuality: 0.9,
         durationMinutes: 60,
@@ -49,7 +49,7 @@ class KitchenService {
       Recipe(
         id: 'bean_stew',
         name: 'Faba & Green Bean Stew',
-        ingredients: {'faba_beans': 1, 'green_beans': 1, 'salt': 1},
+        ingredients: {'faba_beans': 1, 'green_beans': 1, 'salt': 10},
         yield: 4,
         baseQuality: 1.0,
         durationMinutes: 45,
@@ -57,9 +57,19 @@ class KitchenService {
         minFireSkills: 15,
       ),
       Recipe(
+        id: 'omelette',
+        name: 'Country Omelette',
+        ingredients: {'eggs': 2, 'salt': 10},
+        yield: 5,
+        baseQuality: 1.2,
+        durationMinutes: 30,
+        minKnifeSkills: 5,
+        minFireSkills: 15,
+      ),
+      Recipe(
         id: 'roast_chicken',
         name: 'Herbed Roast Chicken',
-        ingredients: {'meat_chicken': 1, 'salt': 1, 'pepper': 1},
+        ingredients: {'meat_chicken': 10, 'salt': 10, 'pepper': 10},
         yield: 4,
         baseQuality: 1.3,
         durationMinutes: 120,
@@ -69,7 +79,7 @@ class KitchenService {
       Recipe(
         id: 'beef_root_stew',
         name: 'Beef & Root Stew',
-        ingredients: {'meat_beef': 1, 'potato': 1, 'carrots': 1, 'beets': 1},
+        ingredients: {'meat_beef': 10, 'potato': 1, 'carrots': 1, 'beets': 1},
         yield: 6,
         baseQuality: 1.4,
         durationMinutes: 150,
@@ -102,7 +112,7 @@ class KitchenService {
       Recipe(
         id: 'protein_mistery_stew',
         name: 'Stew of Unknown Protein',
-        ingredients: {'meat': 1, 'potato': 1, 'salt': 1},
+        ingredients: {'meat': 10, 'potato': 1, 'salt': 10},
         yield: 4,
         baseQuality: 0.8,
         durationMinutes: 60,
@@ -112,7 +122,7 @@ class KitchenService {
       Recipe(
         id: 'fried_generic_meat',
         name: 'Sizzling Generic Protein',
-        ingredients: {'meat': 1, 'pepper': 1},
+        ingredients: {'meat': 10, 'pepper': 10},
         yield: 2,
         baseQuality: 0.9,
         durationMinutes: 30,

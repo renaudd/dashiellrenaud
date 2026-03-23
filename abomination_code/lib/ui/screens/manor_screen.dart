@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../state/game_state.dart';
 import '../../models/room.dart';
 import '../../services/task_service.dart';
+import '../../models/game_item.dart';
 import '../widgets/manor_renderer.dart';
 import '../widgets/character_portrait_dialog.dart';
 import '../widgets/room_ledger.dart';
@@ -109,14 +110,7 @@ class _ManorScreenState extends State<ManorScreen> {
             },
             tooltip: 'Survey Estate',
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.inventory_2_outlined,
-              color: Color(0xFFC4B89B),
-            ),
-            onPressed: () => _showInventory(context),
-            tooltip: 'Inventory',
-          ),
+
           IconButton(
             icon: const Icon(
               Icons.assignment_ind_outlined,
@@ -203,83 +197,67 @@ class _ManorScreenState extends State<ManorScreen> {
   Widget _buildResourceBar(BuildContext context) {
     return Consumer<GameState>(
       builder: (context, state, child) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          color: Colors.black.withValues(alpha: 0.3),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _resourceItem(
-                Icons.payments,
-                (state.resources['funds'] ?? 0).round().toString(),
-              ),
-              _resourceItem(
-                Icons.forest,
-                (state.resources['wood'] ?? 0).round().toString(),
-              ),
-              _resourceItem(
-                Icons.restaurant,
-                (state.resources['meat'] ?? 0).round().toString(),
-              ),
-              _resourceItem(
-                Icons.egg,
-                (state.resources['eggs'] ?? 0).round().toString(),
-              ),
-              _resourceItem(
-                Icons.grass,
-                (state.resources['cabbage'] ?? 0).round().toString(),
-              ),
-              const VerticalDivider(color: Colors.white10),
-              Consumer<GameState>(
-                builder: (context, state, child) {
-                  return Badge(
-                    label: Text(state.unreadObjectiveCount.toString()),
-                    isLabelVisible: state.unreadObjectiveCount > 0,
-                    backgroundColor: const Color(0xFF8B0000), // Blood red
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.menu_book,
-                        size: 18,
-                        color: Color(0xFFC4B89B),
+        return InkWell(
+          onTap: () => _showInventory(context),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            color: Colors.black.withValues(alpha: 0.3),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _resourceItem(
+                  Icons.payments,
+                  (state.resources['funds'] ?? 0).round().toString(),
+                ),
+                _resourceItem(Icons.restaurant, state.pantry.length.toString()),
+                const VerticalDivider(color: Colors.white10),
+                Badge(
+                  label: Text(state.unreadObjectiveCount.toString()),
+                  isLabelVisible: state.unreadObjectiveCount > 0,
+                  backgroundColor: const Color(0xFF8B0000), // Blood red
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.menu_book,
+                      size: 18,
+                      color: Color(0xFFC4B89B),
+                    ),
+                    onPressed: () {
+                      state.markObjectivesRead();
+                      showDialog(
+                        context: context,
+                        builder: (context) => const JournalDialog(),
+                      );
+                    },
+                    tooltip: 'Master\'s Journal',
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.history_edu,
+                    size: 18,
+                    color: Color(0xFFC4B89B),
+                  ),
+                  onPressed: () => _showNotificationHistory(context),
+                  tooltip: 'Chronicle of Events',
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.calendar_month,
+                    size: 18,
+                    color: Color(0xFFC4B89B),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CalendarScreen(),
                       ),
-                      onPressed: () {
-                        state.markObjectivesRead();
-                        showDialog(
-                          context: context,
-                          builder: (context) => const JournalDialog(),
-                        );
-                      },
-                      tooltip: 'Master\'s Journal',
-                    ),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.history_edu,
-                  size: 18,
-                  color: Color(0xFFC4B89B),
+                    );
+                  },
+                  tooltip: 'Chronicle of Time',
                 ),
-                onPressed: () => _showNotificationHistory(context),
-                tooltip: 'Chronicle of Events',
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.calendar_month,
-                  size: 18,
-                  color: Color(0xFFC4B89B),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CalendarScreen(),
-                    ),
-                  );
-                },
-                tooltip: 'Chronicle of Time',
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -430,7 +408,7 @@ class _ManorScreenState extends State<ManorScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'COLLECTED SPECIMENS & ITEMS',
+                'MANOR HOLDINGS',
                 style: GoogleFonts.playfairDisplay(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -439,57 +417,47 @@ class _ManorScreenState extends State<ManorScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              if (state.inventory.isEmpty)
+              if (state.rooms.every((r) => r.inventory.isEmpty) && state.chickens.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 32.0),
                   child: Center(
                     child: Text(
-                      'No items collected yet.',
+                      'No items possessed.',
                       style: GoogleFonts.oldStandardTt(color: Colors.white24),
                     ),
                   ),
                 )
               else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: state.inventory
-                      .map(
-                        (item) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: const Color(
-                                0xFFC4B89B,
-                              ).withValues(alpha: 0.2),
-                            ),
-                            color: Colors.black.withValues(alpha: 0.2),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                Expanded(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    separatorBuilder: (context, index) => const Divider(color: Colors.white10, height: 32),
+                    itemCount: state.rooms.length,
+                    itemBuilder: (context, index) {
+                        final room = state.rooms[index];
+                        final ledgerWidget = RoomLedger(room: room, state: state);
+                        if (ledgerWidget.getLedgerItems().isEmpty) return const SizedBox.shrink();
+
+                        return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(
-                                Icons.science_outlined,
-                                size: 14,
-                                color: Color(0xFFC4B89B),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                item.name.toUpperCase(),
-                                style: GoogleFonts.oldStandardTt(
-                                  color: const Color(0xFFE5D5B0),
-                                  fontSize: 12,
-                                  letterSpacing: 1,
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0, left: 8.0),
+                                  child: Text(
+                                    room.name.toUpperCase(),
+                                    style: GoogleFonts.outfit(
+                                      color: const Color(0xFFC4B89B),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                ledgerWidget,
                             ],
-                          ),
-                        ),
-                      )
-                      .toList(),
+                        );
+                    },
+                  ),
                 ),
               const SizedBox(height: 24),
             ],
@@ -497,6 +465,15 @@ class _ManorScreenState extends State<ManorScreen> {
         );
       },
     );
+  }
+
+  IconData _getIconForItemCategory(ItemCategory category) {
+    if (category == ItemCategory.food) return Icons.restaurant;
+    if (category == ItemCategory.material) return Icons.forest;
+    if (category == ItemCategory.knowledge) return Icons.menu_book;
+    if (category == ItemCategory.medical) return Icons.medical_services;
+    if (category == ItemCategory.resource) return Icons.payments;
+    return Icons.science_outlined;
   }
 
   void _showRoomDetails(BuildContext context, Room room) {
@@ -826,7 +803,12 @@ class _ManorScreenState extends State<ManorScreen> {
                       // Only show available tasks. If it's a one-time task and someone is already doing it,
                       // it will be caught by _isTaskAvailable logic or assignNpcToTask.
                       // For now, let's keep it simple: always show if available.
-                          return _isTaskAvailable(state, liveRoom, taskType);
+                          bool isAvail = _isTaskAvailable(state, liveRoom, taskType);
+                          if (taskType == TaskType.collectEggs) {
+                            final uncollected = state.resources['eggs_uncollected'] ?? 0;
+                            if (uncollected <= 0) return false;
+                          }
+                          return isAvail;
                     }).map((taskType) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 8.0),

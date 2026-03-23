@@ -7,13 +7,14 @@ This guide provides specific procedures for advancing through the initial setup 
 Advance through each step every three seconds.
 
 ### Step 1: Initialize
-- **URL**: `http://localhost:50699/` (or current active debug port)
+- **URL**: `http://localhost:62875/` (or current active debug port)
 - **Start**: Click the **"BEGIN EXPERIMENT"** button.
+- Wait three seconds.
 
 ### Step 2: Character Narrative & Naming
 - **Origin**: Select any origin (e.g., "TERRIBLE DISEASE").
 - **Critical Interaction**: For the **"NEXT"** button, click exactly on the word **"NEXT"**. 
-- **Setup Screens**: Advance through Name, Age, Butler Trait, Family Focus, and Science Interest. Always click the text of the buttons.
+- **Setup Screens**: Advance through Name, Age, Butler Trait, Family Focus, and Science Interest. Always click the text of the buttons. Only wait three seconds between each button press.
 
 ### Step 3: Entering the Manor
 - Click **"BEGIN THE WORK"** to reach the main Manor View.
@@ -52,5 +53,8 @@ Select each character to examine the character's Status Card. Each Character/NPC
 
 Characters should slowly deplete Fullness and slowly deplete Energy while awake. Sleeping characters should slowly regain Energy. Completing meal consumption should cause Fullness to increase. Digestion should progress gradually over time. The Use Toilet/Washroom action should cause Digestion to reset to 0. 
 
-## 4. Reporting
+## 4. Food consumption
+Make sure each NPC is only consuming one item per meal, for a total of two items each day.
+
+## 5. Reporting
 Note if any specific task type (e.g., 'Till Field', 'Rest', 'Use Toilet/Washroom') hangs while others (e.g., 'Cook', 'Restore Room') work. Check the **Browser Console (F12)** for any `Uncaught Error` or `StateError` during the tick processing.

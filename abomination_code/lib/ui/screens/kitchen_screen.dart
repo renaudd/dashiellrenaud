@@ -33,8 +33,16 @@ class KitchenScreen extends StatelessWidget {
       ),
       body: Consumer<GameState>(
         builder: (context, state, child) {
+          final hasGoodMeat = (state.resources['meat_chicken'] ?? 0) > 0 || (state.resources['meat_beef'] ?? 0) > 0;
+          
           final basicRecipes = KitchenService.getAvailableRecipes()
               .where((r) => !r.isExperimental)
+              .where((r) {
+                  if (hasGoodMeat && (r.id == 'protein_mistery_stew' || r.id == 'fried_generic_meat')) {
+                      return false;
+                  }
+                  return true;
+              })
               .toList();
 
           return Container(
@@ -136,7 +144,11 @@ class KitchenScreen extends StatelessWidget {
   ) {
     bool canCraft = true;
     recipe.ingredients.forEach((res, amount) {
-      if ((state.resources[res] ?? 0).round() < amount.round()) canCraft = false;
+      num available = (state.resources[res] ?? 0);
+      if (res == 'meat') {
+          available += (state.resources['meat_chicken'] ?? 0) + (state.resources['meat_beef'] ?? 0);
+      }
+      if (available.round() < amount.round()) canCraft = false;
     });
 
     final metadata = TaskService.getMetadata(TaskType.cook);
@@ -208,7 +220,11 @@ class KitchenScreen extends StatelessWidget {
                       Wrap(
                         spacing: 8,
                         children: recipe.ingredients.entries.map((e) {
-                          final has = (state.resources[e.key] ?? 0).round() >= e.value.round();
+                          num available = (state.resources[e.key] ?? 0);
+                          if (e.key == 'meat') {
+                              available += (state.resources['meat_chicken'] ?? 0) + (state.resources['meat_beef'] ?? 0);
+                          }
+                          final has = available.round() >= e.value.round();
                           return Text(
                             '${e.key.toUpperCase()}: ${e.value.round()}',
                             style: GoogleFonts.oldStandardTt(
