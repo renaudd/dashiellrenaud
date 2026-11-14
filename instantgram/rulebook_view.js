@@ -1,5 +1,5 @@
-import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=113";
-import { renderApp } from "./app.js?v=113";
+import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=114";
+import { renderApp } from "./app.js?v=114";
 
 const RULEBOOK_SECTIONS = [
   {
@@ -7,10 +7,10 @@ const RULEBOOK_SECTIONS = [
     title: "1. Overview & San Francisco Night Setting",
     paragraphs: [
       "Welcome to Night Merchant: InstantGram SF! Five ideological factions—MAGA, ISIS, TECH Bros, the DSA, and MS-13—battle for control of San Francisco's streets and social feeds after dark. By day, 2 to 6 dealers stock up on contraband and hire Henchmen out of an open suitcase at the Safe House Motel. At 8:00 P.M., the five highway and bridge entry points into San Francisco open for business.",
-      "Across 3 Nights (Thursday, Friday, and Saturday), dealers load up their SUVs by day, then navigate 36 nocturnal neighborhoods of San Francisco (A1–F6) across 10 hourly turns (8:00 P.M. to 5:00 A.M.) before the 6:00 A.M. Sunrise Curfew. After Saturday Clean-Up, the Sunday Reckoning settles unfinished Jobs, remaining SUV inventory, loans, and Ballot Initiatives—crowning the wealthiest dealer in Bitcoin (₿)!",
+      "Across 3 Nights (Thursday, Friday, and Saturday), dealers load up their SUVs by day, then navigate 36 nocturnal neighborhoods of San Francisco (A1–F6) across 10 hourly turns (8:00 P.M. to 5:00 A.M.) before the 6:00 A.M. Sunrise Curfew. After Saturday Clean-Up, the Sunday Morning Reckoning settles unfinished Jobs, remaining SUV inventory, loans, and Ballot Initiatives—crowning the wealthiest dealer in Bitcoin (₿)!",
     ],
     bullets: [
-      "Game Boards: The Safe House Suitcase Market Board (6 tracks: Party, Opiates, Uppers, Weapons, Weed, and Henchmen × 6 scarcity bays), the 6×3 Ballot Initiatives Board, and the San Francisco Night City Board (6×6 grid A1–F6, 36 neighborhoods including the Presidio at A1, Chinatown at D2, Civic Center at C3, Tenderloin at D3, Mission at D4, and Bayview at E6, plus 5 Highway/Bridge Entrances and 3 Wholesale Spots).",
+      "Game Boards: The Safe House Suitcase Market Board (6 tracks: Party, Opiates, Uppers, Weapons, Weed, and Henchmen × 6 scarcity bays), the 6×3 Ballot Initiatives Board, and the San Francisco Night City Board (6×6 grid A1–F6, 36 neighborhoods including the Presidio at B1, Chinatown at E2, Civic Center at C3, Tenderloin at D3, Mission at D4, and Bayview at F5, plus 5 Highway/Bridge Entrances and 3 Wholesale Spots).",
       "Neighborhood Tiles: 432 square tiles (12 per neighborhood across 36 stacks) featuring open streets, roadblocks, ₿0.2 road tolls, street encounters, Dice Game gambling, and neighborhood buyers.",
       "Decks & Mats: Market Cards, Job Cards (Starting & Encounter Jobs), Social Media Influence Cards, Celebrities / Cops / Criminals Encounter Decks, Dealer SUV Mats (6■ Cargo Blocks in 2×3 grid, 2▲ Henchman Slots in 2×1 column, 5 Uncapped Faction Favor tracks), and 6-sided Custom Action Dice (0, 0, 1, 1, 2, 3).",
     ],
@@ -146,7 +146,7 @@ const RULEBOOK_SECTIONS = [
         desc: "Volatile streets marked with the Refresh icon discard after their encounter resolves, immediately revealing the next tile beneath.",
       },
       {
-        img: "./assets/icons/sf_logo_icon.png?v=113",
+        img: "./assets/icons/sf_logo_icon.png?v=114",
         title: "Wholesale Spot / First Player",
         desc: "Marks San Francisco's 3 central Wholesale Spots (C3 Civic Center, D3 Tenderloin, D4 Mission) where Goods are sold to dealers, as well as the First Player emblem.",
       },
@@ -169,7 +169,7 @@ const RULEBOOK_SECTIONS = [
       "Starting Jobs: Kept during Setup (3 per dealer). Can be canceled voluntarily without Favor penalty (unless Surge Pricing is active, which fines -10(d) on any failed/canceled/unfinished job!). Starting Job Cargo can NEVER be sold or fenced.",
       "Encounter Jobs: Drawn from NPC encounters or assigned directly by an NPC. Encounter Job Cargo displays a bold Green (SELL_SYM) Fence price row—fencing it to a matching buyer sells 1 card for quick Bitcoin, applies Patron Hostile Favor, and FAILS the job (unless Clique Fence is active, which boosts Fence Scarcity by +1 step and prevents fencing from counting as a Failed Job!).",
       "Schizophrenic Jobs: Mandatory side-quests with 1(R) face-down Influence cards sealed underneath until completed. Cannot be voluntarily canceled unless holding 6 Schizophrenic Jobs simultaneously.",
-      "Most Wanted & Cancel Culture ('Any Player' Clauses): Two high-stakes Encounter Jobs—Most Wanted (defeating Donald Trump in combat) and Cancel Culture (defeating Osama bin Laden in combat)—trigger if ANY Player defeats that target in combat while you hold the Job! Completing Most Wanted immediately ends the game in an instant victory for the holder; completing Cancel Culture awards 100(d) and +2 Rubies (+1 Diamond) while continuing the weekend.",
+      "Regime Change & Witness Protection ('Any Player' Clauses): Two high-stakes Encounter Jobs—Regime Change and Witness Protection—trigger if ANY Player defeats Donald Trump or Jared Kushner in combat while you hold the Job! Witness Protection triggers FIRST, awarding ₿2 (+2 Rubies, +1 Diamond) and canceling every active Regime Change job in the game; otherwise, completing Regime Change immediately ends the game in an instant victory for the holder!",
     ],
   },
   {
@@ -180,32 +180,32 @@ const RULEBOOK_SECTIONS = [
     ],
     iconGrid: [
       {
-        img: "./assets/icons/celebrities_icon.png?v=113",
+        img: "./assets/icons/celebrities_icon.png?v=114",
         title: "Celebrities Encounter (Always 1×)",
         desc: "Tech founders, politicians, and influencers (gold hoodie icon). Always singular (X=1). Friendly Celebrities offer lucrative Jobs or trade deals; Hostile Celebrities make demands.",
       },
       {
-        img: "./assets/icons/cops_icon.png?v=113",
+        img: "./assets/icons/cops_icon.png?v=114",
         title: "Cops Encounter (1–4× Icons)",
         desc: "SFPD, DEA, CHP, and federal agents (cobalt blue police hat icon). Has 1–4 icons on the tile/edge, setting X for the card's combat formula. Heavily aligned with MAGA.",
       },
       {
-        img: "./assets/icons/criminals_icon.png?v=113",
+        img: "./assets/icons/criminals_icon.png?v=114",
         title: "Criminals Encounter (1–4× Icons)",
         desc: "Stick-up crews, cartel enforcers, and street gangs (white A-shirt icon). Has 1–4 icons on the tile/edge, setting X for the card's combat formula.",
       },
       {
-        img: "./assets/icons/angry_mob.png?v=113",
+        img: "./assets/icons/angry_mob.png?v=114",
         title: "Protesters (1R Chart)",
         desc: "Orange megaphone icon. Roll 1(R): 0 = Lose all Opiates; 1 = Lose all Weed; 2 = Lose your most expensive Good; 3 = Escape unharmed.",
       },
       {
-        img: "./assets/icons/theater_masks.png?v=113",
+        img: "./assets/icons/theater_masks.png?v=114",
         title: "Open Mic (1R Chart)",
         desc: "Dark gray microphone icon. Roll 1(R): 0 = Lose all positive Favor; 1 = Lose all negative Favor; 2 = Lose rest of turn & next turn; 3 = Draw 1(R) Influence.",
       },
       {
-        img: "./assets/icons/schizophrenic_icon.png?v=113",
+        img: "./assets/icons/schizophrenic_icon.png?v=114",
         title: "Schizophrenic Encounter",
         desc: "Purple silhouette icon. Draws a mandatory Schizophrenic Job and seals 1(R) face-down Influence cards beneath it until you finish the Job.",
       },
@@ -232,7 +232,8 @@ const RULEBOOK_SECTIONS = [
     ],
     bullets: [
       "Friendly vs. Hostile Encounters & Reputation Tiers: Determined by your uncapped net Favor with the NPC's Faction. There are three interaction tiers: !! means comply or fight; ! means comply or accept hostile encounter consequences with no fight; and ? means comply or decline with no penalty for rejecting the offer (if you accept a ? Job and later fail or abandon that Job, you suffer the encounter's hostile Favor consequences).",
-      "Combat Power (CP) & Cargo Gear: Both sides roll Action Dice (R) plus Henchmen, Weapons, mandatory Uppers (stimulants in your SUV always add/roll their CP in combat!), and Influence modifiers (plus +1 CP per positive Ruby & +2 CP to Cops if Back the Blue is active). Note that Body Armor carries 0 CP in street ambushes (it absorbs wounds instead). If Player CP ≥ Opponent CP against an NPC, you win!",
+      "Combat Power (CP) & Cargo Gear: Both sides roll Action Dice (R) plus Henchmen, Weapons, mandatory Uppers, and Influence modifiers (plus +1 CP per positive Ruby & +2 CP to Cops if Back the Blue is active). Note that Body Armor carries 0 CP in street ambushes (it absorbs wounds instead). If Player CP ≥ Opponent CP against an NPC, you win!",
+      "Addiction Rule (Mandatory Uppers & Open Mic Sets): Dealers cannot resist dipping into their own stash of stimulants. Any Uppers loaded in your SUV are automatically used in combat (adding both their positive CP rolls/bonuses and any negative crash penalties), and if you encounter an Open Mic on a tile edge or center, you must stop in for a mandatory 1(R) set!",
       "Armor, Henchmen, & Dealer Fate (Damage Deficit Note): If Opponent CP > Player CP, suffer Raw Wounds = (Opponent CP − Player CP). Body Armor/Shields reduce Wounds first; each remaining Wound kills 1 Henchman. If an unblocked Wound reaches you, roll 1(R) on the Dealer Fate Chart: 0 = Wasted (lose all Goods & your night ends); 1 = Left for dead (lose all Goods); 2 = Jumped & robbed (lose all Bitcoin); 3 = Begged for mercy (lose all Influence cards).",
       "1(R) Street Charts: Protesters (0: lose all Opiates; 1: lose all Weed; 2: lose most expensive Good; 3: safe), Open Mic (0: undo all Positive-outcome gem changes; 1: undo all Hostile-outcome gem changes; 2: lose rest of turn & next turn; 3: draw 1(R) Influence), Schizophrenic (take mandatory Job + seal 1(R) Influence cards).",
       "Street Dice Gambling: On a tile with the Dice icon, wager 1(d) to 20(d) (capped at 20(d) per gamble action) and roll 1(R) to win Wager × Roll!",
@@ -245,15 +246,15 @@ const RULEBOOK_SECTIONS = [
       "6:00 A.M. Dawn Curfew Fine: Any dealer still inside San Francisco after Turn 10 (5:00 A.M.) pays a nightly curfew fine—Thursday 12(d), Friday 20(d), Saturday 32(d)—halved to 6(d) / 10(d) / 16(d) if standing on one of the 5 Entry Point tiles (B1, F1, F5, D6, A5)!",
       "Tile Cleanup: Persistent tiles (⤹) stay face-up for future nights; Refresh tiles (↻) discard after encounters; ordinary revealed tiles return to the bottom of their stacks at Dawn.",
       "Buy Influence Cards: Cost scales by your current Influence hand size (including face-down Schizophrenic cards): 0–1 cards = 2(d), 2–3 cards = 4(d), 4 cards = 6(d), 5+ cards = 8(d).",
-      "Loans: Thursday Loan grants +20(d) (repay 30(d) at end of Friday, or 45(d) at end of Saturday / Sunday Reckoning). Friday Loan grants +40(d) (repay 60(d) at end of Saturday / Sunday Reckoning).",
-      "Henchmen Salaries & Sunday Tie-Breaker Policy: Pay each retained Henchman's current Market hiring cost (or release them to the bottom of the Market deck). During Saturday Clean-Up, you may also toggle whether your crew is authorized to expend Combat Influence cards during Sunday Reckoning PvP tie-breakers.",
+      "Loans: Thursday Loan grants +20(d) (repay 30(d) at end of Friday, or 45(d) at end of Saturday / Sunday Morning Reckoning). Friday Loan grants +40(d) (repay 60(d) at end of Saturday / Sunday Morning Reckoning).",
+      "Henchmen Salaries & Sunday Tie-Breaker Policy: Pay each retained Henchman's current Market hiring cost (or release them to the bottom of the Market deck). During Saturday Clean-Up, you may also toggle whether your crew is authorized to expend Combat Influence cards during Sunday Morning Reckoning PvP tie-breakers.",
     ],
   },
   {
     id: "winter",
-    title: "9. Sunday Reckoning & The 6×3 Ballot Initiatives Matrix",
+    title: "9. Sunday Morning Reckoning & The 6×3 Ballot Initiatives Matrix",
     paragraphs: [
-      "Unless a dealer achieves instant victory via Most Wanted earlier in the weekend, the game concludes after Saturday Clean-Up with the Sunday Reckoning, governed by the Ballot Initiatives drafted during Setup:",
+      "Unless a dealer achieves instant victory via Regime Change earlier in the weekend, the game concludes after Saturday Clean-Up with the Sunday Morning Reckoning, governed by the Ballot Initiatives drafted during Setup:",
     ],
     bullets: [
       "Step 1 — Unfinished Jobs Fail: Incomplete Jobs fail first (applying Encounter Hostile Favor and -10(d) each if Surge Pricing is active); remaining job cargo is discarded.",
@@ -266,7 +267,7 @@ const RULEBOOK_SECTIONS = [
       rows: [
         [
           "Mass Deportation: End of game (FIRST): Least MAGA favor is eliminated.",
-          "Fatwa: End of game: Least ISIS favor loses 25(d).",
+          "Decapitation: End of game: Most ISIS favor loses 25(d).",
           "Series A: End of game: Most TECH favor gains +20% wealth.",
           "Billionaire Tax: End of game: Most DSA favor steals 15(d) from the wealthiest rival.",
           "Protection Racket: End of game: Most MS13 favor gains 25(d).",
@@ -274,7 +275,7 @@ const RULEBOOK_SECTIONS = [
         ],
         [
           "Recall Election: End of game: Lose 10(d) per +Ruby; gain 5(d) per -Ruby.",
-          "Jihad: End of game: +15(d) per +Emerald if MAGA ≤ 0, or -10(d) if ≥ +1; -5(d) per -Emerald.",
+          "Fatwa: End of game: +15(d) per +Emerald if MAGA ≤ 0, or -10(d) if ≥ +1; -5(d) per -Emerald.",
           "Conflict of Interest: End of game: Lose 15(d) per +Diamond and 15(d) per -Diamond.",
           "Mutual Aid: End of game: Gain 10(d) per net completed Job with +Sapphire or a DSA patron.",
           "Plata o Plomo: End of game: Gain 10(d) per +Amethyst and 10(d) per -Amethyst.",

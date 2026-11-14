@@ -302,8 +302,8 @@ const COLS = ["A", "B", "C", "D", "E", "F"];
 
 const ROWS = ["1", "2", "3", "4", "5", "6"];
 
-// Market layout (display names): Weed, Party, Uppers, Opiates, Weapons, Henchmen
-const TRACK_NAMES = ["Grain", "Marble", "Animals", "Wine", "Weapons", "Henchmen"];
+// Market layout: Weed, Party, Uppers, Opiates, Weapons, Henchmen
+const TRACK_NAMES = ["Weed", "Party", "Uppers", "Opiates", "Weapons", "Henchmen"];
 
 const COL_SYMBOLS = ["<<", "<", "=", "=", ">", ">>"];
 
@@ -1544,14 +1544,19 @@ const GOODS_NAME_TO_ID = {
   "pineapple express": "grn_1", "golden teacher": "grn_2", "brick weed": "grn_3", "granddaddy purple": "grn_4",
   "mescaline": "grn_5", "northern lights": "grn_6", "guerilla glue #4": "grn_7", "wedding cake": "grn_8",
   "blue dream": "grn_9", "feline the cat": "grn_10", "sour diesel": "grn_11", "og kush": "grn_12",
+  "gelato #41": "grn_13", "jack herer": "grn_14", "dmt vape cart": "grn_15", "penis envy": "grn_16",
   "apache": "cw_1", "china white": "cw_2", "brown sugar": "cw_3", "reds": "cw_4", "number 4": "cw_5",
   "tranq": "cw_6", "chiva": "cw_7", "purple drank": "cw_8", "blues": "cw_9",
+  "grey death": "cw_10", "pink fent": "cw_11", "gunpowder": "cw_12",
   "tussin": "fw_1", "trammies": "fw_2", "vikes": "fw_3", "percs": "fw_4", "juice": "fw_5",
   "red devils": "fw_6", "miss emma": "fw_7", "oc 80s": "fw_8", "hospital heroin": "fw_9",
+  "opana er": "fw_10", "roxies": "fw_11", "actavis pint": "fw_12",
   "mini-thins": "ma_1", "bennies": "ma_2", "black beauties": "ma_3", "abu hilalain": "ma_4", "blue addys": "ma_5",
   "dexies": "ma_6", "kiddie coke": "ma_7", "addys": "ma_8", "moda": "ma_9",
+  "vyvanse 70s": "ma_10", "focalin xr": "ma_11", "yellow jackets": "ma_12",
   "crank": "ea_1", "flakka": "ea_2", "shake-n-bake": "ea_3", "yayo": "ea_4", "stepped-on blow": "ea_5",
   "rock": "ea_6", "glass": "ea_7", "peruvian flake": "ea_8", "fish scale": "ea_9",
+  "tina": "ea_10", "eight-ball": "ea_11", "biker crank": "ea_12",
   "brass knuckles": "wpn_1", "riot shield": "wpn_2", "switchblade": "wpn_3", "glawk 19": "wpn_4",
   "ar-15": "wpn_5", "desert eagle": "wpn_6", "stab vest": "wpn_7", "ballistic helmet": "wpn_8",
   "hunting rifle": "wpn_9", "molotov cocktail": "wpn_10", "pipe bomb": "wpn_11", "ballistic vest": "wpn_12",
@@ -1559,9 +1564,11 @@ const GOODS_NAME_TO_ID = {
   "rush": "mrb_1", "liquid g": "mrb_2", "whippets": "mrb_3", "tusi": "mrb_4", "bunk molly": "mrb_5",
   "blue punishas": "mrb_6", "pink tezlas": "mrb_7", "red mitsubushis": "mrb_8", "special k": "mrb_9",
   "blue dolphins": "mrb_10", "nexus": "mrb_11", "champagne molly": "mrb_12",
+  "sassafras": "mrb_13", "orange teslas": "mrb_14", "k-hole s-isomer": "mrb_15", "jungle juice": "mrb_16",
   "big mike": "grd_1", "big tina": "grd_2", "rosa \"la flaca\"": "grd_3", "tank": "grd_4",
   "doc": "grd_5", "skinny pete": "grd_6", "twins": "grd_7", "dre": "grd_8",
   "ex-marine gus": "grd_9", "bouncer sal": "grd_10", "nurse keisha": "grd_11", "felicia": "grd_12",
+  "lil' chino": "grd_13", "dj krystal": "grd_14", "svetlana": "grd_15", "sarge": "grd_16",
 };
 
 const JOBS_NAME_TO_ID = {
@@ -1619,6 +1626,9 @@ const ENC_NAME_TO_ID = {
   "homeless": "nef_19", "illegal": "nef_20", "unhoused": "nef_21", "undocumented": "nef_22",
   "elmer rodriguez": "nef_23", "clique enforcer": "nef_24", "sicario": "nef_25", "gang banger": "nef_26",
   "bad hombre": "nef_28", "coyote": "nef_29",
+  "latin trap star": "pat_31", "lowrider king": "pat_32",
+  "evidence locker clerk": "leg_31", "diplomatic security": "leg_32", "sleeper agent": "leg_33", "port customs inspector": "leg_34",
+  "shot caller": "nef_30", "militia prepper": "nef_31",
 };
 
 function resolveFullGoodCardFaceUrl(cardOrItem, trackName = "") {
@@ -1626,29 +1636,29 @@ function resolveFullGoodCardFaceUrl(cardOrItem, trackName = "") {
   const rawId = String(c.id || "").trim();
   const mStd = rawId.match(/^((?:grn|mrb|ma|ea|cw|fw|wpn|grd)_\d+)/i);
   if (mStd) {
-    return `/assets/fp/cards/goods/${mStd[1].toLowerCase()}.jpg?v=113`;
+    return `/assets/fp/cards/goods/${mStd[1].toLowerCase()}.jpg?v=114`;
   }
   const mCargo = rawId.match(/^mcargo_(?:enc_)?((?:mis|pat|leg|nef)_\d+)/i);
   if (mCargo) {
-    return `/assets/fp/cards/goods/mcargo_${mCargo[1].toLowerCase()}.jpg?v=113`;
+    return `/assets/fp/cards/goods/mcargo_${mCargo[1].toLowerCase()}.jpg?v=114`;
   }
   if (c.missionId) {
     const mMid = String(c.missionId).match(/(?:enc_)?((?:mis|pat|leg|nef)_\d+)/i);
     if (mMid) {
-      return `/assets/fp/cards/goods/mcargo_${mMid[1].toLowerCase()}.jpg?v=113`;
+      return `/assets/fp/cards/goods/mcargo_${mMid[1].toLowerCase()}.jpg?v=114`;
     }
   }
   const lowerName = String(c.name || "").trim().toLowerCase();
   if (GOODS_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/goods/${GOODS_NAME_TO_ID[lowerName]}.jpg?v=113`;
+    return `/assets/fp/cards/goods/${GOODS_NAME_TO_ID[lowerName]}.jpg?v=114`;
   }
   const tr = String(c.track || c.category || trackName || "").toLowerCase();
-  if (tr.includes("hench") || tr.includes("guard")) return "/assets/fp/cards/goods/grd_1.jpg?v=113";
-  if (tr.includes("weapon")) return "/assets/fp/cards/goods/wpn_4.jpg?v=113";
-  if (tr.includes("opiate") || tr.includes("wine")) return "/assets/fp/cards/goods/cw_2.jpg?v=113";
-  if (tr.includes("upper") || tr.includes("animal")) return "/assets/fp/cards/goods/ea_8.jpg?v=113";
-  if (tr.includes("party") || tr.includes("marble")) return "/assets/fp/cards/goods/mrb_12.jpg?v=113";
-  return "/assets/fp/cards/goods/grn_1.jpg?v=113";
+  if (tr.includes("hench") || tr.includes("guard")) return "/assets/fp/cards/goods/grd_1.jpg?v=114";
+  if (tr.includes("weapon")) return "/assets/fp/cards/goods/wpn_4.jpg?v=114";
+  if (tr.includes("opiate") || tr.includes("wine")) return "/assets/fp/cards/goods/cw_2.jpg?v=114";
+  if (tr.includes("upper") || tr.includes("animal")) return "/assets/fp/cards/goods/ea_8.jpg?v=114";
+  if (tr.includes("party") || tr.includes("marble")) return "/assets/fp/cards/goods/mrb_12.jpg?v=114";
+  return "/assets/fp/cards/goods/grn_1.jpg?v=114";
 }
 
 function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
@@ -1666,55 +1676,55 @@ function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
 }
 
 function resolveFullJobCardFaceUrl(m) {
-  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=113";
+  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=114";
   if (m.source === "encounter" && m.encounterCard && !m.hasDrawnMissionCard) {
     return resolveFullEncounterCardFaceUrl(m.encounterCard);
   }
   const rawId = String(m.id || "").trim();
   const mJob = rawId.match(/^(mis_\d+)/i);
   if (mJob) {
-    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=113`;
+    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=114`;
   }
   const mEnc = rawId.match(/^enc_((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=113`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=114`;
   }
   const lowerName = String(m.name || "").trim().toLowerCase();
   if (JOBS_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=113`;
+    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=114`;
   }
-  return "/assets/fp/cards/jobs/mis_1.jpg?v=113";
+  return "/assets/fp/cards/jobs/mis_1.jpg?v=114";
 }
 
 function resolveFullInfluenceCardFaceUrl(c) {
-  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=113";
+  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=114";
   const rawId = String(c.id || "").trim();
   const mInf = rawId.match(/^(inf_\d+)/i);
   if (mInf) {
-    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=113`;
+    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=114`;
   }
   const lowerName = String(c.name || "").trim().toLowerCase();
   if (INF_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=113`;
+    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=114`;
   }
-  return "/assets/fp/cards/influence/inf_1.jpg?v=113";
+  return "/assets/fp/cards/influence/inf_1.jpg?v=114";
 }
 
 function resolveFullEncounterCardFaceUrl(card, deckKey = "") {
-  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=113";
+  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=114";
   const rawId = String(card.id || "").trim();
   const mEnc = rawId.match(/^((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=113`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=114`;
   }
   const lowerName = String(card.name || "").trim().toLowerCase();
   if (ENC_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=113`;
+    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=114`;
   }
   const dk = String(deckKey || card.deck || "").toLowerCase();
-  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=113";
-  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=113";
-  return "/assets/fp/cards/encounters/pat_2.jpg?v=113";
+  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=114";
+  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=114";
+  return "/assets/fp/cards/encounters/pat_2.jpg?v=114";
 }
 
 const FACTION_FAVOR_INFLUENCE_SPECS = {

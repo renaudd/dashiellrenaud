@@ -1,8 +1,8 @@
-import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=113";
-import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=113";
-import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=113";
-import { renderRulebookView } from "./rulebook_view.js?v=113";
-import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=113";
+import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=114";
+import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=114";
+import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=114";
+import { renderRulebookView } from "./rulebook_view.js?v=114";
+import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=114";
 
 function navigateToMarketBoardForCategory(category) {
   appState.highlightedMarketTrack = category || null;
@@ -63,20 +63,20 @@ function buildEncounterFigureNodes(encStr, iconClass) {
   if (!encStr || encStr === "None") return [];
   const s = String(encStr);
   if (s === "mob") {
-    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=113", alt: "Protesters" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=114", alt: "Protesters" })];
   }
   if (s === "theater") {
-    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=113", alt: "Open Mic" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=114", alt: "Open Mic" })];
   }
   if (s === "schizophrenic") {
-    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=113", alt: "Schizophrenic" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=114", alt: "Schizophrenic" })];
   }
   const [deckType, countRaw] = s.split("_");
   const isMultiIconDeck = deckType === "cops" || deckType === "criminals" || deckType === "legionaries" || deckType === "nefarious";
   const count = isMultiIconDeck ? Math.max(1, Math.min(4, Number(countRaw) || 1)) : 1;
-  let iconUrl = "/assets/icons/celebrities_icon.png?v=113";
-  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=113";
-  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=113";
+  let iconUrl = "/assets/icons/celebrities_icon.png?v=114";
+  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=114";
+  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=114";
 
   const figs = [];
   for (let i = 0; i < count; i++) {
@@ -382,14 +382,14 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
           {
             type: "button",
             className: "mission-sell-complete-btn",
-            title: `Bulk Grain Sale: Sell all ${bulkGrainSells.length} Grain cards in ${m.cell || "this neighborhood"
-              } at ${relMod} (${totalBulkPrice} Denarii total) and complete Mission "${m.name}"`,
+            title: `Bulk Weed Sale: Sell all ${bulkGrainSells.length} Weed cards in ${m.cell || "this neighborhood"
+              } at ${relMod} (${totalBulkPrice}d total) and complete Job "${m.name}"`,
             onClick: (e) => {
               e.stopPropagation();
               closeModal();
               sendGameAction({
                 type: "delivery_sell",
-                category: "Grain",
+                category: "Weed",
                 bulkGrain: true,
                 cardIds: bulkGrainSells.map((s) => s.cardId),
                 missionId: m.id,
@@ -397,7 +397,7 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
             },
           },
           replaceDenariiTokens(
-            `🌾 Bulk Sell All ${bulkGrainSells.length} Grain (${totalBulkPrice}d @ ${relMod}) — Complete!`
+            `🌿 Bulk Sell All ${bulkGrainSells.length} Weed (${totalBulkPrice}d @ ${relMod}) — Complete!`
           )
         )
       );
@@ -3597,8 +3597,8 @@ function renderPendingEncounterPanelCore(gs, viewer) {
     const chartRows =
       cType === "mob"
         ? [
-          { roll: "0", color: "#ff6ec7", bg: "rgba(68, 12, 48, 0.92)", border: "#dc2626", title: "Roll 0 — Wine Looted:", desc: "The mob drinks all Wine on your SUV!" },
-          { roll: "I", color: "#92400e", bg: "#fffbeb", border: "#d97706", title: "Roll I — Grain Looted:", desc: "The mob loots all Grain on your SUV!" },
+          { roll: "0", color: "#ff6ec7", bg: "rgba(68, 12, 48, 0.92)", border: "#dc2626", title: "Roll 0 — Opiates Confiscated:", desc: "Protesters confiscate all Opiates on your SUV!" },
+          { roll: "I", color: "#92400e", bg: "#fffbeb", border: "#d97706", title: "Roll I — Weed Looted:", desc: "Protesters loot all Weed on your SUV!" },
           { roll: "II", color: "#7dd3fc", bg: "rgba(14, 42, 84, 0.92)", border: "#ca8a04", title: "Roll II — Cargo Seized:", desc: "Lose the single most expensive Good on your SUV." },
           { roll: "III", color: "#15803d", bg: "#f0fdf4", border: "#16a34a", title: "Roll III — Clamors Noisily:", desc: "Safe passage! No cargo lost — your turn continues." },
         ]
@@ -5540,12 +5540,12 @@ function renderLoadedGoodPhysicalCardNode(item, gs, viewer, readOnly = false) {
           className: "btn btn-sm btn-primary",
           style: { width: "100%", padding: "0.16rem 0.26rem", fontSize: "0.66rem" },
           disabled: viewer.transactedThisTurn,
-          title: `Bulk Grain Sale: Spend 1 hourly Transaction to sell all ${sellOpt.bulkGrainCount} Grain cards in your SUV for ${sellOpt.bulkGrainTotalPrice} Denarii total!`,
-          text: `🌾 Bulk All ${sellOpt.bulkGrainCount} (${sellOpt.bulkGrainTotalPrice}d)`,
+          title: `Bulk Weed Sale: Spend 1 hourly Transaction to sell all ${sellOpt.bulkGrainCount} Weed cards in your SUV for ${sellOpt.bulkGrainTotalPrice}d total!`,
+          text: `🌿 Bulk All ${sellOpt.bulkGrainCount} (${sellOpt.bulkGrainTotalPrice}d)`,
           onClick: () =>
             sendGameAction({
               type: "delivery_sell",
-              category: "Grain",
+              category: "Weed",
               bulkGrain: true,
               cardIds: sellOpt.bulkGrainCardIds,
               missionId: sellOpt.missionId || undefined,
@@ -7352,7 +7352,7 @@ function renderSUVNavigationWidget(gs, viewer) {
           txButtons.push(
             el("div", {
               style: { fontSize: "0.72rem", color: "var(--gold-bright)", fontWeight: "700" },
-              text: viewer.transactedThisTurn ? "✓ Transaction Used This Hour" : "💰 Sell 1 Good (or Bulk Grain):",
+              text: viewer.transactedThisTurn ? "✓ Transaction Used This Hour" : "💰 Sell 1 Good (or Bulk Weed):",
             })
           );
         }
@@ -7372,12 +7372,12 @@ function renderSUVNavigationWidget(gs, viewer) {
               type: "button",
               className: "btn btn-sm btn-primary",
               disabled: viewer.transactedThisTurn,
-              text: `🌾 Bulk Sell All ${sOpt.bulkGrainCount} Grain (${sOpt.bulkGrainTotalPrice}d @ ${sOpt.scarcitySymbol}) [Net ${bulkNetStr}]${sOpt.isMission ? " [Mission]" : ""
+              text: `🌿 Bulk Sell All ${sOpt.bulkGrainCount} Weed (${sOpt.bulkGrainTotalPrice}d @ ${sOpt.scarcitySymbol}) [Net ${bulkNetStr}]${sOpt.isMission ? " [Job]" : ""
                 }`,
               onClick: () =>
                 sendGameAction({
                   type: "delivery_sell",
-                  category: "Grain",
+                  category: "Weed",
                   bulkGrain: true,
                   cardIds: sOpt.bulkGrainCardIds,
                   missionId: sOpt.missionId || undefined,

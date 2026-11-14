@@ -1,5 +1,5 @@
-import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=113";
-import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=113";
+import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=114";
+import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=114";
 
 const GOOD_CATEGORY_DISPLAY_MAP = {
   Grain: "Weed",
@@ -73,21 +73,21 @@ function createStackWatermarkIconNode(kind) {
   if (kLow === "criminals" || kLow === "nefarii") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/criminals_icon.png?v=113",
+      src: "/assets/icons/criminals_icon.png?v=114",
       alt: "Criminals",
     });
   }
   if (kLow === "celebrities" || kLow === "patricii") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/celebrities_icon.png?v=113",
+      src: "/assets/icons/celebrities_icon.png?v=114",
       alt: "Celebrities",
     });
   }
   if (kLow === "cops" || kLow === "legiones") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/cops_icon.png?v=113",
+      src: "/assets/icons/cops_icon.png?v=114",
       alt: "Cops",
     });
   }
@@ -1956,14 +1956,14 @@ function triggerInfluenceCardPlay(gs, viewer, card) {
     return;
   }
 
-  if (cName.includes("Wine Forger") && viewer && !doesItemFitWithoutSwap(viewer, { reqBlocks: 1 })) {
+  if ((cName.includes("Fentanyl Press") || cName.includes("Wine Forger")) && viewer && !doesItemFitWithoutSwap(viewer, { reqBlocks: 1 })) {
     openSUVReplacementModal(viewer, {
       itemType: "good",
       incomingCard: {
-        name: "Stepped-On Product",
-        category: "Wine",
+        name: "Pressed Fentanyl",
+        category: "Opiates",
         subcategory: "Counts as any Opiate",
-        track: "Wine",
+        track: "Opiates",
         blocks: 1,
         sell: [60, 45, 30, 20, 15],
       },
@@ -2094,7 +2094,7 @@ function openProphecyTargetModal(gs, viewer, card) {
 }
 
 function openSurpriseShipmentModal(gs, _viewer, card) {
-  const tracks = ["Marble", "Wine", "Animals", "Weapons", "Grain"];
+  const tracks = ["Party", "Opiates", "Uppers", "Weapons", "Weed"];
   const meta = gs.marketMeta || {};
   showModal(
     `🚢 Play "${card.name}" — Shift Category Scarcity`,
@@ -2147,32 +2147,32 @@ const ALL_PICKER_DECK_SPECS = [
     key: "celebrities",
     label: "Celebrities",
     subtitle: "Tech Founders, A-Listers & VIPs",
-    defaultTotal: 29,
-    img: "/assets/icons/card_back_celebrities.png?v=113",
+    defaultTotal: 30,
+    img: "/assets/icons/card_back_celebrities.png?v=114",
     shortDesc: "High-society patrons & influencers; rewards favor with Jobs, Cash, and Influence.",
   },
   {
     key: "criminals",
     label: "Criminals",
     subtitle: "Syndicates, Boosters & Street Crews",
-    defaultTotal: 26,
-    img: "/assets/icons/card_back_criminals.png?v=113",
+    defaultTotal: 29,
+    img: "/assets/icons/card_back_criminals.png?v=114",
     shortDesc: "Underworld crews & fences; risky shakedowns or black-market deals and shortcuts.",
   },
   {
     key: "cops",
     label: "Cops",
     subtitle: "SFPD, DEA, Feds & Task Forces",
-    defaultTotal: 29,
-    img: "/assets/icons/card_back_cops.png?v=113",
+    defaultTotal: 30,
+    img: "/assets/icons/card_back_cops.png?v=114",
     shortDesc: "Law enforcement checkpoints; contraband sweeps, fines, and combat threats.",
   },
   {
     key: "market",
     label: "Goods",
     subtitle: "Weed, Party, Uppers, Opiates, Weapons & Henchmen",
-    defaultTotal: 89,
-    img: "/assets/icons/card_back_goods.png?v=113",
+    defaultTotal: 112,
+    img: "/assets/icons/card_back_goods.png?v=114",
     shortDesc: "Next Cargo, Weapon, or Henchman card drawn into the Wholesale Market tracks.",
   },
   {
@@ -2180,7 +2180,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Jobs",
     subtitle: "Deliveries, Drops, Hits & Contracts",
     defaultTotal: 56,
-    img: "/assets/icons/card_back_missions.png?v=113",
+    img: "/assets/icons/card_back_missions.png?v=114",
     shortDesc: "Next Delivery, Sale, or Contract Job card drawn.",
   },
   {
@@ -2188,24 +2188,24 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Influence",
     subtitle: "Burner Apps, Bribes, Tips & Schemes",
     defaultTotal: 43,
-    img: "/assets/icons/card_back_influence.png?v=113",
+    img: "/assets/icons/card_back_influence.png?v=114",
     shortDesc: "Next tactical Influence card drawn or purchased at Dawn.",
   },
 ];
 
 const DEFAULT_FACTION_DECK_TOTALS = {
-  celebrities: { MAGA: 3, ISIS: 5, TECH: 8, DSA: 3, MS13: 8 },
-  cops: { MAGA: 14, ISIS: 4, TECH: 3, DSA: 5, MS13: 2 },
-  criminals: { MAGA: 2, ISIS: 5, TECH: 4, DSA: 7, MS13: 6 },
+  celebrities: { MAGA: 3, ISIS: 4, TECH: 6, DSA: 9, MS13: 4 },
+  cops: { MAGA: 11, ISIS: 4, TECH: 6, DSA: 3, MS13: 4 },
+  criminals: { MAGA: 3, ISIS: 6, TECH: 4, DSA: 6, MS13: 7 },
 };
 
 const DEFAULT_GOODS_TRACK_TOTALS = [
-  { track: "Grain", label: "Weed", total: 12 },
-  { track: "Marble", label: "Party", total: 12 },
-  { track: "Animals", label: "Uppers", total: 18 },
-  { track: "Wine", label: "Opiates", total: 18 },
-  { track: "Weapons", label: "Weapons", total: 17 },
-  { track: "Henchmen", label: "Henchmen", total: 12 },
+  { track: "Weed", label: "Weed", total: 16 },
+  { track: "Party", label: "Party", total: 16 },
+  { track: "Uppers", label: "Uppers", total: 24 },
+  { track: "Opiates", label: "Opiates", total: 24 },
+  { track: "Weapons", label: "Weapons", total: 16 },
+  { track: "Henchmen", label: "Henchmen", total: 16 },
 ];
 
 function renderDeckSubCountsStripNode(gs, deckKey) {
