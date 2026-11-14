@@ -62,7 +62,7 @@ function getStoredSessionToken() {
         if (lTok) return lTok;
       }
     }
-  } catch (_e) {}
+  } catch (_e) { }
   return null;
 }
 
@@ -81,7 +81,7 @@ function setStoredSessionToken(tok) {
         else window.localStorage.removeItem("nm_session_token");
       }
     }
-  } catch (_e) {}
+  } catch (_e) { }
 }
 
 function getEffectiveFirebaseConfig() {
@@ -117,17 +117,17 @@ async function setBestFirebasePersistence(auth, authMod, skipIndexedDb = false) 
   const candidates = skipIndexedDb
     ? [authMod.browserLocalPersistence, authMod.browserSessionPersistence, authMod.inMemoryPersistence]
     : [
-        authMod.indexedDBLocalPersistence,
-        authMod.browserLocalPersistence,
-        authMod.browserSessionPersistence,
-        authMod.inMemoryPersistence,
-      ];
+      authMod.indexedDBLocalPersistence,
+      authMod.browserLocalPersistence,
+      authMod.browserSessionPersistence,
+      authMod.inMemoryPersistence,
+    ];
   for (const persistence of candidates) {
     if (!persistence) continue;
     try {
       await authMod.setPersistence(auth, persistence);
       return persistence;
-    } catch (_persistErr) {}
+    } catch (_persistErr) { }
   }
   return null;
 }
@@ -202,7 +202,7 @@ async function getFirebaseIdToken() {
           }
           return tok;
         }
-      } catch (_err) {}
+      } catch (_err) { }
     }
   }
   if (typeof appState !== "undefined" && appState && appState.lastFirebaseIdToken) {
@@ -1469,7 +1469,7 @@ function resolveGoodCardArtUrl(cardOrItem, trackName = "") {
   const c = cardOrItem || {};
   const combined = `${trackName} ${c.track || ""} ${c.category || ""} ${c.subcategory || ""} ${c.subtitle || ""} ${c.name || ""}`.toLowerCase();
   if (combined.includes("henchman") || combined.includes("henchmen") || combined.includes("muscle") || combined.includes("enforcer") || combined.includes("bouncer")) {
-    return "/assets/fp/goods_art/art_henchmen.jpg?v=35";
+    return "/assets/fp/goods_art/art_henchmen.jpg?v=119";
   }
   if (
     combined.includes("weapon") ||
@@ -1486,7 +1486,7 @@ function resolveGoodCardArtUrl(cardOrItem, trackName = "") {
     combined.includes("armor") ||
     combined.includes("blade")
   ) {
-    return "/assets/fp/goods_art/art_weapons.jpg?v=35";
+    return "/assets/fp/goods_art/art_weapons.jpg?v=119";
   }
   if (
     combined.includes("opiate") ||
@@ -1498,7 +1498,7 @@ function resolveGoodCardArtUrl(cardOrItem, trackName = "") {
     combined.includes("marble") ||
     combined.includes("stone")
   ) {
-    return "/assets/fp/goods_art/art_opiates.jpg?v=35";
+    return "/assets/fp/goods_art/art_opiates.jpg?v=119";
   }
   if (
     combined.includes("upper") ||
@@ -1509,7 +1509,7 @@ function resolveGoodCardArtUrl(cardOrItem, trackName = "") {
     combined.includes("speed") ||
     combined.includes("exotic")
   ) {
-    return "/assets/fp/goods_art/art_uppers.jpg?v=35";
+    return "/assets/fp/goods_art/art_uppers.jpg?v=119";
   }
   if (
     combined.includes("party") ||
@@ -1523,7 +1523,7 @@ function resolveGoodCardArtUrl(cardOrItem, trackName = "") {
     combined.includes("animal") ||
     combined.includes("meat")
   ) {
-    return "/assets/fp/goods_art/art_party.jpg?v=35";
+    return "/assets/fp/goods_art/art_party.jpg?v=119";
   }
   if (
     combined.includes("weed") ||
@@ -1535,9 +1535,9 @@ function resolveGoodCardArtUrl(cardOrItem, trackName = "") {
     combined.includes("grain") ||
     combined.includes("wheat")
   ) {
-    return "/assets/fp/goods_art/art_weed.jpg?v=35";
+    return "/assets/fp/goods_art/art_weed.jpg?v=119";
   }
-  return "/assets/fp/goods_art/art_weed.jpg?v=35";
+  return "/assets/fp/goods_art/art_weed.jpg?v=119";
 }
 
 const GOODS_NAME_TO_ID = {
@@ -1636,29 +1636,29 @@ function resolveFullGoodCardFaceUrl(cardOrItem, trackName = "") {
   const rawId = String(c.id || "").trim();
   const mStd = rawId.match(/^((?:grn|mrb|ma|ea|cw|fw|wpn|grd)_\d+)/i);
   if (mStd) {
-    return `/assets/fp/cards/goods/${mStd[1].toLowerCase()}.jpg?v=118`;
+    return `/assets/fp/cards/goods/${mStd[1].toLowerCase()}.jpg?v=119`;
   }
   const mCargo = rawId.match(/^mcargo_(?:enc_)?((?:mis|pat|leg|nef)_\d+)/i);
   if (mCargo) {
-    return `/assets/fp/cards/goods/mcargo_${mCargo[1].toLowerCase()}.jpg?v=118`;
+    return `/assets/fp/cards/goods/mcargo_${mCargo[1].toLowerCase()}.jpg?v=119`;
   }
   if (c.missionId) {
     const mMid = String(c.missionId).match(/(?:enc_)?((?:mis|pat|leg|nef)_\d+)/i);
     if (mMid) {
-      return `/assets/fp/cards/goods/mcargo_${mMid[1].toLowerCase()}.jpg?v=118`;
+      return `/assets/fp/cards/goods/mcargo_${mMid[1].toLowerCase()}.jpg?v=119`;
     }
   }
   const lowerName = String(c.name || "").trim().toLowerCase();
   if (GOODS_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/goods/${GOODS_NAME_TO_ID[lowerName]}.jpg?v=118`;
+    return `/assets/fp/cards/goods/${GOODS_NAME_TO_ID[lowerName]}.jpg?v=119`;
   }
   const tr = String(c.track || c.category || trackName || "").toLowerCase();
-  if (tr.includes("hench") || tr.includes("guard")) return "/assets/fp/cards/goods/grd_1.jpg?v=118";
-  if (tr.includes("weapon")) return "/assets/fp/cards/goods/wpn_4.jpg?v=118";
-  if (tr.includes("opiate") || tr.includes("wine")) return "/assets/fp/cards/goods/cw_2.jpg?v=118";
-  if (tr.includes("upper") || tr.includes("animal")) return "/assets/fp/cards/goods/ea_8.jpg?v=118";
-  if (tr.includes("party") || tr.includes("marble")) return "/assets/fp/cards/goods/mrb_12.jpg?v=118";
-  return "/assets/fp/cards/goods/grn_1.jpg?v=118";
+  if (tr.includes("hench") || tr.includes("guard")) return "/assets/fp/cards/goods/grd_1.jpg?v=119";
+  if (tr.includes("weapon")) return "/assets/fp/cards/goods/wpn_4.jpg?v=119";
+  if (tr.includes("opiate") || tr.includes("wine")) return "/assets/fp/cards/goods/cw_2.jpg?v=119";
+  if (tr.includes("upper") || tr.includes("animal")) return "/assets/fp/cards/goods/ea_8.jpg?v=119";
+  if (tr.includes("party") || tr.includes("marble")) return "/assets/fp/cards/goods/mrb_12.jpg?v=119";
+  return "/assets/fp/cards/goods/grn_1.jpg?v=119";
 }
 
 function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
@@ -1676,55 +1676,55 @@ function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
 }
 
 function resolveFullJobCardFaceUrl(m) {
-  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=118";
+  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=119";
   if (m.source === "encounter" && m.encounterCard && !m.hasDrawnMissionCard) {
     return resolveFullEncounterCardFaceUrl(m.encounterCard);
   }
   const rawId = String(m.id || "").trim();
   const mJob = rawId.match(/^(mis_\d+)/i);
   if (mJob) {
-    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=118`;
+    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=119`;
   }
   const mEnc = rawId.match(/^enc_((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=118`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=119`;
   }
   const lowerName = String(m.name || "").trim().toLowerCase();
   if (JOBS_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=118`;
+    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=119`;
   }
-  return "/assets/fp/cards/jobs/mis_1.jpg?v=118";
+  return "/assets/fp/cards/jobs/mis_1.jpg?v=119";
 }
 
 function resolveFullInfluenceCardFaceUrl(c) {
-  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=118";
+  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=119";
   const rawId = String(c.id || "").trim();
   const mInf = rawId.match(/^(inf_\d+)/i);
   if (mInf) {
-    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=118`;
+    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=119`;
   }
   const lowerName = String(c.name || "").trim().toLowerCase();
   if (INF_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=118`;
+    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=119`;
   }
-  return "/assets/fp/cards/influence/inf_1.jpg?v=118";
+  return "/assets/fp/cards/influence/inf_1.jpg?v=119";
 }
 
 function resolveFullEncounterCardFaceUrl(card, deckKey = "") {
-  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=118";
+  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=119";
   const rawId = String(card.id || "").trim();
   const mEnc = rawId.match(/^((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=118`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=119`;
   }
   const lowerName = String(card.name || "").trim().toLowerCase();
   if (ENC_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=118`;
+    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=119`;
   }
   const dk = String(deckKey || card.deck || "").toLowerCase();
-  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=118";
-  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=118";
-  return "/assets/fp/cards/encounters/pat_2.jpg?v=118";
+  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=119";
+  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=119";
+  return "/assets/fp/cards/encounters/pat_2.jpg?v=119";
 }
 
 const FACTION_FAVOR_INFLUENCE_SPECS = {
@@ -1773,11 +1773,11 @@ function getInfluenceCardEffectText(c) {
 }
 
 const INFLUENCE_SOCIAL_PLATFORMS = [
-  { label: "INSTANTGRAM • SPONSORED POST", art: "/assets/fp/influence_art/art_instantgram.jpg?v=35", cls: "face-social-ig" },
-  { label: "CLOCKTOK • VIRAL FOR YOU", art: "/assets/fp/influence_art/art_clocktok.jpg?v=35", cls: "face-social-tiktok" },
-  { label: "YOUTOOB • TRENDING CLIP", art: "/assets/fp/influence_art/art_youtoob.jpg?v=35", cls: "face-social-yt" },
-  { label: "FACESPACE • BOOSTED FEED", art: "/assets/fp/influence_art/art_facespace.jpg?v=35", cls: "face-social-fb" },
-  { label: "LINKEDOUT • THOUGHT LEADER", art: "/assets/fp/influence_art/art_linkedout.jpg?v=35", cls: "face-social-li" },
+  { label: "INSTANTGRAM • SPONSORED POST", art: "/assets/fp/influence_art/art_instantgram.jpg?v=119", cls: "face-social-ig" },
+  { label: "CLOCKTOK • VIRAL FOR YOU", art: "/assets/fp/influence_art/art_clocktok.jpg?v=119", cls: "face-social-tiktok" },
+  { label: "YOUTOOB • TRENDING CLIP", art: "/assets/fp/influence_art/art_youtoob.jpg?v=119", cls: "face-social-yt" },
+  { label: "FACESPACE • BOOSTED FEED", art: "/assets/fp/influence_art/art_facespace.jpg?v=119", cls: "face-social-fb" },
+  { label: "LINKEDOUT • THOUGHT LEADER", art: "/assets/fp/influence_art/art_linkedout.jpg?v=119", cls: "face-social-li" },
 ];
 
 function formatReactionCondition(cond) {

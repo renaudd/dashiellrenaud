@@ -1,5 +1,5 @@
-import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=118";
-import { renderApp } from "./app.js?v=118";
+import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=119";
+import { renderApp } from "./app.js?v=119";
 
 const RULEBOOK_SECTIONS = [
   {
@@ -146,7 +146,7 @@ const RULEBOOK_SECTIONS = [
         desc: "Volatile streets marked with the Refresh icon discard after their encounter resolves, immediately revealing the next tile beneath.",
       },
       {
-        img: "./assets/icons/sf_logo_icon.png?v=118",
+        img: "./assets/icons/sf_logo_icon.png?v=119",
         title: "Wholesale Spot / First Player",
         desc: "Marks San Francisco's 3 central Wholesale Spots (C3 Civic Center, D3 Tenderloin, D4 Mission) where Goods are sold to dealers, as well as the First Player emblem.",
       },
@@ -180,32 +180,32 @@ const RULEBOOK_SECTIONS = [
     ],
     iconGrid: [
       {
-        img: "./assets/icons/celebrities_icon.png?v=118",
+        img: "./assets/icons/celebrities_icon.png?v=119",
         title: "Celebrities Encounter (Always 1×)",
         desc: "Tech founders, politicians, and influencers (gold hoodie icon). Always singular (X=1). Friendly Celebrities offer lucrative Jobs or trade deals; Hostile Celebrities make demands.",
       },
       {
-        img: "./assets/icons/cops_icon.png?v=118",
+        img: "./assets/icons/cops_icon.png?v=119",
         title: "Cops Encounter (1–4× Icons)",
         desc: "SFPD, DEA, CHP, and federal agents (cobalt blue police hat icon). Has 1–4 icons on the tile/edge, setting X for the card's combat formula. Heavily aligned with MAGA.",
       },
       {
-        img: "./assets/icons/criminals_icon.png?v=118",
+        img: "./assets/icons/criminals_icon.png?v=119",
         title: "Criminals Encounter (1–4× Icons)",
         desc: "Stick-up crews, cartel enforcers, and street gangs (white A-shirt icon). Has 1–4 icons on the tile/edge, setting X for the card's combat formula.",
       },
       {
-        img: "./assets/icons/angry_mob.png?v=118",
+        img: "./assets/icons/angry_mob.png?v=119",
         title: "Protesters (1R Chart)",
         desc: "Orange megaphone icon. Roll 1(R): 0 = Lose all Opiates; 1 = Lose all Weed; 2 = Lose your most expensive Good; 3 = Escape unharmed.",
       },
       {
-        img: "./assets/icons/theater_masks.png?v=118",
+        img: "./assets/icons/theater_masks.png?v=119",
         title: "Open Mic (1R Chart)",
         desc: "Dark gray microphone icon. Roll 1(R): 0 = Lose all positive Favor; 1 = Lose all negative Favor; 2 = Lose rest of turn & next turn; 3 = Draw 1(R) Influence.",
       },
       {
-        img: "./assets/icons/schizophrenic_icon.png?v=118",
+        img: "./assets/icons/schizophrenic_icon.png?v=119",
         title: "Schizophrenic Encounter",
         desc: "Purple silhouette icon. Draws a mandatory Schizophrenic Job and seals 1(R) face-down Influence cards beneath it until you finish the Job.",
       },
@@ -231,8 +231,8 @@ const RULEBOOK_SECTIONS = [
       },
     ],
     bullets: [
-      "Friendly vs. Hostile Encounters & Reputation Tiers: Determined by your uncapped net Favor with the NPC's Faction. There are three interaction tiers: !! means comply or fight; ! means comply or accept hostile encounter consequences with no fight; and ? means comply or decline with no penalty for rejecting the offer (if you accept a ? Job and later fail or abandon that Job, you suffer the encounter's hostile Favor consequences).",
-      "Combat Power (CP) & Cargo Gear: Both sides roll Action Dice (R) plus Henchmen, Weapons, mandatory Uppers, and Influence modifiers (plus +1 CP per positive Ruby & +2 CP to Cops if Back the Blue is active). Note that Body Armor carries 0 CP in street ambushes (it absorbs wounds instead). If Player CP ≥ Opponent CP against an NPC, you win!",
+      "Friendly vs. Hostile Encounters & Reputation Tiers: Determined by your uncapped net Favor with the NPC's Faction. There are three interaction tiers: !! means comply or fight; ! means comply or accept hostile encounter consequences with no fight; and ? means comply or decline with no penalty for rejecting the offer (refusing an Offer always returns the encounter card to the bottom of its encounter deck, applies neither friendly nor hostile consequences, and does not count as a completed Job; if you accept a ? Job and later fail or abandon that Job, you suffer the encounter's hostile Favor consequences).",
+      "Combat Power (CP), Cargo Gear, & Pre-Roll Strike (Pipe Bomb): Both sides roll Action Dice (R) plus Henchmen, Weapons, mandatory Uppers, and Influence modifiers (plus +1 CP per positive Ruby & +2 CP to Cops if Back the Blue is active). Note that Body Armor carries 0 CP in street ambushes (it absorbs wounds instead). Pipe Bomb is a one-time use Pre-Roll (R) Strike weapon used immediately before combat: each unabsorbed wound kills a Henchman or reduces the opponent's count X by 1 (if X reaches 0, if X cannot be reduced, or if a Henchman cannot be killed, the opponent or player is defeated outright!). If Player CP ≥ Opponent CP against an NPC, you win!",
       "Addiction Rule (Mandatory Uppers & Open Mic Sets): Dealers cannot resist dipping into their own stash of stimulants. Any Uppers loaded in your SUV are automatically used in combat (adding both their positive CP rolls/bonuses and any negative crash penalties), and if you encounter an Open Mic on a tile edge or center, you must stop in for a mandatory 1(R) set!",
       "Armor, Henchmen, & Dealer Fate (Damage Deficit Note): If Opponent CP > Player CP, suffer Raw Wounds = (Opponent CP − Player CP). Body Armor/Shields reduce Wounds first; each remaining Wound kills 1 Henchman. If an unblocked Wound reaches you, roll 1(R) on the Dealer Fate Chart: 0 = Wasted (lose all Goods & your night ends); 1 = Left for dead (lose all Goods); 2 = Jumped & robbed (lose all Bitcoin); 3 = Begged for mercy (lose all Influence cards).",
       "1(R) Street Charts: Protesters (0: lose all Opiates; 1: lose all Weed; 2: lose most expensive Good; 3: safe), Open Mic (0: undo all Positive-outcome gem changes; 1: undo all Hostile-outcome gem changes; 2: lose rest of turn & next turn; 3: draw 1(R) Influence), Schizophrenic (take mandatory Job + seal 1(R) Influence cards).",
@@ -354,7 +354,7 @@ const RULEBOOK_SECTIONS = [
         [
           "? (Question Mark)",
           "Encounter Reputation Tiers",
-          "Offer — Comply or Not (No Refusal Penalty): You may comply or reject the offer with no penalty for declining (if you accept a ? Job and later fail or abandon that Job, you suffer the encounter card's hostile Favor consequences).",
+          "Offer — Comply or Not (No Refusal Penalty): You may comply or reject the offer with no penalty for declining (refusing an Offer returns the encounter card to the bottom of the encounter deck, triggers neither friendly nor hostile consequences, and does not count as a completed Job; if you accept a ? Job and later fail or abandon that Job, you suffer the encounter card's hostile Favor consequences).",
         ],
         [
           "(QUEST_ICON)!! / (QUEST_ICON)! / (QUEST_ICON)?",

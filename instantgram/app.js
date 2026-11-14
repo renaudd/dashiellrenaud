@@ -1,8 +1,8 @@
-import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=118";
-import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=118";
-import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=118";
-import { renderRulebookView } from "./rulebook_view.js?v=118";
-import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=118";
+import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=119";
+import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=119";
+import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=119";
+import { renderRulebookView } from "./rulebook_view.js?v=119";
+import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=119";
 
 function navigateToMarketBoardForCategory(category) {
   appState.highlightedMarketTrack = category || null;
@@ -63,20 +63,20 @@ function buildEncounterFigureNodes(encStr, iconClass) {
   if (!encStr || encStr === "None") return [];
   const s = String(encStr);
   if (s === "mob" || s === "protesters" || s === "angry_mob") {
-    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=118", alt: "Protesters" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=119", alt: "Protesters" })];
   }
   if (s === "theater" || s === "open_mic") {
-    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=118", alt: "Open Mic" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=119", alt: "Open Mic" })];
   }
   if (s === "schizophrenic" || s === "soothsayer") {
-    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=118", alt: "Schizophrenic" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=119", alt: "Schizophrenic" })];
   }
   const [deckType, countRaw] = s.split("_");
   const isMultiIconDeck = deckType === "cops" || deckType === "criminals" || deckType === "legionaries" || deckType === "nefarious";
   const count = isMultiIconDeck ? Math.max(1, Math.min(4, Number(countRaw) || 1)) : 1;
-  let iconUrl = "/assets/icons/celebrities_icon.png?v=118";
-  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=118";
-  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=118";
+  let iconUrl = "/assets/icons/celebrities_icon.png?v=119";
+  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=119";
+  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=119";
 
   const figs = [];
   for (let i = 0; i < count; i++) {
@@ -207,7 +207,7 @@ function renderDynamicTileCardNode(tile, coord, mode = "board") {
       className: `dyn-tile-card ${mode === "board" ? "board-overlay" : "inspector-preview"} ${edges.SW ? "has-edge-sw" : ""
         } ${edges.SE ? "has-edge-se" : ""}`.trim(),
       style: {
-        backgroundImage: 'url("./assets/icons/rome_211_map_bg_face.jpg?v=118")',
+        backgroundImage: 'url("./assets/icons/rome_211_map_bg_face.jpg?v=119")',
         backgroundSize: "600% 600%",
         backgroundPosition: `${bgPosX} ${bgPosY}`,
       },
@@ -216,11 +216,11 @@ function renderDynamicTileCardNode(tile, coord, mode = "board") {
     tradeBannerNodes.length > 0 ? el("div", { className: "dyn-tile-trade-stack" }, ...tradeBannerNodes) : null,
     centerFigures.length === 4
       ? el(
-          "div",
-          { className: "dyn-tile-center-enc is-grid-2x2" },
-          el("div", { className: "dyn-center-enc-row" }, centerFigures[0], centerFigures[1]),
-          el("div", { className: "dyn-center-enc-row" }, centerFigures[2], centerFigures[3])
-        )
+        "div",
+        { className: "dyn-tile-center-enc is-grid-2x2" },
+        el("div", { className: "dyn-center-enc-row" }, centerFigures[0], centerFigures[1]),
+        el("div", { className: "dyn-center-enc-row" }, centerFigures[2], centerFigures[3])
+      )
       : centerFigures.length > 0
         ? el("div", { className: "dyn-tile-center-enc" }, ...centerFigures)
         : null,
@@ -2914,7 +2914,34 @@ function renderInlineClickableDiceRow(pend, viewer, merchantLabel = "Your") {
   }
 
   const dieButtons = [];
-  if (stage === "combat_post_roll") {
+  if (stage === "combat_pre_strike_post_roll") {
+    const sDice = Array.isArray(pend.preStrikeDiceObjs) ? pend.preStrikeDiceObjs : [];
+    sDice.forEach((d, idx) => {
+      const rom = d.roman !== undefined ? String(d.roman) : toRomanDieSymbol(Number(d.value) || 0);
+      dieButtons.push(
+        el(
+          "button",
+          {
+            type: "button",
+            className: `inline-roman-die-btn ${hasTwist ? "clickable-die" : ""} ${hasTwist && isArmed ? "armed-die" : ""}`,
+            disabled: !hasTwist,
+            title: hasTwist ? `Click this die to re-roll with 'Twist Of Fate'` : `${merchantLabel} ${d.label || "Pre-Strike Die"}`,
+            onClick: hasTwist ? () => handleDieSelectionClick(pend, viewer, "player", idx) : null,
+          },
+          el("span", { className: "inline-roman-die-face", text: rom }),
+          el(
+            "span",
+            { className: "inline-roman-die-meta" },
+            el("span", { className: "inline-roman-die-owner", text: `${merchantLabel} • ${d.label || `Pre-Strike Die #${idx + 1}`}` }),
+            el("span", {
+              className: "inline-roman-die-action",
+              text: hasTwist ? `${rom} Wound(s) • ${actionHint}` : `${rom} Wound(s)`,
+            })
+          )
+        )
+      );
+    });
+  } else if (stage === "combat_post_roll") {
     const pDice = Array.isArray(pend.playerDiceObjs) ? pend.playerDiceObjs : [];
     pDice.forEach((d, idx) => {
       const rom = d.roman !== undefined ? String(d.roman) : toRomanDieSymbol(Number(d.value) || 0);
@@ -3063,10 +3090,11 @@ function renderInlineClickableDiceRow(pend, viewer, merchantLabel = "Your") {
 function buildConsumableWeaponPickerNodes(consumables, selectedSet, onChange) {
   return consumables.map((it) => {
     const c = it.combat || {};
+    const isPreStrike = Boolean(c.preRollStrike);
     const effParts = [];
-    if (c.dice) effParts.push(`+${c.dice}(R)`);
-    if (c.flat) effParts.push(`${formatSignedFlat(c.flat)} CP`);
-    const effLabel = effParts.join(" ") || "+1 CP";
+    if (c.dice) effParts.push(isPreStrike ? `${c.dice}(R) Pre-Roll Strike` : `+${c.dice}(R)`);
+    if (c.flat) effParts.push(isPreStrike ? `${formatSignedFlat(c.flat)} Wound(s)` : `${formatSignedFlat(c.flat)} CP`);
+    const effLabel = effParts.join(" ") || (isPreStrike ? "1(R) Pre-Roll Strike" : "+1 CP");
     const isChecked = selectedSet.has(it.id);
 
     return el(
@@ -3077,13 +3105,15 @@ function buildConsumableWeaponPickerNodes(consumables, selectedSet, onChange) {
         { style: { flex: "1", minWidth: "200px" } },
         el("div", {
           style: { fontWeight: "800", fontSize: "0.9rem", color: isChecked ? "#991b1b" : "var(--text-main)" },
-          text: `🗡️ ${it.name || it.item || "Weapon"} (${effLabel} — Destroyed if Used)`,
+          text: `${isPreStrike ? "💣" : "🗡️"} ${it.name || it.item || "Weapon"} (${effLabel} — Destroyed when Used)`,
         }),
         el("div", {
           style: { fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "0.18rem" },
           text: isChecked
-            ? `Selected for this combat: Grants ${effLabel}, then is destroyed and removed from your SUV.`
-            : "Kept safe on your SUV: Contributes 0 CP in this combat and is NOT destroyed.",
+            ? isPreStrike
+              ? `Selected for Pre-Roll Strike: Rolls ${effLabel} immediately before combat! Each unabsorbed wound reduces opponent X by 1 (or kills a Henchman); if X reaches 0 or cannot be reduced, the opponent is defeated outright! Then destroyed.`
+              : `Selected for this combat: Grants ${effLabel}, then is destroyed and removed from your SUV.`
+            : "Kept safe on your SUV: Not used in this combat and is NOT destroyed.",
         }),
         it.isMissionCargo
           ? el("div", {
@@ -3098,7 +3128,7 @@ function buildConsumableWeaponPickerNodes(consumables, selectedSet, onChange) {
         el("button", {
           type: "button",
           className: `btn btn-sm ${isChecked ? "btn-crimson" : ""}`,
-          text: `🗡️ Use (${effLabel}, Destroyed)`,
+          text: `${isPreStrike ? "💣" : "🗡️"} Use (${effLabel}, Destroyed)`,
           onClick: () => {
             selectedSet.add(it.id);
             onChange();
@@ -3499,6 +3529,7 @@ function isInfluenceCardPlayableNow(gs, viewer, c) {
     return (
       isViewerInvolvedInPend &&
       [
+        "combat_pre_strike_post_roll",
         "combat_post_roll",
         "driver_fate_post_roll",
         "chart_post_roll",
@@ -3992,6 +4023,106 @@ function renderPendingEncounterPanelCore(gs, viewer) {
             })
         )
       )
+    );
+  }
+
+  // Stage 1B: Pre-Roll Strike Post-Roll (Pipe Bomb)
+  if (stage === "combat_pre_strike_post_roll") {
+    const wounds = Number(pend.preStrikeWounds) || 0;
+    const isDefeated = Boolean(pend.preStrikeDefeatsNpc);
+    const hasX = Boolean(pend.preStrikeHasX);
+    const origX = Number(pend.preStrikeOrigX) || 0;
+    const effX = Number(pend.preStrikeEffX) || 0;
+    const itemNames = (pend.preStrikeItemNames || ["Pipe Bomb"]).join(", ");
+    const twistCards = (viewer.influence || []).filter((c) => String(c.name || "") === "Twist Of Fate");
+    const sDiceSummary = (pend.preStrikeDiceObjs || [])
+      .map((d) => `${d.label}: [${d.roman}]`)
+      .join(", ");
+
+    let outcomeSummaryText = "";
+    if (wounds <= 0) {
+      outcomeSummaryText = `💨 ${itemNames} rolled 0 Wounds — ${card.name} is unharmed and combat will proceed normally!`;
+    } else if (isDefeated) {
+      outcomeSummaryText = hasX
+        ? `💥 ${itemNames} inflicted ${wounds} Wound${wounds === 1 ? "" : "s"}, reducing ${card.name} from X=${origX} to 0 — ${card.name} is eliminated before combat begins!`
+        : `💥 ${itemNames} inflicted ${wounds} Wound${wounds === 1 ? "" : "s"} against single character ${card.name} (X cannot be reduced) — ${card.name} is defeated before combat begins!`;
+    } else {
+      outcomeSummaryText = `💣 ${itemNames} inflicted ${wounds} Wound${wounds === 1 ? "" : "s"}, reducing ${card.name}'s count X from ${origX} to ${effX} for the upcoming combat roll!`;
+    }
+
+    const borderCol = isDefeated ? "#16a34a" : wounds > 0 ? "#ca8a04" : "#dc2626";
+
+    return el(
+      "div",
+      { id: "pending-encounter-panel", className: "panel", style: { borderColor: borderCol } },
+      el(
+        "h3",
+        { className: "panel-title" },
+        el("span", {
+          text: `💣 Pre-Roll Strike (${itemNames}): ${wounds} Wound${wounds === 1 ? "" : "s"} vs. ${card.name}${isOtherPlayerEncounter ? " [Your Intervention Window]" : ""}`,
+        })
+      ),
+      el(
+        "div",
+        {
+          style: {
+            padding: "0.65rem 0.85rem",
+            background: isDefeated ? "#f0fdf4" : "rgba(14, 42, 84, 0.92)",
+            border: `1.5px solid ${borderCol}`,
+            borderRadius: "4px",
+            fontSize: "0.85rem",
+            color: isDefeated ? "#14532d" : "#7dd3fc",
+            marginBottom: "0.85rem",
+            boxShadow: "var(--bevel-sunken)",
+          },
+        },
+        el("div", {
+          style: { fontWeight: "700", marginBottom: "0.25rem" },
+          text: outcomeSummaryText,
+        }),
+        el("div", {
+          style: { fontSize: "0.78rem", color: "var(--text-main)" },
+          text: `${encPlayer.name} Pre-Strike Roll: ${sDiceSummary || "None"}`,
+        })
+      ),
+      renderInlineClickableDiceRow(pend, viewer, merchantLabel),
+      buildArmedDieBannerNode() ? el("div", { style: { marginBottom: "0.7rem" } }, buildArmedDieBannerNode()) : null,
+      twistCards.length > 0
+        ? el(
+          "div",
+          { style: { marginBottom: "0.85rem" } },
+          el("div", {
+            style: { fontSize: "0.84rem", fontWeight: "700", color: "var(--gold-bright)", marginBottom: "0.45rem" },
+            text: isOtherPlayerEncounter
+              ? `🃏 Intervene on ${encPlayer.name}'s Pre-Roll Strike! Click a Die Above to Force a Re-Roll:`
+              : "🃏 Click Directly on a Die Above to Re-Roll with Twist Of Fate:",
+          }),
+          el(
+            "div",
+            { className: "phys-cards-grid compact-sidebar-grid" },
+            ...twistCards.map((rc) => {
+              const isArmed = Boolean(appState.armedDieAction && appState.armedDieAction.cardId === rc.id);
+              return renderPhysicalInfluenceCardNode(rc, {
+                actionButton: el("button", {
+                  className: `btn btn-sm ${isArmed ? "btn-crimson" : "btn-primary"}`,
+                  style: { width: "100%" },
+                  text: isArmed ? "👆 Click a Die Above to Re-Roll!" : "🎲 Click a Die Above to Re-Roll",
+                  onClick: () => armDieCardAction(rc, "reroll"),
+                }),
+              });
+            })
+          )
+        )
+        : null,
+      el("button", {
+        className: isDefeated ? "btn btn-primary" : "btn btn-crimson",
+        text: isOtherPlayerEncounter
+          ? "✅ Pass Intervention / Confirm Pre-Roll Strike"
+          : isDefeated
+            ? `🏆 Confirm Pre-Strike Victory (${card.name} Defeated!)`
+            : `⚔️ Confirm Pre-Roll Strike & Roll Combat Dice${hasX && wounds > 0 ? ` (X=${effX})` : ""}`,
+        onClick: () => sendGameAction({ type: "resolve_encounter", decision: "finalize_pre_strike" }),
+      })
     );
   }
 
@@ -4509,12 +4640,16 @@ function renderPendingEncounterPanelCore(gs, viewer) {
     const c = it.combat;
     if (!c) return;
     const parts = [];
-    if (c.dice) parts.push(`+${c.dice}(R)`);
-    if (c.negDice) parts.push(`-${c.negDice}(R)`);
-    if (c.flat) parts.push(formatSignedFlat(c.flat) + " CP");
+    if (c.preRollStrike) {
+      parts.push(`Pre-roll ${c.dice || 1}(R) Strike — each wound reduces X by 1 or defeats target`);
+    } else {
+      if (c.dice) parts.push(`+${c.dice}(R)`);
+      if (c.negDice) parts.push(`-${c.negDice}(R)`);
+      if (c.flat) parts.push(formatSignedFlat(c.flat) + " CP");
+    }
     if (c.ignoreWoundsFlat) parts.push(`Absorb ${c.ignoreWoundsFlat} Wound${c.ignoreWoundsFlat === 1 ? "" : "s"}`);
     if (c.ignoreWoundsDice) parts.push(`Absorb ${c.ignoreWoundsDice === 1 ? "" : c.ignoreWoundsDice}(R) Wounds`);
-    if (c.consumable) parts.push((c.ignoreWoundsFlat || c.ignoreWoundsDice) ? "Destroyed when used" : "Optional — Destroyed if Used");
+    if (c.consumable) parts.push((c.ignoreWoundsFlat || c.ignoreWoundsDice || c.preRollStrike) ? "Destroyed when used" : "Optional — Destroyed if Used");
     if (parts.length > 0) {
       gearCombatEffects.push(`${it.item || it.name || "Gear"} (${parts.join(", ")})`);
     }
@@ -4648,21 +4783,21 @@ function renderPendingEncounterPanelCore(gs, viewer) {
               { style: { display: "flex", justifyContent: "flex-end", gap: "0.6rem", marginTop: "1rem" } },
               isStrictThreat
                 ? el("button", {
-                    className: "btn btn-crimson",
-                    text: "⚔️ Fight in Combat!",
-                    onClick: () => {
-                      closeModal();
-                      initiateCombatWithConsumablePrompt(viewer, { type: "resolve_encounter", decision: "refuse" });
-                    },
-                  })
+                  className: "btn btn-crimson",
+                  text: "⚔️ Fight in Combat!",
+                  onClick: () => {
+                    closeModal();
+                    initiateCombatWithConsumablePrompt(viewer, { type: "resolve_encounter", decision: "refuse" });
+                  },
+                })
                 : el("button", {
-                    className: "btn btn-crimson",
-                    text: "Refuse Job",
-                    onClick: () => {
-                      closeModal();
-                      sendGameAction({ type: "resolve_encounter", decision: "refuse" });
-                    },
-                  }),
+                  className: "btn btn-crimson",
+                  text: "Refuse Job",
+                  onClick: () => {
+                    closeModal();
+                    sendGameAction({ type: "resolve_encounter", decision: "refuse" });
+                  },
+                }),
               el("button", {
                 className: "btn",
                 text: "Close",
@@ -4758,13 +4893,13 @@ function renderPendingEncounterPanelCore(gs, viewer) {
             { style: { display: "flex", justifyContent: "flex-end", gap: "0.6rem" } },
             isStrictThreat
               ? el("button", {
-                  className: "btn btn-crimson",
-                  text: "⚔️ Refuse Job Threat & Fight in Combat!",
-                  onClick: () => {
-                    closeModal();
-                    initiateCombatWithConsumablePrompt(viewer, { type: "resolve_encounter", decision: "refuse" });
-                  },
-                })
+                className: "btn btn-crimson",
+                text: "⚔️ Refuse Job Threat & Fight in Combat!",
+                onClick: () => {
+                  closeModal();
+                  initiateCombatWithConsumablePrompt(viewer, { type: "resolve_encounter", decision: "refuse" });
+                },
+              })
               : null,
             el("button", {
               className: "btn",

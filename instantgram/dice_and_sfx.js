@@ -1,5 +1,5 @@
-import { resolveAssetUrl, COLS, ROWS, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getPlayerHexColor, renderSUVIconNode, ROME_DIE_ROMAN_FACES, appState, replaceDenariiTokens, el, resolveGoodCardArtUrl, resolveFullGoodCardFaceUrl, resolveFullEncounterCardFaceUrl } from "./core_ui.js?v=118";
-import { checkPostActionModals, sendGameAction, renderApp, armDieCardAction, handleDieSelectionClick, renderOpponentPublicSUVSummaryNode, getCellOffBoardDirs } from "./app.js?v=118";
+import { resolveAssetUrl, COLS, ROWS, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getPlayerHexColor, renderSUVIconNode, ROME_DIE_ROMAN_FACES, appState, replaceDenariiTokens, el, resolveGoodCardArtUrl, resolveFullGoodCardFaceUrl, resolveFullEncounterCardFaceUrl } from "./core_ui.js?v=119";
+import { checkPostActionModals, sendGameAction, renderApp, armDieCardAction, handleDieSelectionClick, renderOpponentPublicSUVSummaryNode, getCellOffBoardDirs } from "./app.js?v=119";
 
 function toRomanDieSymbol(val) {
   if (typeof val === "string" && ["0", "I", "II", "III", "IV", "V", "VI"].includes(val)) {
@@ -443,6 +443,18 @@ function getDieClickMetaForOverlay(ev, _grp, gIdx, dIdx) {
 
   const stage = pend.stage || "pre_decision";
   const evKind = String((ev && ev.kind) || "");
+  if (stage === "combat_pre_strike_post_roll" && evKind === "combat_pre_strike") {
+    const twistCard = (viewer.influence || []).find((c) => String(c.name || "") === "Twist Of Fate");
+    if (!twistCard) return null;
+    const isArmed = Boolean(appState.armedDieAction && appState.armedDieAction.mode === "reroll");
+    return {
+      clickable: true,
+      isArmed,
+      pillLabel: isArmed ? "👆 Click to Re-Roll!" : "🔄 Click to Re-Roll",
+      title: "Click this die to play 'Twist Of Fate' and re-roll it!",
+      onClick: () => handleDieSelectionClick(pend, viewer, "player", dIdx),
+    };
+  }
   if (stage === "combat_post_roll" && evKind === "combat") {
     const twistCard = (viewer.influence || []).find((c) => String(c.name || "") === "Twist Of Fate");
     if (!twistCard) return null;
@@ -561,6 +573,58 @@ function buildDiceOverlayInteractiveControls() {
   const oppName = (pend.card && pend.card.name) || "Opponent";
 
   const stage = pend.stage || "pre_decision";
+  if (stage === "combat_pre_strike_post_roll") {
+    const wounds = Number(pend.preStrikeWounds) || 0;
+    const isDefeated = Boolean(pend.preStrikeDefeatsNpc);
+    const itemNames = (pend.preStrikeItemNames || ["Pipe Bomb"]).join(", ");
+    const twistCards = (viewer.influence || []).filter((c) => String(c.name || "") === "Twist Of Fate");
+    const firstTwist = twistCards[0] || null;
+    const isArmed = Boolean(firstTwist && appState.armedDieAction && appState.armedDieAction.cardId === firstTwist.id);
+
+    return el(
+      "div",
+      { className: "dice-post-roll-box" },
+      isOtherPlayerEncounter ? renderOpponentPublicSUVSummaryNode(gs, encPlayer, viewer, "dark") : null,
+      el("div", {
+        style: { fontSize: "0.8rem", fontWeight: "700", color: "#fde68a" },
+        text:
+          twistCards.length > 0
+            ? isOtherPlayerEncounter
+              ? `⚡ Intervention Window on ${encPlayer.name}'s ${itemNames} Strike (${wounds} Wound${wounds === 1 ? "" : "s"}): Click a die to re-roll with Twist Of Fate, or pass!`
+              : `🃏 Twist Of Fate Available on Your ${itemNames} Strike (${wounds} Wound${wounds === 1 ? "" : "s"}): Click a die to re-roll, or confirm outcome!`
+            : `Pre-Roll Strike (${itemNames}): ${wounds} Wound${wounds === 1 ? "" : "s"} — Click below to continue.`,
+      }),
+      buildArmedDieBannerNode(),
+      firstTwist
+        ? el(
+          "div",
+          { style: { display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" } },
+          el("button", {
+            className: `btn btn-sm ${isArmed ? "btn-crimson" : "btn-primary"}`,
+            text: isArmed
+              ? "👆 Click Any Die Above to Re-Roll (Twist Of Fate Armed)"
+              : "🎲 Twist Of Fate — Click a Die Above to Re-Roll",
+            onClick: () => armDieCardAction(firstTwist, "reroll"),
+          })
+        )
+        : null,
+      el("button", {
+        className: isDefeated ? "btn btn-sm btn-primary" : "btn btn-sm btn-crimson",
+        text: isOtherPlayerEncounter
+          ? "✅ Pass Intervention / Confirm Pre-Roll Strike"
+          : isDefeated
+            ? `🏆 Confirm Pre-Strike Victory (${oppName} Defeated!)`
+            : "⚔️ Confirm Pre-Roll Strike & Roll Combat Dice",
+        onClick: async () => {
+          if (appState.diceRollQueue.length === 0) {
+            dismissDiceOverlay();
+          }
+          await sendGameAction({ type: "resolve_encounter", decision: "finalize_pre_strike" });
+        },
+      })
+    );
+  }
+
   if (stage === "combat_post_roll") {
     const pCP = Number(pend.playerCP) || 0;
     const oCP = Number(pend.oppCP) || 0;
@@ -839,10 +903,13 @@ function buildDiceOutcomeCard(ev, isRolling) {
             if (
               queueRemaining === 0 &&
               pend &&
-              pend.stage === "combat_post_roll" &&
+              (pend.stage === "combat_post_roll" || pend.stage === "combat_pre_strike_post_roll") &&
               pend.interveningPlayerIndex == null
             ) {
-              await sendGameAction({ type: "resolve_encounter", decision: "finalize_combat" });
+              await sendGameAction({
+                type: "resolve_encounter",
+                decision: pend.stage === "combat_pre_strike_post_roll" ? "finalize_pre_strike" : "finalize_combat",
+              });
             }
           },
         })

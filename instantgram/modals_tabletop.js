@@ -1,5 +1,5 @@
-import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=115";
-import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=115";
+import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=119";
+import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=119";
 
 const GOOD_CATEGORY_DISPLAY_MAP = {
   Grain: "Weed",
@@ -73,21 +73,21 @@ function createStackWatermarkIconNode(kind) {
   if (kLow === "criminals" || kLow === "nefarii") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/criminals_icon.png?v=115",
+      src: "/assets/icons/criminals_icon.png?v=119",
       alt: "Criminals",
     });
   }
   if (kLow === "celebrities" || kLow === "patricii") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/celebrities_icon.png?v=115",
+      src: "/assets/icons/celebrities_icon.png?v=119",
       alt: "Celebrities",
     });
   }
   if (kLow === "cops" || kLow === "legiones") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/cops_icon.png?v=115",
+      src: "/assets/icons/cops_icon.png?v=119",
       alt: "Cops",
     });
   }
@@ -2148,7 +2148,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Celebrities",
     subtitle: "Tech Founders, A-Listers & VIPs",
     defaultTotal: 30,
-    img: "/assets/icons/card_back_celebrities.png?v=115",
+    img: "/assets/icons/card_back_celebrities.png?v=119",
     shortDesc: "High-society patrons & influencers; rewards favor with Jobs, Cash, and Influence.",
   },
   {
@@ -2156,7 +2156,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Criminals",
     subtitle: "Syndicates, Boosters & Street Crews",
     defaultTotal: 29,
-    img: "/assets/icons/card_back_criminals.png?v=115",
+    img: "/assets/icons/card_back_criminals.png?v=119",
     shortDesc: "Underworld crews & fences; risky shakedowns or black-market deals and shortcuts.",
   },
   {
@@ -2164,7 +2164,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Cops",
     subtitle: "SFPD, DEA, Feds & Task Forces",
     defaultTotal: 30,
-    img: "/assets/icons/card_back_cops.png?v=115",
+    img: "/assets/icons/card_back_cops.png?v=119",
     shortDesc: "Law enforcement checkpoints; contraband sweeps, fines, and combat threats.",
   },
   {
@@ -2172,7 +2172,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Goods",
     subtitle: "Weed, Party, Uppers, Opiates, Weapons & Henchmen",
     defaultTotal: 112,
-    img: "/assets/icons/card_back_goods.png?v=115",
+    img: "/assets/icons/card_back_goods.png?v=119",
     shortDesc: "Next Cargo, Weapon, or Henchman card drawn into the Wholesale Market tracks.",
   },
   {
@@ -2180,7 +2180,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Jobs",
     subtitle: "Deliveries, Drops, Hits & Contracts",
     defaultTotal: 56,
-    img: "/assets/icons/card_back_missions.png?v=115",
+    img: "/assets/icons/card_back_missions.png?v=119",
     shortDesc: "Next Delivery, Sale, or Contract Job card drawn.",
   },
   {
@@ -2188,7 +2188,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Influence",
     subtitle: "Burner Apps, Bribes, Tips & Schemes",
     defaultTotal: 43,
-    img: "/assets/icons/card_back_influence.png?v=115",
+    img: "/assets/icons/card_back_influence.png?v=119",
     shortDesc: "Next tactical Influence card drawn or purchased at Dawn.",
   },
 ];
