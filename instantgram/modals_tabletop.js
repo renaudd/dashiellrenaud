@@ -1,5 +1,5 @@
-import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=116";
-import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=116";
+import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=115";
+import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=115";
 
 const GOOD_CATEGORY_DISPLAY_MAP = {
   Grain: "Weed",
@@ -33,12 +33,12 @@ function renderDynamicTileBackNode(coord, cell) {
   const bgPosY = `${(rowIdx / 5) * 100}%`;
   const stackCnt = cell
     ? Number(
-        cell.stackCount !== undefined
-          ? cell.stackCount
-          : cell.unrevealedCount !== undefined
-            ? cell.unrevealedCount
-            : 12
-      )
+      cell.stackCount !== undefined
+        ? cell.stackCount
+        : cell.unrevealedCount !== undefined
+          ? cell.unrevealedCount
+          : 12
+    )
     : 12;
 
   return el(
@@ -73,21 +73,21 @@ function createStackWatermarkIconNode(kind) {
   if (kLow === "criminals" || kLow === "nefarii") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/criminals_icon.png?v=116",
+      src: "/assets/icons/criminals_icon.png?v=115",
       alt: "Criminals",
     });
   }
   if (kLow === "celebrities" || kLow === "patricii") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/celebrities_icon.png?v=116",
+      src: "/assets/icons/celebrities_icon.png?v=115",
       alt: "Celebrities",
     });
   }
   if (kLow === "cops" || kLow === "legiones") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/cops_icon.png?v=116",
+      src: "/assets/icons/cops_icon.png?v=115",
       alt: "Cops",
     });
   }
@@ -283,12 +283,12 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
   const scoutedTile = !exposedTile && tileData ? tileData : null;
   const unrevealedCount = cell
     ? Number(
-        cell.stackCount !== undefined
-          ? cell.stackCount
-          : cell.unrevealedCount !== undefined
-            ? cell.unrevealedCount
-            : 12
-      )
+      cell.stackCount !== undefined
+        ? cell.stackCount
+        : cell.unrevealedCount !== undefined
+          ? cell.unrevealedCount
+          : 12
+    )
     : 0;
 
   let resolvedMoveOpts = moveOpts;
@@ -312,11 +312,11 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
   const isDeliveryPhase = Boolean(gs && gs.phase === "delivery");
   const isMyTurn = Boolean(
     gs &&
-      viewer &&
-      gs.activePlayerIndex === viewer.index &&
-      (isEntryPhase || isDeliveryPhase) &&
-      !viewer.exitedRome &&
-      !viewer.nightEnded
+    viewer &&
+    gs.activePlayerIndex === viewer.index &&
+    (isEntryPhase || isDeliveryPhase) &&
+    !viewer.exitedRome &&
+    !viewer.nightEnded
   );
   const isGateCell = Boolean(cell && cell.isGate);
   const isGateEntrance = Boolean(isEntryPhase && isGateCell && isMyTurn);
@@ -324,21 +324,21 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
   const canScoutDeck = Boolean(isMyTurn && !viewer.scoutedThisTurn);
   const canTrashThisTile = Boolean(
     !isEntryPhase &&
-      isDeliveryPhase &&
-      isMyTurn &&
-      !viewer.trashedThisTurn &&
-      Array.isArray(viewer.influence) &&
-      viewer.influence.length > 0 &&
-      (exposedTile || unrevealedCount > 0)
+    isDeliveryPhase &&
+    isMyTurn &&
+    !viewer.trashedThisTurn &&
+    Array.isArray(viewer.influence) &&
+    viewer.influence.length > 0 &&
+    (exposedTile || unrevealedCount > 0)
   );
   const moveDir = resolvedMoveOpts && resolvedMoveOpts.moveDir ? String(resolvedMoveOpts.moveDir) : null;
   const adjInfo = (resolvedMoveOpts && resolvedMoveOpts.adjInfo) || null;
   const canMoveStep = Boolean(
     !isEntryPhase &&
-      isDeliveryPhase &&
-      isMyTurn &&
-      moveDir &&
-      Number(viewer.movesRemaining || 0) > 0
+    isDeliveryPhase &&
+    isMyTurn &&
+    moveDir &&
+    Number(viewer.movesRemaining || 0) > 0
   );
   const canMoveHere = Boolean(canMoveStep || isGateEntrance);
   const canEndTurnHere = Boolean(!isEntryPhase && isDeliveryPhase && isMyTurn);
@@ -384,10 +384,10 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
       : null;
   const centerParts = activeInfoTile
     ? [
-        activeInfoTile.encounter ? formatEdgeLabel(activeInfoTile.encounter) : "No Center Encounter",
-        activeInfoTile.gamble ? "Gambling Den (≤20(d))" : null,
-        activeInfoTile.persistent ? "Persistent (⤹)" : activeInfoTile.refresh ? "Refresh (↻)" : "Standard Tile",
-      ].filter(Boolean)
+      activeInfoTile.encounter ? formatEdgeLabel(activeInfoTile.encounter) : "No Center Encounter",
+      activeInfoTile.gamble ? "Gambling Den (≤20(d))" : null,
+      activeInfoTile.persistent ? "Persistent (⤹)" : activeInfoTile.refresh ? "Refresh (↻)" : "Standard Tile",
+    ].filter(Boolean)
     : [];
 
   const tilePreviewSlot = el(
@@ -402,21 +402,21 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
   const scoutToggleBtn =
     !exposedTile && scoutedTile
       ? el("button", {
-          type: "button",
-          className: "btn btn-sm",
-          text: "👁️ Show Scouted Top Tile Face",
-          onClick: () => {
-            showingScoutedFace = !showingScoutedFace;
-            scoutToggleBtn.textContent = showingScoutedFace
-              ? "🔒 Show Face-Down Tile Back"
-              : "👁️ Show Scouted Top Tile Face";
-            tilePreviewSlot.replaceChildren(
-              showingScoutedFace
-                ? renderDynamicTileCardNode(scoutedTile, coord, "inspector")
-                : renderDynamicTileBackNode(coord, cell)
-            );
-          },
-        })
+        type: "button",
+        className: "btn btn-sm",
+        text: "👁️ Show Scouted Top Tile Face",
+        onClick: () => {
+          showingScoutedFace = !showingScoutedFace;
+          scoutToggleBtn.textContent = showingScoutedFace
+            ? "🔒 Show Face-Down Tile Back"
+            : "👁️ Show Scouted Top Tile Face";
+          tilePreviewSlot.replaceChildren(
+            showingScoutedFace
+              ? renderDynamicTileCardNode(scoutedTile, coord, "inspector")
+              : renderDynamicTileBackNode(coord, cell)
+          );
+        },
+      })
       : null;
 
   const unusedIndicatorItems = [];
@@ -532,23 +532,23 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
         buysStr ? el("div", {}, el("strong", { style: { color: "#38bdf8" }, text: "Market Sells: " }), buysStr) : null,
         centerParts.length > 0
           ? el(
-              "div",
-              {},
-              el("strong", { style: { color: "var(--gold-bright)" }, text: "Properties: " }),
-              centerParts.join(" • ")
-            )
+            "div",
+            {},
+            el("strong", { style: { color: "var(--gold-bright)" }, text: "Properties: " }),
+            centerParts.join(" • ")
+          )
           : null,
         crossingNote
           ? el("div", {
-              style: {
-                marginTop: "0.2rem",
-                paddingTop: "0.22rem",
-                borderTop: "1px solid rgba(255, 110, 199, 0.35)",
-                fontWeight: "700",
-                color: "#ff6ec7",
-              },
-              text: replaceDenariiTokens(crossingNote),
-            })
+            style: {
+              marginTop: "0.2rem",
+              paddingTop: "0.22rem",
+              borderTop: "1px solid rgba(255, 110, 199, 0.35)",
+              fontWeight: "700",
+              color: "#ff6ec7",
+            },
+            text: replaceDenariiTokens(crossingNote),
+          })
           : null
       ),
       el(
@@ -633,25 +633,25 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
           }),
           !isEntryPhase && isDeliveryPhase
             ? el("button", {
-                id: "modal-trash-tile-btn",
-                type: "button",
-                className: "btn",
-                disabled: !canTrashThisTile,
-                title: canTrashThisTile
-                  ? exposedTile
-                    ? `Discard 1 Influence card to trash the face-up tile on ${coord}`
-                    : `Discard 1 Influence card to bury the top unrevealed tile of ${coord}`
-                  : "Trash Tile is unavailable (already trashed this turn, no Influence cards, or not your turn)",
-                text: exposedTile ? "🗑️ Trash Face-Up Tile" : "🗑️ Bury Stack Tile",
-                onClick: () => {
-                  if (!canTrashThisTile) return;
-                  closeModal();
-                  openTrashModal(gs, viewer, {
-                    cell: coord,
-                    targetMode: exposedTile ? "revealed" : "stack",
-                  });
-                },
-              })
+              id: "modal-trash-tile-btn",
+              type: "button",
+              className: "btn",
+              disabled: !canTrashThisTile,
+              title: canTrashThisTile
+                ? exposedTile
+                  ? `Discard 1 Influence card to trash the face-up tile on ${coord}`
+                  : `Discard 1 Influence card to bury the top unrevealed tile of ${coord}`
+                : "Trash Tile is unavailable (already trashed this turn, no Influence cards, or not your turn)",
+              text: exposedTile ? "🗑️ Trash Face-Up Tile" : "🗑️ Bury Stack Tile",
+              onClick: () => {
+                if (!canTrashThisTile) return;
+                closeModal();
+                openTrashModal(gs, viewer, {
+                  cell: coord,
+                  targetMode: exposedTile ? "revealed" : "stack",
+                });
+              },
+            })
             : null,
           el("button", {
             id: "modal-encounter-decks-btn",
@@ -675,27 +675,27 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
           },
           unusedIndicatorItems.length > 0
             ? el(
-                "div",
-                {
-                  className: "unused-turn-actions-indicator",
-                  style: {
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.45rem",
-                    padding: "0.2rem 0.5rem",
-                    borderRadius: "999px",
-                    background: "rgba(34, 13, 62, 0.94)",
-                    border: "1px solid #b59257",
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)",
-                  },
-                  title: "Unused Move and/or Transaction actions remaining this turn",
+              "div",
+              {
+                className: "unused-turn-actions-indicator",
+                style: {
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.45rem",
+                  padding: "0.2rem 0.5rem",
+                  borderRadius: "999px",
+                  background: "rgba(34, 13, 62, 0.94)",
+                  border: "1px solid #b59257",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.65)",
                 },
-                el("span", {
-                  style: { fontSize: "0.68rem", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.04em", color: "#ff6ec7" },
-                  text: "Unused:",
-                }),
-                ...unusedIndicatorItems
-              )
+                title: "Unused Move and/or Transaction actions remaining this turn",
+              },
+              el("span", {
+                style: { fontSize: "0.68rem", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.04em", color: "#ff6ec7" },
+                text: "Unused:",
+              }),
+              ...unusedIndicatorItems
+            )
             : null,
           el(
             "div",
@@ -2148,7 +2148,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Celebrities",
     subtitle: "Tech Founders, A-Listers & VIPs",
     defaultTotal: 30,
-    img: "/assets/icons/card_back_celebrities.png?v=116",
+    img: "/assets/icons/card_back_celebrities.png?v=115",
     shortDesc: "High-society patrons & influencers; rewards favor with Jobs, Cash, and Influence.",
   },
   {
@@ -2156,7 +2156,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Criminals",
     subtitle: "Syndicates, Boosters & Street Crews",
     defaultTotal: 29,
-    img: "/assets/icons/card_back_criminals.png?v=116",
+    img: "/assets/icons/card_back_criminals.png?v=115",
     shortDesc: "Underworld crews & fences; risky shakedowns or black-market deals and shortcuts.",
   },
   {
@@ -2164,7 +2164,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Cops",
     subtitle: "SFPD, DEA, Feds & Task Forces",
     defaultTotal: 30,
-    img: "/assets/icons/card_back_cops.png?v=116",
+    img: "/assets/icons/card_back_cops.png?v=115",
     shortDesc: "Law enforcement checkpoints; contraband sweeps, fines, and combat threats.",
   },
   {
@@ -2172,7 +2172,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Goods",
     subtitle: "Weed, Party, Uppers, Opiates, Weapons & Henchmen",
     defaultTotal: 112,
-    img: "/assets/icons/card_back_goods.png?v=116",
+    img: "/assets/icons/card_back_goods.png?v=115",
     shortDesc: "Next Cargo, Weapon, or Henchman card drawn into the Wholesale Market tracks.",
   },
   {
@@ -2180,7 +2180,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Jobs",
     subtitle: "Deliveries, Drops, Hits & Contracts",
     defaultTotal: 56,
-    img: "/assets/icons/card_back_missions.png?v=116",
+    img: "/assets/icons/card_back_missions.png?v=115",
     shortDesc: "Next Delivery, Sale, or Contract Job card drawn.",
   },
   {
@@ -2188,7 +2188,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Influence",
     subtitle: "Burner Apps, Bribes, Tips & Schemes",
     defaultTotal: 43,
-    img: "/assets/icons/card_back_influence.png?v=116",
+    img: "/assets/icons/card_back_influence.png?v=115",
     shortDesc: "Next tactical Influence card drawn or purchased at Dawn.",
   },
 ];
@@ -2241,11 +2241,11 @@ function renderDeckSubCountsStripNode(gs, deckKey) {
       gs && Array.isArray(gs.goodsDeckCategoryCounts) && gs.goodsDeckCategoryCounts.length > 0
         ? gs.goodsDeckCategoryCounts
         : DEFAULT_GOODS_TRACK_TOTALS.map((d) => ({
-            track: d.track,
-            label: d.label,
-            remaining: d.total,
-            total: d.total,
-          }));
+          track: d.track,
+          label: d.label,
+          remaining: d.total,
+          total: d.total,
+        }));
     const badges = rawCats.map((entry) => {
       const rem = Number(entry.remaining ?? entry.total ?? 0);
       const tot = Number(entry.total ?? rem);
@@ -2278,43 +2278,43 @@ function renderDeckCardBackPickerGrid(gs, deckSpecs, onSelectDeck, tapPillLabel 
       const countText = `${rem}/${tot} cards`;
       const cardVisual = spec.img
         ? el(
+          "div",
+          { className: "scout-deck-card-wrap" },
+          el("img", {
+            className: "scout-deck-card-img",
+            src: spec.img,
+            alt: `${spec.label} Deck Card Back`,
+          })
+        )
+        : el(
+          "div",
+          { className: "scout-deck-card-wrap" },
+          el(
             "div",
-            { className: "scout-deck-card-wrap" },
-            el("img", {
+            {
               className: "scout-deck-card-img",
-              src: spec.img,
-              alt: `${spec.label} Deck Card Back`,
+              style: {
+                width: "126px",
+                height: "176px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.35rem",
+                padding: "0.55rem",
+                textAlign: "center",
+                background: "radial-gradient(circle at 50% 35%, #4c1d4b, #1d0c24)",
+                border: "3px double #d4af37",
+                color: "#fef08a",
+              },
+            },
+            el("div", { style: { fontSize: "1.6rem" }, text: spec.icon || "🃏" }),
+            el("div", {
+              style: { fontFamily: "Cinzel, Georgia, serif", fontWeight: "800", fontSize: "0.8rem", letterSpacing: "0.06em" },
+              text: spec.label.toUpperCase(),
             })
           )
-        : el(
-            "div",
-            { className: "scout-deck-card-wrap" },
-            el(
-              "div",
-              {
-                className: "scout-deck-card-img",
-                style: {
-                  width: "126px",
-                  height: "176px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.35rem",
-                  padding: "0.55rem",
-                  textAlign: "center",
-                  background: "radial-gradient(circle at 50% 35%, #4c1d4b, #1d0c24)",
-                  border: "3px double #d4af37",
-                  color: "#fef08a",
-                },
-              },
-              el("div", { style: { fontSize: "1.6rem" }, text: spec.icon || "🃏" }),
-              el("div", {
-                style: { fontFamily: "Cinzel, Georgia, serif", fontWeight: "800", fontSize: "0.8rem", letterSpacing: "0.06em" },
-                text: spec.label.toUpperCase(),
-              })
-            )
-          );
+        );
 
       const subCountsNode = renderDeckSubCountsStripNode(gs, spec.key);
 
@@ -2349,30 +2349,30 @@ function openEncounterDecksOverviewModal(gs, focusDeck = null) {
   const isDeliveryPhase = Boolean(gs && gs.phase === "delivery");
   const isMyTurn = Boolean(
     gs &&
-      viewer &&
-      gs.activePlayerIndex === viewer.index &&
-      (isEntryPhase || isDeliveryPhase) &&
-      !viewer.exitedRome &&
-      !viewer.nightEnded &&
-      !gs.pendingEncounter
+    viewer &&
+    gs.activePlayerIndex === viewer.index &&
+    (isEntryPhase || isDeliveryPhase) &&
+    !viewer.exitedRome &&
+    !viewer.nightEnded &&
+    !gs.pendingEncounter
   );
   const canScoutDeck = Boolean(isMyTurn && !viewer.scoutedThisTurn);
   const canTrashDeck = Boolean(
     !isEntryPhase &&
-      isDeliveryPhase &&
-      isMyTurn &&
-      !viewer.trashedThisTurn &&
-      Array.isArray(viewer.influence) &&
-      viewer.influence.length > 0
+    isDeliveryPhase &&
+    isMyTurn &&
+    !viewer.trashedThisTurn &&
+    Array.isArray(viewer.influence) &&
+    viewer.influence.length > 0
   );
   const wiretapCard =
     viewer && Array.isArray(viewer.influence)
       ? viewer.influence.find((c) => {
-          const code = String(c.effectCode || "").toLowerCase();
-          const nm = String(c.name || "").toLowerCase();
-          const txt = String(c.effectText || "").toLowerCase();
-          return code.startsWith("reorder_top_3") || nm.includes("wiretap") || nm.includes("informant") || txt.includes("look at the top three");
-        })
+        const code = String(c.effectCode || "").toLowerCase();
+        const nm = String(c.name || "").toLowerCase();
+        const txt = String(c.effectText || "").toLowerCase();
+        return code.startsWith("reorder_top_3") || nm.includes("wiretap") || nm.includes("informant") || txt.includes("look at the top three");
+      })
       : null;
   const canReorderDeck = Boolean(isDeliveryPhase && isMyTurn && wiretapCard);
 
@@ -2416,17 +2416,17 @@ function openEncounterDecksOverviewModal(gs, focusDeck = null) {
                 }),
                 spec.subtitle
                   ? el("div", {
-                      style: { fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "1px" },
-                      text: spec.subtitle,
-                    })
+                    style: { fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "1px" },
+                    text: spec.subtitle,
+                  })
                   : null
               )
             ),
             spec.shortDesc
               ? el("div", {
-                  style: { fontSize: "0.74rem", color: "var(--text-main)", lineHeight: "1.32" },
-                  text: spec.shortDesc,
-                })
+                style: { fontSize: "0.74rem", color: "var(--text-main)", lineHeight: "1.32" },
+                text: spec.shortDesc,
+              })
               : null,
             subCountsNode,
             el(
@@ -2474,22 +2474,22 @@ function openEncounterDecksOverviewModal(gs, focusDeck = null) {
               }),
               wiretapCard
                 ? el("button", {
-                    type: "button",
-                    className: canReorderDeck && rem > 0 ? "btn btn-sm btn-primary" : "btn btn-sm",
-                    disabled: !canReorderDeck || rem <= 0,
-                    title: `Play "${wiretapCard.name}" to inspect and reorder the top 3 cards of the ${spec.label} deck`,
-                    text: `🕵️ ${wiretapCard.name} Top 3`,
-                    onClick: () => {
-                      if (!canReorderDeck || rem <= 0) return;
-                      closeModal();
-                      sendGameAction({
-                        type: "play_influence",
-                        cardId: wiretapCard.id,
-                        targetType: "deck",
-                        targetKey: dk,
-                      });
-                    },
-                  })
+                  type: "button",
+                  className: canReorderDeck && rem > 0 ? "btn btn-sm btn-primary" : "btn btn-sm",
+                  disabled: !canReorderDeck || rem <= 0,
+                  title: `Play "${wiretapCard.name}" to inspect and reorder the top 3 cards of the ${spec.label} deck`,
+                  text: `🕵️ ${wiretapCard.name} Top 3`,
+                  onClick: () => {
+                    if (!canReorderDeck || rem <= 0) return;
+                    closeModal();
+                    sendGameAction({
+                      type: "play_influence",
+                      cardId: wiretapCard.id,
+                      targetType: "deck",
+                      targetKey: dk,
+                    });
+                  },
+                })
                 : null
             )
           );
@@ -2767,52 +2767,52 @@ function openGambleModal(viewer) {
       }),
       isMatchFixingActive
         ? el("div", {
-            style: {
-              padding: "0.45rem 0.65rem",
-              background: "#ecfdf5",
-              border: "1.5px solid #16a34a",
-              borderRadius: "6px",
-              color: "#14532d",
-              fontSize: "0.82rem",
-              fontWeight: "700",
-              marginBottom: "0.65rem",
-            },
-            text: "✓ 'Match Fixing' Active: +1(R) Bonus Die will be added to your Gambling roll!",
-          })
+          style: {
+            padding: "0.45rem 0.65rem",
+            background: "#ecfdf5",
+            border: "1.5px solid #16a34a",
+            borderRadius: "6px",
+            color: "#14532d",
+            fontSize: "0.82rem",
+            fontWeight: "700",
+            marginBottom: "0.65rem",
+          },
+          text: "✓ 'Match Fixing' Active: +1(R) Bonus Die will be added to your Gambling roll!",
+        })
         : matchFixingCard
           ? el(
-              "div",
-              {
-                style: {
-                  padding: "0.5rem 0.7rem",
-                  background: "rgba(34, 13, 62, 0.94)",
-                  border: "1.5px solid #b58d52",
-                  borderRadius: "6px",
-                  marginBottom: "0.7rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "0.5rem",
-                },
+            "div",
+            {
+              style: {
+                padding: "0.5rem 0.7rem",
+                background: "rgba(34, 13, 62, 0.94)",
+                border: "1.5px solid #b58d52",
+                borderRadius: "6px",
+                marginBottom: "0.7rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "0.5rem",
               },
-              el("span", {
-                style: { fontSize: "0.8rem", color: "var(--gold-bright)", fontWeight: "600" },
-                text: "🃏 Hold 'Match Fixing' (+1(R) to Gambling Roll):",
-              }),
-              el("button", {
-                className: "btn btn-sm btn-primary",
-                text: "Play 'Match Fixing'",
-                onClick: async () => {
-                  closeModal();
-                  await sendGameAction({ type: "play_influence", cardId: matchFixingCard.id });
-                  const updatedViewer =
-                    appState.gameState && appState.gameState.players
-                      ? appState.gameState.players[appState.gameState.viewerPlayerIndex || 0]
-                      : null;
-                  if (updatedViewer && !updatedViewer.gambledThisTurn) openGambleModal(updatedViewer);
-                },
-              })
-            )
+            },
+            el("span", {
+              style: { fontSize: "0.8rem", color: "var(--gold-bright)", fontWeight: "600" },
+              text: "🃏 Hold 'Match Fixing' (+1(R) to Gambling Roll):",
+            }),
+            el("button", {
+              className: "btn btn-sm btn-primary",
+              text: "Play 'Match Fixing'",
+              onClick: async () => {
+                closeModal();
+                await sendGameAction({ type: "play_influence", cardId: matchFixingCard.id });
+                const updatedViewer =
+                  appState.gameState && appState.gameState.players
+                    ? appState.gameState.players[appState.gameState.viewerPlayerIndex || 0]
+                    : null;
+                if (updatedViewer && !updatedViewer.gambledThisTurn) openGambleModal(updatedViewer);
+              },
+            })
+          )
           : null,
       el(
         "div",
@@ -2848,9 +2848,9 @@ function openScoutModal(gs, _viewer) {
       {},
       !isEntryPhase
         ? el("p", {
-            style: { fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "0", marginBottom: "0.75rem" },
-            text: "Committing to your Scout action immediately advances the turn so the next dealer in sequence can begin while you examine the scouted card or tile.",
-          })
+          style: { fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "0", marginBottom: "0.75rem" },
+          text: "Committing to your Scout action immediately advances the turn so the next dealer in sequence can begin while you examine the scouted card or tile.",
+        })
         : null,
       el(
         "div",
@@ -2993,11 +2993,11 @@ function openTrashModal(gs, viewer, prefillOpts = null) {
     const revSummary =
       hasExposed && cObj.revealed
         ? [
-            cObj.revealed.encounter ? `Center: ${formatEdgeLabel(cObj.revealed.encounter)}` : "No Center Encounter",
-            Array.isArray(cObj.revealed.sells) && cObj.revealed.sells.length > 0
-              ? `Buys: ${cObj.revealed.sells.map((s) => s.category).join(", ")}`
-              : "No Buyers",
-          ].join(" • ")
+          cObj.revealed.encounter ? `Center: ${formatEdgeLabel(cObj.revealed.encounter)}` : "No Center Encounter",
+          Array.isArray(cObj.revealed.sells) && cObj.revealed.sells.length > 0
+            ? `Buys: ${cObj.revealed.sells.map((s) => s.category).join(", ")}`
+            : "No Buyers",
+        ].join(" • ")
         : "";
 
     trashExposedBtn.disabled = !hasExposed;

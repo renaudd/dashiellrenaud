@@ -2332,7 +2332,10 @@ select {
   width: 100%;
   height: 100%;
   aspect-ratio: 1 / 1;
-  background: radial-gradient(circle at 50% 50%, #fbf5e6 0%, #f1e3c6 68%, #e2cca2 100%);
+  background-color: #f2eef6;
+  background-image: url("./assets/icons/rome_211_map_bg_face.jpg?v=117");
+  background-size: 600% 600%;
+  background-repeat: no-repeat;
   border: 1.5px solid rgba(88, 56, 26, 0.65);
   box-shadow: inset 0 0 12px rgba(92, 60, 28, 0.22);
   overflow: hidden;

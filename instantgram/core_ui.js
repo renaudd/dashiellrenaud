@@ -1409,7 +1409,7 @@ function el(tag, attrs = {}, ...children) {
     } else if (k === "style" && typeof v === "object") {
       for (const [sk, sv] of Object.entries(v)) {
         const sVal = String(sv);
-        node.style[sk] = sVal.includes("/assets/") ? sVal.replace(/\/assets\//g, "./assets/") : sVal;
+        node.style[sk] = sVal.replace(/(^|[^.])\/assets\//g, "$1./assets/");
       }
     } else if (k.startsWith("on") && typeof v === "function") {
       node.addEventListener(k.slice(2).toLowerCase(), v);
@@ -1636,29 +1636,29 @@ function resolveFullGoodCardFaceUrl(cardOrItem, trackName = "") {
   const rawId = String(c.id || "").trim();
   const mStd = rawId.match(/^((?:grn|mrb|ma|ea|cw|fw|wpn|grd)_\d+)/i);
   if (mStd) {
-    return `/assets/fp/cards/goods/${mStd[1].toLowerCase()}.jpg?v=116`;
+    return `/assets/fp/cards/goods/${mStd[1].toLowerCase()}.jpg?v=117`;
   }
   const mCargo = rawId.match(/^mcargo_(?:enc_)?((?:mis|pat|leg|nef)_\d+)/i);
   if (mCargo) {
-    return `/assets/fp/cards/goods/mcargo_${mCargo[1].toLowerCase()}.jpg?v=116`;
+    return `/assets/fp/cards/goods/mcargo_${mCargo[1].toLowerCase()}.jpg?v=117`;
   }
   if (c.missionId) {
     const mMid = String(c.missionId).match(/(?:enc_)?((?:mis|pat|leg|nef)_\d+)/i);
     if (mMid) {
-      return `/assets/fp/cards/goods/mcargo_${mMid[1].toLowerCase()}.jpg?v=116`;
+      return `/assets/fp/cards/goods/mcargo_${mMid[1].toLowerCase()}.jpg?v=117`;
     }
   }
   const lowerName = String(c.name || "").trim().toLowerCase();
   if (GOODS_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/goods/${GOODS_NAME_TO_ID[lowerName]}.jpg?v=116`;
+    return `/assets/fp/cards/goods/${GOODS_NAME_TO_ID[lowerName]}.jpg?v=117`;
   }
   const tr = String(c.track || c.category || trackName || "").toLowerCase();
-  if (tr.includes("hench") || tr.includes("guard")) return "/assets/fp/cards/goods/grd_1.jpg?v=116";
-  if (tr.includes("weapon")) return "/assets/fp/cards/goods/wpn_4.jpg?v=116";
-  if (tr.includes("opiate") || tr.includes("wine")) return "/assets/fp/cards/goods/cw_2.jpg?v=116";
-  if (tr.includes("upper") || tr.includes("animal")) return "/assets/fp/cards/goods/ea_8.jpg?v=116";
-  if (tr.includes("party") || tr.includes("marble")) return "/assets/fp/cards/goods/mrb_12.jpg?v=116";
-  return "/assets/fp/cards/goods/grn_1.jpg?v=116";
+  if (tr.includes("hench") || tr.includes("guard")) return "/assets/fp/cards/goods/grd_1.jpg?v=117";
+  if (tr.includes("weapon")) return "/assets/fp/cards/goods/wpn_4.jpg?v=117";
+  if (tr.includes("opiate") || tr.includes("wine")) return "/assets/fp/cards/goods/cw_2.jpg?v=117";
+  if (tr.includes("upper") || tr.includes("animal")) return "/assets/fp/cards/goods/ea_8.jpg?v=117";
+  if (tr.includes("party") || tr.includes("marble")) return "/assets/fp/cards/goods/mrb_12.jpg?v=117";
+  return "/assets/fp/cards/goods/grn_1.jpg?v=117";
 }
 
 function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
@@ -1676,55 +1676,55 @@ function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
 }
 
 function resolveFullJobCardFaceUrl(m) {
-  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=116";
+  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=117";
   if (m.source === "encounter" && m.encounterCard && !m.hasDrawnMissionCard) {
     return resolveFullEncounterCardFaceUrl(m.encounterCard);
   }
   const rawId = String(m.id || "").trim();
   const mJob = rawId.match(/^(mis_\d+)/i);
   if (mJob) {
-    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=116`;
+    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=117`;
   }
   const mEnc = rawId.match(/^enc_((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=116`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=117`;
   }
   const lowerName = String(m.name || "").trim().toLowerCase();
   if (JOBS_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=116`;
+    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=117`;
   }
-  return "/assets/fp/cards/jobs/mis_1.jpg?v=116";
+  return "/assets/fp/cards/jobs/mis_1.jpg?v=117";
 }
 
 function resolveFullInfluenceCardFaceUrl(c) {
-  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=116";
+  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=117";
   const rawId = String(c.id || "").trim();
   const mInf = rawId.match(/^(inf_\d+)/i);
   if (mInf) {
-    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=116`;
+    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=117`;
   }
   const lowerName = String(c.name || "").trim().toLowerCase();
   if (INF_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=116`;
+    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=117`;
   }
-  return "/assets/fp/cards/influence/inf_1.jpg?v=116";
+  return "/assets/fp/cards/influence/inf_1.jpg?v=117";
 }
 
 function resolveFullEncounterCardFaceUrl(card, deckKey = "") {
-  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=116";
+  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=117";
   const rawId = String(card.id || "").trim();
   const mEnc = rawId.match(/^((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=116`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=117`;
   }
   const lowerName = String(card.name || "").trim().toLowerCase();
   if (ENC_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=116`;
+    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=117`;
   }
   const dk = String(deckKey || card.deck || "").toLowerCase();
-  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=116";
-  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=116";
-  return "/assets/fp/cards/encounters/pat_2.jpg?v=116";
+  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=117";
+  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=117";
+  return "/assets/fp/cards/encounters/pat_2.jpg?v=117";
 }
 
 const FACTION_FAVOR_INFLUENCE_SPECS = {
