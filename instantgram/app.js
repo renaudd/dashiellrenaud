@@ -1,8 +1,8 @@
-import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=119";
-import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=119";
-import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=119";
-import { renderRulebookView } from "./rulebook_view.js?v=119";
-import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=119";
+import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=120";
+import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=120";
+import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=120";
+import { renderRulebookView } from "./rulebook_view.js?v=120";
+import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=120";
 
 function navigateToMarketBoardForCategory(category) {
   appState.highlightedMarketTrack = category || null;
@@ -63,20 +63,20 @@ function buildEncounterFigureNodes(encStr, iconClass) {
   if (!encStr || encStr === "None") return [];
   const s = String(encStr);
   if (s === "mob" || s === "protesters" || s === "angry_mob") {
-    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=119", alt: "Protesters" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=120", alt: "Protesters" })];
   }
   if (s === "theater" || s === "open_mic") {
-    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=119", alt: "Open Mic" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=120", alt: "Open Mic" })];
   }
   if (s === "schizophrenic" || s === "soothsayer") {
-    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=119", alt: "Schizophrenic" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=120", alt: "Schizophrenic" })];
   }
   const [deckType, countRaw] = s.split("_");
   const isMultiIconDeck = deckType === "cops" || deckType === "criminals" || deckType === "legionaries" || deckType === "nefarious";
   const count = isMultiIconDeck ? Math.max(1, Math.min(4, Number(countRaw) || 1)) : 1;
-  let iconUrl = "/assets/icons/celebrities_icon.png?v=119";
-  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=119";
-  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=119";
+  let iconUrl = "/assets/icons/celebrities_icon.png?v=120";
+  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=120";
+  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=120";
 
   const figs = [];
   for (let i = 0; i < count; i++) {
@@ -88,21 +88,58 @@ function buildEncounterFigureNodes(encStr, iconClass) {
 function renderDynamicEdgeSlotNode(dir, edgeVal) {
   if (!edgeVal) return null;
   let inner = null;
+  let slotKindClass = "";
+  const s = String(edgeVal);
   const tollAmt = parseTollAmount(edgeVal);
   if (edgeVal === "green") {
     inner = el("span", { className: "dyn-edge-bar edge-green" });
+    slotKindClass = "edge-slot-green";
   } else if (edgeVal === "red") {
     inner = el("span", { className: "dyn-edge-bar edge-red" });
+    slotKindClass = "edge-slot-red";
   } else if (tollAmt > 0) {
     inner = el("span", { className: "dyn-edge-toll", text: `${tollAmt}(d)` });
+    slotKindClass = "edge-slot-toll";
   } else {
-    const figs = buildEncounterFigureNodes(edgeVal, "dyn-edge-enc-icon");
+    const isSingleFeatureEnc =
+      s === "mob" ||
+      s === "protesters" ||
+      s === "angry_mob" ||
+      s === "theater" ||
+      s === "open_mic" ||
+      s === "schizophrenic" ||
+      s === "soothsayer" ||
+      s.startsWith("celebrities") ||
+      s.startsWith("patricians");
+    const encTypeKey =
+      s === "mob" || s === "protesters" || s === "angry_mob"
+        ? "protesters"
+        : s === "theater" || s === "open_mic"
+          ? "open-mic"
+          : s === "schizophrenic" || s === "soothsayer"
+            ? "schizophrenic"
+            : s.startsWith("celebrities") || s.startsWith("patricians")
+              ? "celebrities"
+              : s.startsWith("cops") || s.startsWith("legionaries")
+                ? "cops"
+                : "criminals";
+    const figs = buildEncounterFigureNodes(
+      edgeVal,
+      `dyn-edge-enc-icon ${isSingleFeatureEnc ? "is-single-feature-icon" : ""} icon-kind-${encTypeKey}`.trim()
+    );
     if (figs.length > 0) {
-      inner = el("span", { className: `dyn-edge-enc-group enc-count-${figs.length}` }, ...figs);
+      inner = el(
+        "span",
+        {
+          className: `dyn-edge-enc-group enc-count-${figs.length} ${isSingleFeatureEnc ? "is-single-feature-enc" : ""} enc-kind-${encTypeKey}`.trim(),
+        },
+        ...figs
+      );
+      slotKindClass = `edge-slot-enc edge-slot-${encTypeKey}`;
     }
   }
   if (!inner) return null;
-  return el("div", { className: `dyn-edge-slot dyn-edge-${dir}` }, inner);
+  return el("div", { className: `dyn-edge-slot dyn-edge-${dir} ${slotKindClass}`.trim() }, inner);
 }
 
 /**
@@ -207,7 +244,7 @@ function renderDynamicTileCardNode(tile, coord, mode = "board") {
       className: `dyn-tile-card ${mode === "board" ? "board-overlay" : "inspector-preview"} ${edges.SW ? "has-edge-sw" : ""
         } ${edges.SE ? "has-edge-se" : ""}`.trim(),
       style: {
-        backgroundImage: 'url("./assets/icons/rome_211_map_bg_face.jpg?v=119")',
+        backgroundImage: 'url("./assets/icons/rome_211_map_bg_face.jpg?v=120")',
         backgroundSize: "600% 600%",
         backgroundPosition: `${bgPosX} ${bgPosY}`,
       },
@@ -531,9 +568,6 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
       onClick,
     },
     selected ? el("div", { className: "phys-card-discard-ribbon", text: "DISCARD" }) : null,
-    deliveryStatusBadgeNode
-      ? el("div", { className: "enc-mission-floating-status" }, deliveryStatusBadgeNode)
-      : null,
     el("img", {
       className: "phys-full-bleed-card-img",
       src: resolveFullJobCardFaceUrl(m),
@@ -550,9 +584,6 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
       visualCardNode = el(
         "div",
         { className: "enc-on-mission-board-wrap" },
-        deliveryStatusBadgeNode
-          ? el("div", { className: "enc-mission-floating-status" }, deliveryStatusBadgeNode)
-          : null,
         encNode
       );
     } else {
@@ -1183,7 +1214,7 @@ function openMissionCompletionModal(ev) {
   const m = ev.mission || {};
   const rewardNotes = Array.isArray(ev.rewardNotes) && ev.rewardNotes.length > 0
     ? ev.rewardNotes
-    : [ev.rewardSummary || m.rewardText || "Mission Reward"];
+    : [ev.rewardSummary || m.rewardText || "Job Reward"];
   const favorNotes = Array.isArray(ev.favorNotes) ? ev.favorNotes : [];
   const favorGems = renderFactionGemNodes(m.favor || []);
 
@@ -1204,21 +1235,21 @@ function openMissionCompletionModal(ev) {
       "div",
       {
         style: {
-          padding: "0.65rem 0.85rem",
-          borderRadius: "4px",
-          background: "#ecfdf5",
-          border: "1.5px solid #16a34a",
-          boxShadow: "var(--bevel-sunken)",
+          padding: "0.7rem 0.9rem",
+          borderRadius: "6px",
+          background: "linear-gradient(135deg, rgba(16, 42, 76, 0.96), rgba(38, 14, 68, 0.96))",
+          border: "1.5px solid #00e5ff",
+          boxShadow: "0 0 14px rgba(0, 229, 255, 0.25), var(--bevel-sunken)",
           textAlign: "center",
         },
       },
       el("div", {
-        style: { fontFamily: "Cinzel, Georgia, serif", fontSize: "1.02rem", fontWeight: "800", color: "#14532d" },
-        text: `✨ Mission Accomplished: "${m.name || "Missio"}"!`,
+        style: { fontFamily: "Cinzel, Georgia, serif", fontSize: "1.04rem", fontWeight: "800", color: "#7dd3fc", textShadow: "0 1px 4px rgba(0, 0, 0, 0.85)" },
+        text: `✨ Job Completed: "${m.name || "Job"}"!`,
       }),
       ev.contextDetail
         ? el("div", {
-          style: { fontSize: "0.84rem", color: "#38bdf8", marginTop: "0.25rem", fontWeight: "700" },
+          style: { fontSize: "0.84rem", color: "#ff6ec7", marginTop: "0.25rem", fontWeight: "700" },
           text: `Completed by ${ev.contextDetail}`,
         })
         : null
@@ -1233,9 +1264,9 @@ function openMissionCompletionModal(ev) {
       {
         style: {
           padding: "0.75rem 0.9rem",
-          borderRadius: "4px",
-          background: "rgba(34, 13, 62, 0.94)",
-          border: "1.5px solid #a88d6b",
+          borderRadius: "6px",
+          background: "rgba(24, 10, 44, 0.96)",
+          border: "1.5px solid #9333ea",
           boxShadow: "var(--bevel-sunken)",
           display: "flex",
           flexDirection: "column",
@@ -1244,20 +1275,20 @@ function openMissionCompletionModal(ev) {
       },
       el("div", {
         style: { fontFamily: "Cinzel, Georgia, serif", fontSize: "0.86rem", fontWeight: "800", color: "var(--gold-bright)" },
-        text: "🎁 Rewards & Imperial Favor Earned",
+        text: "🎁 Payout & Faction Standing Earned",
       }),
       el(
         "div",
-        { style: { display: "flex", alignItems: "center", gap: "0.45rem", fontSize: "0.88rem", color: "#754208", fontWeight: "700" } },
-        el("img", { className: "phys-inline-icon", src: "/assets/icons/chest.png", alt: "Reward" }),
-        el("span", { text: `Rewards: ${rewardNotes.join(" • ")}` })
+        { style: { display: "flex", alignItems: "center", gap: "0.45rem", fontSize: "0.88rem", color: "#fde047", fontWeight: "700" } },
+        el("img", { className: "phys-inline-icon", src: "/assets/icons/cash_white.png", alt: "Reward" }),
+        el("span", { text: `Payout: ${rewardNotes.join(" • ")}` })
       ),
       el(
         "div",
-        { style: { display: "flex", alignItems: "center", gap: "0.45rem", fontSize: "0.86rem", color: "#15803d", fontWeight: "700", flexWrap: "wrap" } },
-        el("img", { className: "phys-inline-icon", src: "/assets/icons/thumb_up.png", alt: "Favor" }),
+        { style: { display: "flex", alignItems: "center", gap: "0.45rem", fontSize: "0.86rem", color: "#4ade80", fontWeight: "700", flexWrap: "wrap" } },
+        el("img", { className: "phys-inline-icon", src: "/assets/icons/thumb_up_green.png", alt: "Favor" }),
         el("span", {
-          text: `Faction Favor: ${favorNotes.length > 0 ? favorNotes.join(", ") : ev.favorSummary || "No Faction Favor change"
+          text: `Faction Standing: ${favorNotes.length > 0 ? favorNotes.join(", ") : ev.favorSummary || "No Faction Standing change"
             }`,
         }),
         ...favorGems
@@ -1294,7 +1325,7 @@ function openMissionCompletionModal(ev) {
       el("button", {
         type: "button",
         className: "btn btn-primary",
-        text: appState.missionModalQueue.length > 0 ? "🏛️ Claim & View Next Completed Mission ▶" : "🏛️ Claim Rewards & Continue",
+        text: appState.missionModalQueue.length > 0 ? "💵 Claim & View Next Completed Job ▶" : "💵 Claim Payout & Continue",
         onClick: () => {
           if (skipCheckbox.checked) {
             persistSkipMissionCompletionPopups(true);
@@ -1308,7 +1339,7 @@ function openMissionCompletionModal(ev) {
     )
   );
 
-  showModal(`🏆 Mission Completed — ${m.name || "Missio"}`, body);
+  showModal(`🏆 Job Completed — ${m.name || "Job"}`, body);
 }
 
 function checkPostActionModals(state) {
@@ -3511,9 +3542,34 @@ function isInfluenceCardPlayableNow(gs, viewer, c) {
     gs.activePlayerIndex === viewer.index &&
     !pend &&
     !viewer.pendingNpcOffer &&
-    !viewer.pendingSUVOverflow &&
-    !viewer.pendingMarketReward &&
+    !((viewer.pendingSUVOverflow || []).length > 0) &&
+    !((viewer.pendingMarketReward || []).length > 0) &&
     !viewer.pendingTop3Reorder;
+
+  // Spontaneous cards that grant Bitcoin, SUV space, Favor, a Henchman, or a Good are playable at any time
+  const isSpontaneousAnytime =
+    cName === "Patron" ||
+    cName === "Sponsor" ||
+    cName === "SUVwright" ||
+    cName === "Cartwright" ||
+    cName === "Body Shop" ||
+    cName === "Thug" ||
+    cName === "Fentanyl Press" ||
+    cName === "Wine Forger" ||
+    cName === "Opiates Forger" ||
+    cName === "Procurer" ||
+    cName === "Dark Web Plug" ||
+    cName.includes("Favor") ||
+    effCode === "gain_40d" ||
+    effCode === "permanent_storage_plus_2" ||
+    effCode === "free_henchman_1r" ||
+    effCode === "wine_forger" ||
+    effCode === "buy_from_deck_uncommon" ||
+    effCode === "buy_any_good_common" ||
+    effCode.startsWith("faction_favor_");
+  if (isSpontaneousAnytime) {
+    return true;
+  }
 
   if (cName.includes("Distraction") || cName.includes("Mercenary")) {
     return (
@@ -8188,8 +8244,10 @@ function renderPlayerSidebar(gs, viewer) {
                 cName.toLowerCase().includes("informants") ||
                 effTxt.includes("look at the top three");
               const isProcurerCard =
+                effCode === "buy_from_deck_uncommon" ||
                 effCode === "buy_any_good_common" ||
-                cName.toLowerCase() === "procurer";
+                cName.toLowerCase() === "procurer" ||
+                cName.toLowerCase() === "dark web plug";
               const isProphecyCard = cName === "Prophecy" || effCode === "trigger_schizophrenic";
               const isSurpriseShipmentCard =
                 cName === "Surprise Shipment" || effCode === "shift_category_scarcity_right";
@@ -8202,7 +8260,8 @@ function renderPlayerSidebar(gs, viewer) {
                 const needsThugSwap =
                   cName.includes("Thug") && !doesItemFitWithoutSwap(viewer, { reqHenchmen: 1 });
                 const needsWineForgerSwap =
-                  cName.includes("Wine Forger") && !doesItemFitWithoutSwap(viewer, { reqBlocks: 1 });
+                  (cName.includes("Wine Forger") || cName.includes("Fentanyl Press")) &&
+                  !doesItemFitWithoutSwap(viewer, { reqBlocks: 1 });
                 const isArmedCard = Boolean(appState.armedDieAction && appState.armedDieAction.cardId === c.id);
                 actionNode = el("button", {
                   className: `btn btn-sm ${isArmedCard ? "btn-crimson" : "btn-primary"}`,
