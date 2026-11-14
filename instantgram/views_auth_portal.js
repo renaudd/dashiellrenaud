@@ -1,6 +1,6 @@
-import { maskEmailClient, isFirebaseClientConfigured, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, FACTION_META, SUV_COLOR_PALETTE, renderSUVIconNode, renderGoogleLogoSvg, appState, el, showToast, closeModal, showModal } from "./core_ui.js?v=115";
-import { apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, refreshPortalOverview, seedSeenScoutIds, openGame, renderApp } from "./app.js?v=115";
-import { stopNpcTurnPacing, enqueueNewNpcEvents } from "./dice_and_sfx.js?v=115";
+import { maskEmailClient, isFirebaseClientConfigured, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, FACTION_META, SUV_COLOR_PALETTE, renderSUVIconNode, renderGoogleLogoSvg, appState, el, showToast, closeModal, showModal } from "./core_ui.js?v=116";
+import { apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, refreshPortalOverview, seedSeenScoutIds, openGame, renderApp } from "./app.js?v=116";
+import { stopNpcTurnPacing, enqueueNewNpcEvents } from "./dice_and_sfx.js?v=116";
 
 function buildFallbackFinalStandings(state) {
   if (!state || !Array.isArray(state.players)) return [];
@@ -398,7 +398,7 @@ function openFinalScoringModal(standings, meta = {}) {
       { className: "final-scoring-banner" },
       el("img", {
         className: "final-scoring-mori-thumb",
-        src: "/assets/icons/sf_logo_icon.png?v=115",
+        src: "/assets/icons/sf_logo_icon.png?v=116",
         alt: "InstantGram SF",
       }),
       el(
