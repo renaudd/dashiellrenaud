@@ -48,6 +48,32 @@ let _fbAuthInstance = null;
 
 let _fbInitPromise = null;
 
+let _fbCurrentUser = null;
+
+function getStoredSessionToken() {
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      return window.sessionStorage.getItem("nm_session_token") || null;
+    }
+  } catch (_e) {}
+  return null;
+}
+
+function setStoredSessionToken(tok) {
+  if (typeof appState !== "undefined" && appState) {
+    appState.sessionToken = tok || null;
+  }
+  try {
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      if (tok) {
+        window.sessionStorage.setItem("nm_session_token", String(tok));
+      } else {
+        window.sessionStorage.removeItem("nm_session_token");
+      }
+    }
+  } catch (_e) {}
+}
+
 function getEffectiveFirebaseConfig() {
   const cfg = getNightMerchantRuntimeConfig();
   const baseFb = cfg && cfg.firebaseConfig && typeof cfg.firebaseConfig === "object" ? cfg.firebaseConfig : {};
@@ -76,6 +102,51 @@ function isFirebaseClientConfigured() {
   return Boolean(fb && typeof fb.apiKey === "string" && fb.apiKey.trim() && typeof fb.projectId === "string" && fb.projectId.trim());
 }
 
+async function setBestFirebasePersistence(auth, authMod, skipIndexedDb = false) {
+  if (!auth || !authMod || typeof authMod.setPersistence !== "function") return null;
+  const candidates = skipIndexedDb
+    ? [authMod.browserLocalPersistence, authMod.browserSessionPersistence, authMod.inMemoryPersistence]
+    : [
+        authMod.indexedDBLocalPersistence,
+        authMod.browserLocalPersistence,
+        authMod.browserSessionPersistence,
+        authMod.inMemoryPersistence,
+      ];
+  for (const persistence of candidates) {
+    if (!persistence) continue;
+    try {
+      await authMod.setPersistence(auth, persistence);
+      return persistence;
+    } catch (_persistErr) {}
+  }
+  return null;
+}
+
+function isStoragePersistenceError(err) {
+  const code = String((err && err.code) || "").toLowerCase();
+  const msg = String((err && err.message) || "").toLowerCase();
+  return (
+    code.includes("web-storage-unsupported") ||
+    msg.includes("indexeddb") ||
+    msg.includes("sessionstorage") ||
+    msg.includes("localstorage") ||
+    msg.includes("quota") ||
+    msg.includes("storage")
+  );
+}
+
+async function runFirebaseAuthOpWithPersistenceFallback(auth, authMod, authOp) {
+  try {
+    return await authOp(auth);
+  } catch (err) {
+    if (!isStoragePersistenceError(err)) {
+      throw err;
+    }
+    await setBestFirebasePersistence(auth, authMod, true);
+    return authOp(auth);
+  }
+}
+
 async function initFirebaseClientIfConfigured() {
   if (!isFirebaseClientConfigured()) return null;
   if (_fbAuthInstance) return _fbAuthInstance;
@@ -91,15 +162,7 @@ async function initFirebaseClientIfConfigured() {
       const existingApps = typeof appMod.getApps === "function" ? appMod.getApps() : [];
       const fbApp = existingApps.length > 0 ? existingApps[0] : appMod.initializeApp(fbCfg);
       const auth = authMod.getAuth(fbApp);
-      if (typeof authMod.indexedDBLocalPersistence !== "undefined" && typeof authMod.setPersistence === "function") {
-        try {
-          await authMod.setPersistence(auth, authMod.indexedDBLocalPersistence);
-        } catch (_persistErr) {
-          if (typeof authMod.inMemoryPersistence !== "undefined") {
-            await authMod.setPersistence(auth, authMod.inMemoryPersistence).catch(() => { });
-          }
-        }
-      }
+      await setBestFirebasePersistence(auth, authMod, false);
       if (typeof auth.authStateReady === "function") {
         await auth.authStateReady();
       }
@@ -117,22 +180,43 @@ async function initFirebaseClientIfConfigured() {
 }
 
 async function getFirebaseIdToken() {
-  if (!isFirebaseClientConfigured()) return null;
-  const auth = await initFirebaseClientIfConfigured();
-  if (!auth || !auth.currentUser) return null;
-  try {
-    return await auth.currentUser.getIdToken();
-  } catch (_err) {
-    return null;
+  if (isFirebaseClientConfigured()) {
+    const auth = await initFirebaseClientIfConfigured();
+    const userObj = (auth && auth.currentUser) || _fbCurrentUser;
+    if (userObj && typeof userObj.getIdToken === "function") {
+      try {
+        const tok = await userObj.getIdToken();
+        if (tok) {
+          if (typeof appState !== "undefined" && appState) {
+            appState.lastFirebaseIdToken = tok;
+          }
+          return tok;
+        }
+      } catch (_err) {}
+    }
   }
+  if (typeof appState !== "undefined" && appState && appState.lastFirebaseIdToken) {
+    return appState.lastFirebaseIdToken;
+  }
+  return null;
 }
 
 async function signInWithFirebaseCustomToken(customToken) {
   if (!customToken || !isFirebaseClientConfigured()) return null;
   const auth = await initFirebaseClientIfConfigured();
   if (!auth || !_fbAuthModule) return null;
-  const cred = await _fbAuthModule.signInWithCustomToken(auth, customToken);
-  return cred && cred.user ? cred.user.getIdToken() : null;
+  const cred = await runFirebaseAuthOpWithPersistenceFallback(auth, _fbAuthModule, (a) =>
+    _fbAuthModule.signInWithCustomToken(a, customToken)
+  );
+  if (cred && cred.user) {
+    _fbCurrentUser = cred.user;
+    const tok = await cred.user.getIdToken();
+    if (typeof appState !== "undefined" && appState) {
+      appState.lastFirebaseIdToken = tok || null;
+    }
+    return tok;
+  }
+  return null;
 }
 
 async function signInWithFirebaseEmailPassword(email, password) {
@@ -140,28 +224,64 @@ async function signInWithFirebaseEmailPassword(email, password) {
   const auth = await initFirebaseClientIfConfigured();
   if (!auth || !_fbAuthModule || typeof _fbAuthModule.signInWithEmailAndPassword !== "function") return null;
   try {
-    const cred = await _fbAuthModule.signInWithEmailAndPassword(auth, email, password);
-    return cred && cred.user ? cred.user.getIdToken() : null;
+    const cred = await runFirebaseAuthOpWithPersistenceFallback(auth, _fbAuthModule, (a) =>
+      _fbAuthModule.signInWithEmailAndPassword(a, email, password)
+    );
+    if (cred && cred.user) {
+      _fbCurrentUser = cred.user;
+      const tok = await cred.user.getIdToken();
+      if (typeof appState !== "undefined" && appState) {
+        appState.lastFirebaseIdToken = tok || null;
+      }
+      return tok;
+    }
+    return null;
   } catch (_err) {
     return null;
   }
 }
 
-async function signInWithFirebaseGooglePopup() {
-  const auth = await initFirebaseClientIfConfigured();
-  if (!auth || !_fbAuthModule) {
-    throw new Error("Firebase Google Sign-In is not configured on the server yet.");
+function signInWithFirebaseGooglePopup() {
+  if (_fbAuthInstance && _fbAuthModule) {
+    const provider = new _fbAuthModule.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    return _fbAuthModule.signInWithPopup(_fbAuthInstance, provider).then(async (cred) => {
+      if (!cred || !cred.user) {
+        throw new Error("Google sign-in did not return a user credential.");
+      }
+      _fbCurrentUser = cred.user;
+      const tok = await cred.user.getIdToken();
+      if (typeof appState !== "undefined" && appState) {
+        appState.lastFirebaseIdToken = tok || null;
+      }
+      return tok;
+    });
   }
-  const provider = new _fbAuthModule.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: "select_account" });
-  const cred = await _fbAuthModule.signInWithPopup(auth, provider);
-  if (!cred || !cred.user) {
-    throw new Error("Google sign-in did not return a user credential.");
-  }
-  return cred.user.getIdToken();
+  return initFirebaseClientIfConfigured().then(async (auth) => {
+    if (!auth || !_fbAuthModule) {
+      throw new Error("Firebase Google Sign-In is not configured on the server yet.");
+    }
+    const provider = new _fbAuthModule.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    const cred = await _fbAuthModule.signInWithPopup(auth, provider);
+    if (!cred || !cred.user) {
+      throw new Error("Google sign-in did not return a user credential.");
+    }
+    _fbCurrentUser = cred.user;
+    const tok = await cred.user.getIdToken();
+    if (typeof appState !== "undefined" && appState) {
+      appState.lastFirebaseIdToken = tok || null;
+    }
+    return tok;
+  });
 }
 
 async function signOutFirebaseClient() {
+  _fbCurrentUser = null;
+  if (typeof appState !== "undefined" && appState) {
+    appState.lastFirebaseIdToken = null;
+  }
+  setStoredSessionToken(null);
   if (!_fbAuthInstance || !_fbAuthModule) return;
   try {
     await _fbAuthModule.signOut(_fbAuthInstance);
@@ -1059,6 +1179,23 @@ function createTransactionActionCircleNode(titleText = "Unused Transaction Actio
  * passes through here to show the San Francisco names instead.
  */
 const SF_RESKIN_RULES = [
+  [/\bGladiator's Intervention\b/g, "Backup Arrives"],
+  [/\bHenchman's Intervention\b/g, "Backup Arrives"],
+  [/\bFriend In The City (?:Guard|Henchman)\b/g, "City Hall Fixer"],
+  [/\bFlying Chamber Pot\b/g, "Pepper Spray"],
+  [/\bMercenary Ambush\b/g, "Drive-By"],
+  [/\bWine Forger\b/g, "Fentanyl Press"],
+  [/\bOpiates Forger\b/g, "Fentanyl Press"],
+  [/\bCartwright\b/g, "Body Shop"],
+  [/\bSUVwright\b/g, "Body Shop"],
+  [/\bCasus Belli\b/g, "Doxxing"],
+  [/\bProphecy\b/g, "Bad Trip"],
+  [/\bProcurer\b/g, "Dark Web Plug"],
+  [/\bSupplicant\b/g, "VIP Vouch"],
+  [/\bDramaturge\b/g, "Viral Heckler"],
+  [/\bMake Haste\b/g, "Floor It"],
+  [/\bPuffery\b/g, "Market Hype"],
+  [/\bPatron\b/g, "Sponsor"],
   [/\bExotic Animals?\b/g, "Powder Uppers"],
   [/\bExotic A\b/g, "Powder Uppers"],
   [/\bExotic Beasts?\b/g, "Powder Uppers"],
@@ -1406,15 +1543,27 @@ const JOBS_NAME_TO_ID = {
 };
 
 const INF_NAME_TO_ID = {
-  "twist of fate": "inf_1", "patron": "inf_2", "flying chamber pot": "inf_3", "procurer": "inf_5",
-  "change of plans": "inf_8", "lucky break": "inf_11", "prophecy": "inf_12", "shortcut": "inf_14",
-  "supplicant": "inf_15", "dsa favor": "inf_16", "plea": "inf_17", "ms13 favor": "inf_18",
-  "make haste": "inf_20", "suvwright": "inf_22", "body shop": "inf_22", "friend in the city henchman": "inf_23",
+  "twist of fate": "inf_1", "patron": "inf_2", "sponsor": "inf_2",
+  "flying chamber pot": "inf_3", "pepper spray": "inf_3",
+  "procurer": "inf_5", "dark web plug": "inf_5",
+  "change of plans": "inf_8", "lucky break": "inf_11",
+  "prophecy": "inf_12", "bad trip": "inf_12",
+  "shortcut": "inf_14",
+  "supplicant": "inf_15", "vip vouch": "inf_15",
+  "dsa favor": "inf_16", "plea": "inf_17", "ms13 favor": "inf_18",
+  "make haste": "inf_20", "floor it": "inf_20",
+  "suvwright": "inf_22", "cartwright": "inf_22", "body shop": "inf_22",
+  "friend in the city henchman": "inf_23", "friend in the city guard": "inf_23", "city hall fixer": "inf_23",
   "isis favor": "inf_26", "informants": "inf_27", "thug": "inf_28", "muscle": "inf_28",
   "match fixing": "inf_29", "man of the people": "inf_34", "surprise shipment": "inf_35",
-  "distraction": "inf_37", "dramaturge": "inf_43", "gladiator's intervention": "inf_45",
-  "puffery": "inf_46", "wine forger": "inf_50", "stepped on": "inf_50", "tech favor": "inf_52",
-  "maga favor": "inf_53", "mercenary ambush": "inf_56", "trained dog": "inf_57", "attack dog": "inf_57",
+  "distraction": "inf_37",
+  "dramaturge": "inf_43", "viral heckler": "inf_43",
+  "gladiator's intervention": "inf_45", "henchman's intervention": "inf_45", "backup arrives": "inf_45",
+  "puffery": "inf_46", "market hype": "inf_46",
+  "wine forger": "inf_50", "opiates forger": "inf_50", "fentanyl press": "inf_50", "stepped on": "inf_50",
+  "tech favor": "inf_52", "maga favor": "inf_53",
+  "mercenary ambush": "inf_56", "drive-by": "inf_56",
+  "trained dog": "inf_57", "attack dog": "inf_57",
   "casus belli": "inf_58", "doxxing": "inf_58",
 };
 
@@ -1447,29 +1596,29 @@ function resolveFullGoodCardFaceUrl(cardOrItem, trackName = "") {
   const rawId = String(c.id || "").trim();
   const mStd = rawId.match(/^((?:grn|mrb|ma|ea|cw|fw|wpn|grd)_\d+)/i);
   if (mStd) {
-    return `/assets/fp/cards/goods/${mStd[1].toLowerCase()}.jpg?v=110`;
+    return `/assets/fp/cards/goods/${mStd[1].toLowerCase()}.jpg?v=111`;
   }
   const mCargo = rawId.match(/^mcargo_(?:enc_)?((?:mis|pat|leg|nef)_\d+)/i);
   if (mCargo) {
-    return `/assets/fp/cards/goods/mcargo_${mCargo[1].toLowerCase()}.jpg?v=110`;
+    return `/assets/fp/cards/goods/mcargo_${mCargo[1].toLowerCase()}.jpg?v=111`;
   }
   if (c.missionId) {
     const mMid = String(c.missionId).match(/(?:enc_)?((?:mis|pat|leg|nef)_\d+)/i);
     if (mMid) {
-      return `/assets/fp/cards/goods/mcargo_${mMid[1].toLowerCase()}.jpg?v=110`;
+      return `/assets/fp/cards/goods/mcargo_${mMid[1].toLowerCase()}.jpg?v=111`;
     }
   }
   const lowerName = String(c.name || "").trim().toLowerCase();
   if (GOODS_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/goods/${GOODS_NAME_TO_ID[lowerName]}.jpg?v=110`;
+    return `/assets/fp/cards/goods/${GOODS_NAME_TO_ID[lowerName]}.jpg?v=111`;
   }
   const tr = String(c.track || c.category || trackName || "").toLowerCase();
-  if (tr.includes("hench") || tr.includes("guard")) return "/assets/fp/cards/goods/grd_1.jpg?v=110";
-  if (tr.includes("weapon")) return "/assets/fp/cards/goods/wpn_4.jpg?v=110";
-  if (tr.includes("opiate") || tr.includes("wine")) return "/assets/fp/cards/goods/cw_2.jpg?v=110";
-  if (tr.includes("upper") || tr.includes("animal")) return "/assets/fp/cards/goods/ea_8.jpg?v=110";
-  if (tr.includes("party") || tr.includes("marble")) return "/assets/fp/cards/goods/mrb_12.jpg?v=110";
-  return "/assets/fp/cards/goods/grn_1.jpg?v=110";
+  if (tr.includes("hench") || tr.includes("guard")) return "/assets/fp/cards/goods/grd_1.jpg?v=111";
+  if (tr.includes("weapon")) return "/assets/fp/cards/goods/wpn_4.jpg?v=111";
+  if (tr.includes("opiate") || tr.includes("wine")) return "/assets/fp/cards/goods/cw_2.jpg?v=111";
+  if (tr.includes("upper") || tr.includes("animal")) return "/assets/fp/cards/goods/ea_8.jpg?v=111";
+  if (tr.includes("party") || tr.includes("marble")) return "/assets/fp/cards/goods/mrb_12.jpg?v=111";
+  return "/assets/fp/cards/goods/grn_1.jpg?v=111";
 }
 
 function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
@@ -1487,55 +1636,55 @@ function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
 }
 
 function resolveFullJobCardFaceUrl(m) {
-  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=110";
+  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=111";
   if (m.source === "encounter" && m.encounterCard && !m.hasDrawnMissionCard) {
     return resolveFullEncounterCardFaceUrl(m.encounterCard);
   }
   const rawId = String(m.id || "").trim();
   const mJob = rawId.match(/^(mis_\d+)/i);
   if (mJob) {
-    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=110`;
+    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=111`;
   }
   const mEnc = rawId.match(/^enc_((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=110`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=111`;
   }
   const lowerName = String(m.name || "").trim().toLowerCase();
   if (JOBS_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=110`;
+    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=111`;
   }
-  return "/assets/fp/cards/jobs/mis_1.jpg?v=110";
+  return "/assets/fp/cards/jobs/mis_1.jpg?v=111";
 }
 
 function resolveFullInfluenceCardFaceUrl(c) {
-  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=110";
+  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=111";
   const rawId = String(c.id || "").trim();
   const mInf = rawId.match(/^(inf_\d+)/i);
   if (mInf) {
-    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=110`;
+    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=111`;
   }
   const lowerName = String(c.name || "").trim().toLowerCase();
   if (INF_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=110`;
+    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=111`;
   }
-  return "/assets/fp/cards/influence/inf_1.jpg?v=110";
+  return "/assets/fp/cards/influence/inf_1.jpg?v=111";
 }
 
 function resolveFullEncounterCardFaceUrl(card, deckKey = "") {
-  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=110";
+  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=111";
   const rawId = String(card.id || "").trim();
   const mEnc = rawId.match(/^((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=110`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=111`;
   }
   const lowerName = String(card.name || "").trim().toLowerCase();
   if (ENC_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=110`;
+    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=111`;
   }
   const dk = String(deckKey || card.deck || "").toLowerCase();
-  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=110";
-  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=110";
-  return "/assets/fp/cards/encounters/pat_2.jpg?v=110";
+  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=111";
+  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=111";
+  return "/assets/fp/cards/encounters/pat_2.jpg?v=111";
 }
 
 const FACTION_FAVOR_INFLUENCE_SPECS = {
@@ -1762,4 +1911,4 @@ const NUMPAD_DIGIT_TO_DIR = {
   "3": "SE",
 };
 
-export { getNightMerchantRuntimeConfig, getNightMerchantApiBaseUrl, resolveAssetUrl, maskEmailClient, _fbAuthModule, _fbAuthInstance, _fbInitPromise, getEffectiveFirebaseConfig, isFirebaseClientConfigured, initFirebaseClientIfConfigured, getFirebaseIdToken, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, EDGE_LABELS, parseTollAmount, formatEdgeLabel, WEST_BANK_CELLS, TIBER_BRIDGES, getTiberBridgeName, isTiberCrossingBlocked, DIR_DELTAS_8, getNeighborCoordInDir, SUV_COLOR_PALETTE, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getSUVColorLabel, getPlayerHexColor, renderSUVIconNode, renderGoogleLogoSvg, ROME_DIE_ROMAN_FACES, appState, DENARIUS_SYM, BTC_SYM, formatBtc, replaceDenariiTokens, GAME_TOKEN_REGEX, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createCombatInlineIconNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, SF_RESKIN_RULES, sfReskinText, appendTextWithRomeDice, resolveGoodTrackClass, el, TILE_MODIFIER_MAP, formatTileModifier, getTileModifierClass, resolveGoodCardArtUrl, GOODS_NAME_TO_ID, JOBS_NAME_TO_ID, INF_NAME_TO_ID, ENC_NAME_TO_ID, resolveFullGoodCardFaceUrl, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, FACTION_FAVOR_INFLUENCE_SPECS, getInfluenceCardEffectText, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, ENCOUNTER_FACE_ARCHETYPES, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR };
+export { getNightMerchantRuntimeConfig, getNightMerchantApiBaseUrl, resolveAssetUrl, maskEmailClient, getStoredSessionToken, setStoredSessionToken, _fbAuthModule, _fbAuthInstance, _fbInitPromise, getEffectiveFirebaseConfig, isFirebaseClientConfigured, initFirebaseClientIfConfigured, getFirebaseIdToken, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, EDGE_LABELS, parseTollAmount, formatEdgeLabel, WEST_BANK_CELLS, TIBER_BRIDGES, getTiberBridgeName, isTiberCrossingBlocked, DIR_DELTAS_8, getNeighborCoordInDir, SUV_COLOR_PALETTE, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getSUVColorLabel, getPlayerHexColor, renderSUVIconNode, renderGoogleLogoSvg, ROME_DIE_ROMAN_FACES, appState, DENARIUS_SYM, BTC_SYM, formatBtc, replaceDenariiTokens, GAME_TOKEN_REGEX, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createCombatInlineIconNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, SF_RESKIN_RULES, sfReskinText, appendTextWithRomeDice, resolveGoodTrackClass, el, TILE_MODIFIER_MAP, formatTileModifier, getTileModifierClass, resolveGoodCardArtUrl, GOODS_NAME_TO_ID, JOBS_NAME_TO_ID, INF_NAME_TO_ID, ENC_NAME_TO_ID, resolveFullGoodCardFaceUrl, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, FACTION_FAVOR_INFLUENCE_SPECS, getInfluenceCardEffectText, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, ENCOUNTER_FACE_ARCHETYPES, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR };

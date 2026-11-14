@@ -1,5 +1,5 @@
-import { EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=110";
-import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=110";
+import { EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=111";
+import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=111";
 
 /**
  * Displays the up-close view of a face-up tile (or the tile currently occupied by the player's SUV),
@@ -1905,12 +1905,12 @@ function renderDeckCardBackPickerGrid(gs, deckSpecs, onSelectDeck, tapPillLabel 
 
 function openInformantsTargetModal(gs, _viewer, card) {
   const allDeckSpecs = [
-    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=110" },
-    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=110" },
-    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=110" },
-    { key: "market", label: "Goods & Henchmen", img: "/assets/icons/card_back_goods.png?v=110" },
-    { key: "missions", label: "Jobs", img: "/assets/icons/card_back_missions.png?v=110" },
-    { key: "influence", label: "Influence", img: "/assets/icons/card_back_influence.png?v=110" },
+    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=111" },
+    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=111" },
+    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=111" },
+    { key: "market", label: "Goods & Henchmen", img: "/assets/icons/card_back_goods.png?v=111" },
+    { key: "missions", label: "Jobs", img: "/assets/icons/card_back_missions.png?v=111" },
+    { key: "influence", label: "Influence", img: "/assets/icons/card_back_influence.png?v=111" },
   ];
 
   const cellSelect = el(
@@ -2241,9 +2241,9 @@ function openScoutModal(gs, _viewer) {
   );
 
   const encounterDeckSpecs = [
-    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=110" },
-    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=110" },
-    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=110" },
+    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=111" },
+    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=111" },
+    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=111" },
   ];
 
   showModal(
@@ -2334,9 +2334,9 @@ function openTrashModal(gs, viewer) {
     )
   );
   const encounterDeckSpecs = [
-    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=110" },
-    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=110" },
-    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=110" },
+    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=111" },
+    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=111" },
+    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=111" },
   ];
 
   showModal(

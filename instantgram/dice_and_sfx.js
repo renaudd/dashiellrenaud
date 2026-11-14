@@ -1,5 +1,5 @@
-import { resolveAssetUrl, COLS, ROWS, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getPlayerHexColor, renderSUVIconNode, ROME_DIE_ROMAN_FACES, appState, replaceDenariiTokens, el, resolveGoodCardArtUrl, resolveFullGoodCardFaceUrl, resolveFullEncounterCardFaceUrl } from "./core_ui.js?v=110";
-import { checkPostActionModals, sendGameAction, renderApp, armDieCardAction, handleDieSelectionClick, renderOpponentPublicSUVSummaryNode, getCellOffBoardDirs } from "./app.js?v=110";
+import { resolveAssetUrl, COLS, ROWS, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getPlayerHexColor, renderSUVIconNode, ROME_DIE_ROMAN_FACES, appState, replaceDenariiTokens, el, resolveGoodCardArtUrl, resolveFullGoodCardFaceUrl, resolveFullEncounterCardFaceUrl } from "./core_ui.js?v=111";
+import { checkPostActionModals, sendGameAction, renderApp, armDieCardAction, handleDieSelectionClick, renderOpponentPublicSUVSummaryNode, getCellOffBoardDirs } from "./app.js?v=111";
 
 function toRomanDieSymbol(val) {
   if (typeof val === "string" && ["0", "I", "II", "III", "IV", "V", "VI"].includes(val)) {

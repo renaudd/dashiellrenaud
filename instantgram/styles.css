@@ -2479,55 +2479,67 @@ select {
 
 .dyn-edge-bar {
   display: block;
-  border-radius: 2px;
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.55);
+  border-radius: 3px;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
   box-sizing: border-box;
 }
 
 .dyn-edge-N .dyn-edge-bar,
 .dyn-edge-S .dyn-edge-bar {
-  width: 24px;
-  height: 5px;
+  width: 28px;
+  height: 8.5px;
 }
 
 .dyn-edge-E .dyn-edge-bar,
 .dyn-edge-W .dyn-edge-bar {
-  width: 5px;
-  height: 24px;
+  width: 8.5px;
+  height: 28px;
 }
 
 .dyn-edge-NW .dyn-edge-bar,
 .dyn-edge-SE .dyn-edge-bar {
-  width: 16px;
-  height: 4.5px;
+  width: 19px;
+  height: 8px;
   transform: rotate(-45deg);
   transform-origin: center center;
 }
 
 .dyn-edge-NE .dyn-edge-bar,
 .dyn-edge-SW .dyn-edge-bar {
-  width: 16px;
-  height: 4.5px;
+  width: 19px;
+  height: 8px;
   transform: rotate(45deg);
   transform-origin: center center;
+}
+
+.inspector-preview .dyn-edge-N .dyn-edge-bar,
+.inspector-preview .dyn-edge-S .dyn-edge-bar {
+  width: 34px;
+  height: 10.5px;
+}
+
+.inspector-preview .dyn-edge-E .dyn-edge-bar,
+.inspector-preview .dyn-edge-W .dyn-edge-bar {
+  width: 10.5px;
+  height: 34px;
 }
 
 .inspector-preview .dyn-edge-NW .dyn-edge-bar,
 .inspector-preview .dyn-edge-SE .dyn-edge-bar,
 .inspector-preview .dyn-edge-NE .dyn-edge-bar,
 .inspector-preview .dyn-edge-SW .dyn-edge-bar {
-  width: 22px;
-  height: 5.5px;
+  width: 24px;
+  height: 9.5px;
 }
 
 .dyn-edge-bar.edge-green {
-  background: #16a34a;
-  border: 1px solid #052e16;
+  background: #22c55e;
+  border: 1.5px solid #052e16;
 }
 
 .dyn-edge-bar.edge-red {
-  background: #dc2626;
-  border: 1px solid #450a0a;
+  background: #ef4444;
+  border: 1.5px solid #450a0a;
 }
 
 .dyn-edge-toll {
@@ -6031,7 +6043,7 @@ select {
 }
 
 /* =========================================================================
-   CURIA JULIA — 6×3 ROMAN SENATE POLITICAL CLIMATE BOARD (211 A.D.)
+   CITY HALL— 6×3 POLITICAL CLIMATE BOARD (2026 A.D.)
    ========================================================================= */
 
 .active-climate-strip {

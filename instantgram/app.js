@@ -1,8 +1,8 @@
-import { getNightMerchantApiBaseUrl, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=110";
-import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=110";
-import { openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=110";
-import { renderRulebookView } from "./rulebook_view.js?v=110";
-import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=110";
+import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=111";
+import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=111";
+import { openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=111";
+import { renderRulebookView } from "./rulebook_view.js?v=111";
+import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=111";
 
 function navigateToMarketBoardForCategory(category) {
   appState.highlightedMarketTrack = category || null;
@@ -63,19 +63,20 @@ function buildEncounterFigureNodes(encStr, iconClass) {
   if (!encStr || encStr === "None") return [];
   const s = String(encStr);
   if (s === "mob") {
-    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png", alt: "Protesters" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=111", alt: "Protesters" })];
   }
   if (s === "theater") {
-    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png", alt: "Theater" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=111", alt: "Open Mic" })];
   }
   if (s === "schizophrenic") {
-    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png", alt: "Schizophrenic" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=111", alt: "Schizophrenic" })];
   }
   const [deckType, countRaw] = s.split("_");
-  const count = Math.max(1, Math.min(4, Number(countRaw) || 1));
-  let iconUrl = "/assets/icons/celebrities_icon.png";
-  if (deckType === "cops") iconUrl = "/assets/icons/cops_icon.png";
-  else if (deckType === "criminals") iconUrl = "/assets/icons/criminals_icon.png";
+  const isMultiIconDeck = deckType === "cops" || deckType === "criminals" || deckType === "legionaries" || deckType === "nefarious";
+  const count = isMultiIconDeck ? Math.max(1, Math.min(4, Number(countRaw) || 1)) : 1;
+  let iconUrl = "/assets/icons/celebrities_icon.png?v=111";
+  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=111";
+  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=111";
 
   const figs = [];
   for (let i = 0; i < count; i++) {
@@ -215,8 +216,7 @@ function renderDynamicTileCardNode(tile, coord, mode = "board") {
     tradeBannerNodes.length > 0 ? el("div", { className: "dyn-tile-trade-stack" }, ...tradeBannerNodes) : null,
     centerFigures.length > 0 ? el("div", { className: "dyn-tile-center-enc" }, ...centerFigures) : null,
     bottomLeftNode,
-    bottomRightNode,
-    el("div", { className: "dyn-tile-id-label", text: tile.id || tileCoord })
+    bottomRightNode
   );
 }
 
@@ -797,10 +797,10 @@ function renderPhysicalEncounterCardNode(card, pend, opts = {}) {
           ? handleFulfillClick
           : interactive
             ? (e) => {
-                e.stopPropagation();
-                const effFav = pend && typeof pend.effectiveFavor === "number" ? pend.effectiveFavor : 0;
-                showToast(`That section requires Favor ${t.cond} (your current Favor is ${effFav}).`, true);
-              }
+              e.stopPropagation();
+              const effFav = pend && typeof pend.effectiveFavor === "number" ? pend.effectiveFavor : 0;
+              showToast(`That section requires Favor ${t.cond} (your current Favor is ${effFav}).`, true);
+            }
             : null,
     });
   });
@@ -848,8 +848,9 @@ async function apiRequest(path, method = "GET", body = null) {
   const fullUrl = apiBaseUrl && String(path).startsWith("/") ? `${apiBaseUrl}${path}` : path;
   const headers = { Accept: "application/json" };
   const idToken = await getFirebaseIdToken();
-  if (idToken) {
-    headers["Authorization"] = `Bearer ${idToken}`;
+  const bearerTok = idToken || appState.sessionToken || getStoredSessionToken();
+  if (bearerTok) {
+    headers["Authorization"] = `Bearer ${bearerTok}`;
   }
   if (method !== "GET" && method !== "HEAD") {
     headers["Content-Type"] = "application/json";
@@ -887,6 +888,9 @@ async function apiRequest(path, method = "GET", body = null) {
   });
   if (!resp.ok || data.ok === false) {
     throw new Error(data.error || data.message || `Request failed (${resp.status})`);
+  }
+  if (data && data.sessionToken) {
+    setStoredSessionToken(data.sessionToken);
   }
   return data;
 }
@@ -2548,7 +2552,7 @@ function renderPoliticalClimateBoard(gs, viewer) {
     el(
       "div",
       { className: "panel-title fresco-banner-header fresco-griffin", style: { flexWrap: "wrap", gap: "0.5rem" } },
-      el("span", { text: "🏛️ Curia Julia — Political Climate Board" }),
+      el("span", { text: "🏛️ City Hall — Ballot Initiative Board" }),
       el(
         "div",
         { style: { display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap" } },
@@ -4474,18 +4478,130 @@ function renderPendingEncounterPanelCore(gs, viewer) {
         style: {
           padding: "0.55rem 0.75rem",
           background: "rgba(14, 42, 84, 0.92)",
-          border: "1.5px solid #0284c7",
+          border: "1.5px solid #00f0ff",
           borderRadius: "4px",
           fontSize: "0.82rem",
-          color: "#0c4a6e",
+          color: "#e0f2fe",
           marginBottom: "0.75rem",
           boxShadow: "var(--bevel-sunken)",
         },
       },
       el("strong", { text: "🕊️ Combat Not Threatened: " }),
-      "This party is not threatening combat at your current Favor tier. You cannot initiate combat unless required by an active Mission or by playing 'Casus Belli'. Click the Action/Tier section on the card to accept/comply, or Refuse below."
+      "This party is not threatening combat at your current Favor tier. You cannot initiate combat unless required by an active Job or by playing 'Doxxing' (Casus Belli). Click the Action/Tier section on the card to accept/comply, or Refuse below."
     );
   }
+
+  const handleFulfillEncounter = () => {
+    const rType = pend.reaction || pend.reactionType || "";
+    const actTxtLow = String(card.actionText || "").trim().toLowerCase().replace(/^[?!:\s]+/, "");
+    const mRaw = card.mission || null;
+    const isNpcBuy =
+      (mRaw && mRaw.kind === "buy_from_npc") ||
+      String(card.actionText || "").toLowerCase().includes("will sell") ||
+      actTxtLow.startsWith("buy ");
+    const isNpcSell =
+      mRaw &&
+      mRaw.kind === "sell" &&
+      !mRaw.cell &&
+      !mRaw.deliverCell &&
+      (String(card.actionText || "").toLowerCase().includes("will buy") ||
+        String(card.actionText || "").toLowerCase().includes("on the spot") ||
+        (actTxtLow.startsWith("sell ") && !actTxtLow.includes(" in ")));
+    const isJobAssignment =
+      rType === "deck_quest_strict" ||
+      rType === "deck_quest_demand" ||
+      rType === "deck_quest_offer" ||
+      (rType !== "no_contraband" &&
+        rType !== "payoff" &&
+        rType !== "cash_reward" &&
+        !isNpcBuy &&
+        !isNpcSell &&
+        (Boolean(mRaw) || !String(card.actionText || "").trim()));
+    const activeRegularJobs = (encPlayer.missions || []).filter((m) => m.source !== "schizophrenic");
+    if (isJobAssignment && activeRegularJobs.length >= 5) {
+      const isStrictThreat =
+        rType === "deck_quest_strict" || rType === "mission_strict" || Boolean(pend.combatThreatened);
+      openModal(
+        "📋 5-Job Limit Reached — Fail an Active Job to Accept",
+        el(
+          "div",
+          {},
+          el("p", {
+            style: { fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "0.85rem", color: "#ffffff" },
+            text: isStrictThreat
+              ? `${card.name} is threatening you with a Job (!!), and you already hold the maximum of 5 active Jobs. To accept this Job and avoid Combat, you must choose one of your 5 active Jobs to fail right now (applying its failure penalty), or refuse and fight in Combat!`
+              : `You already hold the maximum of 5 active Jobs. To accept this new Job from ${card.name}, select one of your 5 active Jobs below to fail (applying its failure penalty):`,
+          }),
+          el(
+            "div",
+            { style: { display: "flex", flexDirection: "column", gap: "0.55rem", marginBottom: "1rem" } },
+            ...activeRegularJobs.map((m) => {
+              const isEnc = m.source === "encounter";
+              const hFav = Array.isArray(m.hostileFavor) && m.hostileFavor.length > 0 ? m.hostileFavor.join(", ") : "None";
+              const penLabel = isEnc
+                ? `Encounter Job — Failure Penalty: ${hFav} Favor`
+                : "Starting / Deck Job — No Favor Penalty";
+              return el(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                    padding: "0.6rem 0.75rem",
+                    background: "rgba(26, 10, 48, 0.92)",
+                    border: "1px solid #ff2e9f",
+                    borderRadius: "6px",
+                  },
+                },
+                el(
+                  "div",
+                  {},
+                  el("div", { style: { fontWeight: "700", color: "#00f0ff", fontSize: "0.9rem" }, text: m.name || "Job" }),
+                  el("div", { style: { fontSize: "0.82rem", color: "#ffffff" }, text: m.description || m.text || "" }),
+                  el("div", { style: { fontSize: "0.75rem", color: "#ff9ed2", marginTop: "0.15rem" }, text: penLabel })
+                ),
+                el("button", {
+                  className: "btn btn-crimson",
+                  text: "Fail This Job & Accept New Job",
+                  onClick: () => {
+                    closeModal();
+                    sendGameAction({
+                      type: "resolve_encounter",
+                      decision: "fulfill",
+                      replaceMissionId: m.id,
+                    });
+                  },
+                })
+              );
+            })
+          ),
+          el(
+            "div",
+            { style: { display: "flex", justifyContent: "flex-end", gap: "0.6rem" } },
+            isStrictThreat
+              ? el("button", {
+                  className: "btn btn-crimson",
+                  text: "⚔️ Refuse Job Threat & Fight in Combat!",
+                  onClick: () => {
+                    closeModal();
+                    initiateCombatWithConsumablePrompt(viewer, { type: "resolve_encounter", decision: "refuse" });
+                  },
+                })
+              : null,
+            el("button", {
+              className: "btn",
+              text: "Cancel",
+              onClick: () => closeModal(),
+            })
+          )
+        )
+      );
+      return;
+    }
+    sendGameAction({ type: "resolve_encounter", decision: "fulfill" });
+  };
 
   return el(
     "div",
@@ -4495,8 +4611,8 @@ function renderPendingEncounterPanelCore(gs, viewer) {
       { className: "panel-title" },
       el("span", {
         text: isOtherPlayerEncounter
-          ? `⚔️ ${encPlayer.name}'s Encounter in Rome: ${card.name} (${(pend.deck || "").toUpperCase()} Deck)`
-          : `⚔️ Encounter in Rome: ${card.name} (${(pend.deck || "").toUpperCase()} Deck)`,
+          ? `⚔️ ${encPlayer.name}'s Encounter in SF: ${card.name} (${(pend.deck || "").toUpperCase()} Deck)`
+          : `⚔️ Encounter in SF: ${card.name} (${(pend.deck || "").toUpperCase()} Deck)`,
       }),
       el("span", {
         style: { fontSize: "0.78rem", color: "var(--gold-bright)" },
@@ -4511,7 +4627,7 @@ function renderPendingEncounterPanelCore(gs, viewer) {
       { className: "encounter-interactive-layout" },
       renderPhysicalEncounterCardNode(card, pend, {
         interactive: !isOtherPlayerEncounter,
-        onFulfill: () => sendGameAction({ type: "resolve_encounter", decision: "fulfill" }),
+        onFulfill: handleFulfillEncounter,
         onFight: () => initiateCombatWithConsumablePrompt(viewer, { type: "resolve_encounter", decision: "fight" }),
       }),
       el(
@@ -4631,7 +4747,7 @@ function renderPendingEncounterPanelCore(gs, viewer) {
                 }
                 return "✓ Comply / Accept Terms";
               })(),
-              onClick: () => sendGameAction({ type: "resolve_encounter", decision: "fulfill" }),
+              onClick: handleFulfillEncounter,
             })
             : null,
           canFight

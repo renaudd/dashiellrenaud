@@ -1,6 +1,6 @@
-import { maskEmailClient, isFirebaseClientConfigured, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, FACTION_META, SUV_COLOR_PALETTE, renderSUVIconNode, renderGoogleLogoSvg, appState, el, showToast, closeModal, showModal } from "./core_ui.js?v=110";
-import { apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, refreshPortalOverview, seedSeenScoutIds, openGame, renderApp } from "./app.js?v=110";
-import { stopNpcTurnPacing, enqueueNewNpcEvents } from "./dice_and_sfx.js?v=110";
+import { maskEmailClient, isFirebaseClientConfigured, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, FACTION_META, SUV_COLOR_PALETTE, renderSUVIconNode, renderGoogleLogoSvg, appState, el, showToast, closeModal, showModal } from "./core_ui.js?v=111";
+import { apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, refreshPortalOverview, seedSeenScoutIds, openGame, renderApp } from "./app.js?v=111";
+import { stopNpcTurnPacing, enqueueNewNpcEvents } from "./dice_and_sfx.js?v=111";
 
 function buildFallbackFinalStandings(state) {
   if (!state || !Array.isArray(state.players)) return [];
@@ -56,9 +56,9 @@ function buildFallbackFinalStandings(state) {
 
 function openFinalScoringModal(standings, meta = {}) {
   const list = Array.isArray(standings) ? standings : [];
-  const gameTitle = meta.gameName || (appState.gameSummary && appState.gameSummary.name) || "Roman Expedition";
+  const gameTitle = meta.gameName || (appState.gameSummary && appState.gameSummary.name) || "SF Night Run";
   const winnerEntry = list.find((s) => s && s.won) || list.find((s) => s && !s.eliminated) || list[0] || null;
-  const winnerName = meta.winnerName || (winnerEntry ? winnerEntry.name : "Unknown Merchant");
+  const winnerName = meta.winnerName || (winnerEntry ? winnerEntry.name : "Unknown Dealer");
   const factionOrder = ["MAGA", "ISIS", "TECH", "DSA", "MS13"];
 
   const formatSignedDenarii = (n) => {
@@ -125,7 +125,7 @@ function openFinalScoringModal(standings, meta = {}) {
         const wrCells = [
           ["Saturday Cash", `${Number(wr.preReckoningCash) || 0}(d)`, "var(--text-main)"],
           ...(step1Fines !== 0
-            ? [["Step 1 Mission Fines", formatSignedDenarii(step1Fines), "#b91c1c"]]
+            ? [["Step 1 Job Fines", formatSignedDenarii(step1Fines), "#b91c1c"]]
             : []),
           [
             "SUV Goods (>>)",
@@ -143,16 +143,16 @@ function openFinalScoringModal(standings, meta = {}) {
             isEliminated ? "#b91c1c" : cDelta > 0 ? "#15803d" : cDelta < 0 ? "#b91c1c" : "var(--text-muted)",
           ],
           [
-            `Missions (✓${mComp}/✕${mFail})`,
+            `Jobs (✓${mComp}/✕${mFail})`,
             `Net ${mNetStr}`,
             mNet > 0 ? "#15803d" : mNet < 0 ? "#b91c1c" : "var(--text-muted)",
           ],
           [
-            "Final Treasury",
+            "Final Bankroll",
             isEliminated
-              ? `☠️ ${Number(wr.finalCash ?? entry.cash) || 0}(d) (Proscribed)`
+              ? `☠️ ${Number(wr.finalCash ?? entry.cash) || 0}(d) (Deported)`
               : `${Number(wr.finalCash ?? entry.cash) || 0}(d)`,
-            isEliminated ? "#b91c1c" : "#754208",
+            isEliminated ? "#b91c1c" : "#00e5ff",
           ],
         ];
         sundayNode = el(
@@ -161,7 +161,7 @@ function openFinalScoringModal(standings, meta = {}) {
           el("div", {
             className: "final-section-label",
             style: { color: "#ff6ec7" },
-            text: "⚔️ December 211 Purge — Political Climate & Sunday Reckoning",
+            text: "🌅 Sunday Morning Reckoning — Political Climate & Final Payout",
           }),
           el(
             "div",
@@ -212,13 +212,13 @@ function openFinalScoringModal(standings, meta = {}) {
       } else {
         const leaderNotes = [];
         if (Number(wr.magaLeaderBonus) > 0) {
-          leaderNotes.push(`+${wr.magaLeaderBonus}(d) Imperial Contract (MAGA)`);
+          leaderNotes.push(`+${wr.magaLeaderBonus}(d) Federal Contract (MAGA)`);
         }
         if (Number(wr.ms13LeaderBonus) > 0) {
-          leaderNotes.push(`+${wr.ms13LeaderBonus}(d) Senatorial Patronage (MS13)`);
+          leaderNotes.push(`+${wr.ms13LeaderBonus}(d) Cartel Patronage (MS13)`);
         }
         if (Number(wr.dsaLeaderBonus) > 0) {
-          leaderNotes.push(`+${wr.dsaLeaderBonus}(d) Smuggler Ring (DSA)`);
+          leaderNotes.push(`+${wr.dsaLeaderBonus}(d) Mutual Aid Network (DSA)`);
         }
         if (Number(wr.missionBonus) > 0 && wr.missionRankLabel) {
           leaderNotes.push(`+${wr.missionBonus}(d) Five-Star Courier (${wr.missionRankLabel})`);
@@ -237,7 +237,7 @@ function openFinalScoringModal(standings, meta = {}) {
             Number(wr.loansDeducted) > 0 ? "#b91c1c" : "var(--text-muted)",
           ],
           [
-            "Faction Purge",
+            "Faction Reckoning",
             formatSignedDenarii(wr.factionDelta),
             Number(wr.factionDelta) > 0
               ? "#15803d"
@@ -246,11 +246,11 @@ function openFinalScoringModal(standings, meta = {}) {
                 : "var(--text-muted)",
           ],
           [
-            `Missions (Net ${mNetStr})`,
+            `Jobs (Net ${mNetStr})`,
             `+${mBonus}(d)`,
             mBonus > 0 ? "#15803d" : mNet < 0 ? "#b91c1c" : "var(--text-muted)",
           ],
-          ["Final Treasury", `${Number(wr.finalCash ?? entry.cash) || 0}(d)`, "#754208"],
+          ["Final Bankroll", `${Number(wr.finalCash ?? entry.cash) || 0}(d)`, "#00e5ff"],
         ];
         sundayNode = el(
           "div",
@@ -258,7 +258,7 @@ function openFinalScoringModal(standings, meta = {}) {
           el("div", {
             className: "final-section-label",
             style: { color: "#ff6ec7" },
-            text: "⚔️ December 211 Purge — Sunday Reckoning",
+            text: "🌅 Sunday Morning Reckoning — Final Payout",
           }),
           el(
             "div",
@@ -274,8 +274,8 @@ function openFinalScoringModal(standings, meta = {}) {
           ),
           leaderNotes.length > 0
             ? el("div", {
-              style: { fontSize: "0.76rem", color: "#754208", fontWeight: "700" },
-              text: `🏛️ Reckoning Honors: ${leaderNotes.join(" • ")}`,
+              style: { fontSize: "0.76rem", color: "#00e5ff", fontWeight: "700" },
+              text: `🏆 Reckoning Bonuses: ${leaderNotes.join(" • ")}`,
             })
             : null
         );
@@ -289,17 +289,17 @@ function openFinalScoringModal(standings, meta = {}) {
       ["Items Sold", String(Number(stats.itemsSold) || 0)],
       ["Neighborhoods Traversed", String(Number(stats.neighborhoodsTraversed) || 0)],
       ["Neighborhoods Visited", `${Number(stats.neighborhoodsVisited) || 0} / ${totalCells}`],
-      ["Missions Completed", String(Number(stats.missionsCompleted) || 0)],
-      ["Missions Failed", String(Number(stats.missionsFailed) || 0)],
-      ["Net Missions", netMissionsStat > 0 ? `+${netMissionsStat}` : String(netMissionsStat)],
+      ["Jobs Completed", String(Number(stats.missionsCompleted) || 0)],
+      ["Jobs Failed", String(Number(stats.missionsFailed) || 0)],
+      ["Net Jobs", netMissionsStat > 0 ? `+${netMissionsStat}` : String(netMissionsStat)],
       ["Influence Cards Played", String(Number(stats.influencePlayed) || 0)],
     ];
 
     const encounterStats = [
       ["Celebrities", Number(enc.celebrities) || 0],
       ["Criminals", Number(enc.criminals) || 0],
-      ["Legionnaires", Number(enc.cops) || 0],
-      ["Protesterss", Number(enc.angryMobs) || 0],
+      ["Cops", Number(enc.cops) || 0],
+      ["Protesters", Number(enc.angryMobs) || 0],
       ["Open Mics", Number(enc.theaterTroupes) || 0],
       ["Schizophrenics", Number(enc.schizophrenics) || 0],
     ];
@@ -319,7 +319,7 @@ function openFinalScoringModal(standings, meta = {}) {
             style: {
               fontFamily: "Cinzel, Georgia, serif",
               fontSize: "1.02rem",
-              color: isEliminated ? "#991b1b" : entry.won ? "#6e2119" : "var(--text-main)",
+              color: isEliminated ? "#991b1b" : entry.won ? "#ff6ec7" : "var(--text-main)",
             },
             text: entry.name,
           }),
@@ -343,7 +343,7 @@ function openFinalScoringModal(standings, meta = {}) {
         el("div", {
           className: "final-score-pill",
           style: isEliminated ? { borderColor: "#dc2626", color: "#ff6ec7", background: "rgba(68, 12, 48, 0.92)" } : {},
-          text: isEliminated ? `☠️ ${Number(entry.cash) || 0}d (Eliminated)` : `${Number(entry.cash) || 0} Denarii (d)`,
+          text: isEliminated ? `☠️ ${Number(entry.cash) || 0}(d) (Eliminated)` : `${Number(entry.cash) || 0}(d)`,
         })
       ),
       sundayNode,
@@ -356,7 +356,7 @@ function openFinalScoringModal(standings, meta = {}) {
       el(
         "div",
         { style: { display: "flex", flexDirection: "column", gap: "0.3rem" } },
-        el("div", { className: "final-section-label", text: "Expedition & Trade Ledger" }),
+        el("div", { className: "final-section-label", text: "Night Run & Deal Ledger" }),
         el(
           "div",
           { className: "final-stats-grid" },
@@ -373,7 +373,7 @@ function openFinalScoringModal(standings, meta = {}) {
       el(
         "div",
         { style: { display: "flex", flexDirection: "column", gap: "0.3rem" } },
-        el("div", { className: "final-section-label", text: "Nocturnal Encounters in Rome" }),
+        el("div", { className: "final-section-label", text: "Late-Night Encounters in San Francisco" }),
         el(
           "div",
           { className: "final-encounters-row" },
@@ -398,19 +398,19 @@ function openFinalScoringModal(standings, meta = {}) {
       { className: "final-scoring-banner" },
       el("img", {
         className: "final-scoring-mori-thumb",
-        src: "/assets/rome_art/mosaic_memento_mori.jpg?v=30",
-        alt: "Pompeii Fortune's Wheel Memento Mori Mosaic",
+        src: "/assets/icons/sf_logo_icon.png?v=111",
+        alt: "InstantGram SF",
       }),
       el(
         "div",
         {},
         el("div", {
           className: "final-scoring-banner-title",
-          text: `🏛️ Victory in Rome — ${winnerName} Triumphs!`,
+          text: `🌉 King of the Bay — ${winnerName} Triumphs!`,
         }),
         el("div", {
           className: "final-scoring-banner-sub",
-          text: `${gameTitle}${meta.night ? ` • Concluded in ${meta.night}, 211 A.D.` : " • December 211 A.D. Reckoning"}`,
+          text: `${gameTitle}${meta.night ? ` • Concluded on ${meta.night}` : " • Sunday Morning Reckoning"}`,
         })
       )
     ),
@@ -484,7 +484,7 @@ function renderCompletedGamesView() {
     el(
       "div",
       { className: "panel-title" },
-      el("span", { text: `🏆 Completed Games & Final Scores — ${user.displayName || "Merchant"}` }),
+      el("span", { text: `🏆 Completed Games & Final Scores — ${user.displayName || "Dealer"}` }),
       el(
         "div",
         { style: { display: "flex", gap: "0.5rem", flexWrap: "wrap" } },
@@ -511,7 +511,7 @@ function renderCompletedGamesView() {
     ),
     el("p", {
       style: { fontSize: "0.85rem", color: "var(--text-muted)", margin: "0.2rem 0 0.65rem" },
-      text: "Every unique Roman expedition you have completed is recorded below with all participating merchants and their final Denarii scores. Each unique game counts at most once toward your total victories and expeditions played.",
+      text: "Every unique San Francisco night run you have completed is recorded below with all participating dealers and their final Bitcoin (d) scores. Each unique game counts at most once toward your total victories and games played.",
     }),
     el(
       "div",
@@ -526,7 +526,7 @@ function renderCompletedGamesView() {
         "div",
         { className: "profile-stat-box" },
         el("div", { className: "stat-val", text: String(user.gamesWon || 0) }),
-        el("div", { className: "stat-lbl", text: "Imperial Victories" })
+        el("div", { className: "stat-lbl", text: "Total Victories" })
       ),
       el(
         "div",
@@ -542,7 +542,7 @@ function renderCompletedGamesView() {
     listContent = el(
       "div",
       { className: "panel", style: { textAlign: "center", padding: "2rem" } },
-      el("p", { style: { color: "var(--gold-bright)" }, text: "Consulting the Imperial Tabularium..." })
+      el("p", { style: { color: "var(--gold-bright)" }, text: "Loading Completed Night Runs..." })
     );
   } else if (games.length === 0) {
     listContent = el(
@@ -550,12 +550,12 @@ function renderCompletedGamesView() {
       { className: "panel", style: { textAlign: "center", padding: "2rem" } },
       el("p", {
         style: { color: "var(--text-muted)", marginBottom: "0.85rem" },
-        text: "You have not completed any expeditions yet. Finish a game through Saturday Clean-Up or Regicide to record your final standings!",
+        text: "You have not completed any night runs yet. Finish a game through Saturday Night Clean-Up or Sunday Morning Reckoning to record your final standings!",
       }),
       el("button", {
         type: "button",
         className: "btn btn-primary",
-        text: "🏛️ Return to Lobbies",
+        text: "🚙 Return to Lobbies",
         onClick: async () => {
           appState.activeTab = "portal";
           await refreshPortalOverview();
@@ -575,7 +575,7 @@ function renderCompletedGamesView() {
               month: "short",
               day: "numeric",
             })
-            : "Anno Domini 211";
+            : "Recent Weekend";
         const hasDetailedStats = Array.isArray(g.standings) && g.standings.length > 0;
         const players = Array.isArray(g.players) ? g.players : [];
 
@@ -593,7 +593,7 @@ function renderCompletedGamesView() {
                 { style: { display: "flex", alignItems: "center", gap: "0.55rem", flexWrap: "wrap" } },
                 el("strong", {
                   style: { fontFamily: "Cinzel, Georgia, serif", fontSize: "1.02rem", color: "var(--gold-bright)" },
-                  text: g.gameName || "Roman Expedition",
+                  text: g.gameName || "SF Night Run",
                 }),
                 g.userWon
                   ? el("span", {
@@ -608,7 +608,7 @@ function renderCompletedGamesView() {
               ),
               el("div", {
                 style: { fontSize: "0.78rem", color: "var(--text-muted)" },
-                text: `Completed ${dateStr}${g.night ? ` • Ended in ${g.night}` : ""}${g.winnerName ? ` • Winner: ${g.winnerName}` : ""
+                text: `Completed ${dateStr}${g.night ? ` • Ended on ${g.night}` : ""}${g.winnerName ? ` • Winner: ${g.winnerName}` : ""
                   }`,
               })
             ),
@@ -650,21 +650,21 @@ function renderCompletedGamesView() {
                   "div",
                   { style: { display: "flex", alignItems: "center", gap: "0.45rem", minWidth: "0" } },
                   el("strong", {
-                    style: { color: p.won ? "#6e2119" : "var(--gold-bright)", fontSize: "0.82rem" },
+                    style: { color: p.won ? "#ff6ec7" : "var(--gold-bright)", fontSize: "0.82rem" },
                     text: `#${rk}`,
                   }),
                   renderSUVIconNode(p.color || "Z3", "", `${p.name}'s SUV`),
                   el("span", {
                     style: {
                       fontWeight: p.userId === user.id ? "800" : "600",
-                      color: p.won ? "#6e2119" : "var(--text-main)",
+                      color: p.won ? "#ff6ec7" : "var(--text-main)",
                       fontSize: "0.86rem",
                     },
                     text: `${p.won ? "👑 " : ""}${p.name}${p.isBot ? " (AI)" : ""}`,
                   })
                 ),
                 el("strong", {
-                  style: { color: "#754208", fontSize: "0.9rem", whiteSpace: "nowrap" },
+                  style: { color: "#00e5ff", fontSize: "0.9rem", whiteSpace: "nowrap" },
                   text: `${Number(p.finalScore) || 0}(d)`,
                 })
               );
@@ -712,31 +712,35 @@ async function handlePendingInviteDeepLink() {
     if (alreadySeated) {
       showToast(`Opened lobby for "${matching.name}".`);
     } else if (matching.canViewerJoin) {
-      showToast(`Invited expedition "${matching.name}" is ready — click Claim Invited Seat to join!`);
+      showToast(`Invited game "${matching.name}" is ready — click Claim Invited Seat to join!`);
     } else if (matching.status !== "lobby") {
-      showToast(`Expedition "${matching.name}" has already started and is closed to new players.`, true);
+      showToast(`Game "${matching.name}" has already started and is closed to new players.`, true);
     } else {
       showToast(
-        `Expedition "${matching.name}" is Invite-Only. Sign in with your invited username (@handle) to claim a seat.`,
+        `Game "${matching.name}" is Invite-Only. Sign in with your invited username (@handle) to claim a seat.`,
         true
       );
     }
   } else {
-    showToast(`Expedition #${targetGameId} could not be found.`, true);
+    showToast(`Game #${targetGameId} could not be found.`, true);
   }
 }
 
 async function handleGoogleSignInClick() {
   if (isFirebaseClientConfigured()) {
     try {
-      const idToken = await signInWithFirebaseGooglePopup();
+      const idTokenPromise = signInWithFirebaseGooglePopup();
+      const idToken = await idTokenPromise;
+      if (idToken) {
+        appState.lastFirebaseIdToken = idToken;
+      }
       const res = await apiRequest("/api/auth/firebase", "POST", { idToken });
       appState.user = res.user;
       appState.csrfToken = res.csrfToken || null;
       applyUserDefaultBoardView(res.user.settings);
       appState.activeTab = "portal";
       if (res.user && res.user.needsUsernameSetup) {
-        showToast("Google account verified! Choose your permanent Collegium username to finish joining.");
+        showToast("Google account verified! Choose your permanent InstantGram username to finish joining.");
         renderApp();
         return;
       }
@@ -750,11 +754,11 @@ async function handleGoogleSignInClick() {
     return;
   }
 
-  // Local offline development saturdayback when Firebase OAuth is not configured
+  // Local offline development fallback when Firebase OAuth is not configured
   const emailInput = el("input", {
     className: "form-input",
     type: "email",
-    placeholder: "e.g. mercator.romanus@gmail.com",
+    placeholder: "e.g. dealer.sf@gmail.com",
     value: "",
     autocomplete: "email",
   });
@@ -776,7 +780,7 @@ async function handleGoogleSignInClick() {
       appState.activeTab = "portal";
       closeModal();
       if (res.user && res.user.needsUsernameSetup) {
-        showToast("Google account verified! Choose your permanent Collegium username to finish joining.");
+        showToast("Google account verified! Choose your permanent InstantGram username to finish joining.");
         renderApp();
         return;
       }
@@ -832,7 +836,7 @@ function renderGoogleUsernameSetupView() {
   const unameInput = el("input", {
     className: "form-input",
     type: "text",
-    placeholder: "e.g. marcus_ms13",
+    placeholder: "e.g. ricky_sunset",
     maxLength: 34,
     autocomplete: "username",
     onInput: (e) => {
@@ -881,7 +885,7 @@ function renderGoogleUsernameSetupView() {
       appState.user = res.user;
       applyUserDefaultBoardView(res.user.settings);
       await refreshPortalOverview();
-      showToast(`Salve, @${res.user.username}! Your permanent Collegium username is set.`);
+      showToast(`Welcome, @${res.user.username}! Your permanent InstantGram username is set.`);
       renderApp();
       await handlePendingInviteDeepLink();
     } catch (err) {
@@ -904,11 +908,11 @@ function renderGoogleUsernameSetupView() {
       },
       el("h2", {
         className: "panel-title fresco-banner-header fresco-merchants",
-        text: "🏛️ Welcome — Choose Your Permanent Username",
+        text: "🚙 Welcome — Choose Your Permanent Username",
       }),
       el("p", {
         style: { fontSize: "0.9rem", color: "var(--text-main)", marginTop: "0" },
-        text: `Signed in with Google as ${user.displayName || "Merchant"} (${maskEmailClient(user.email)}).`,
+        text: `Signed in with Google as ${user.displayName || "Dealer"} (${maskEmailClient(user.email)}).`,
       }),
       el(
         "div",
@@ -937,7 +941,7 @@ function renderGoogleUsernameSetupView() {
         el(
           "div",
           { className: "form-group" },
-          el("label", { text: "Permanent Collegium Username (3–32 characters)" }),
+          el("label", { text: "Permanent InstantGram Username (3–32 characters)" }),
           unameInput,
           previewNode
         ),
@@ -952,19 +956,19 @@ function renderAuthView() {
   const usernameInput = el("input", {
     className: "form-input",
     type: "text",
-    placeholder: isLogin ? "Username or email (e.g. marcus@ostia.it)" : "e.g. marcus_ms13",
+    placeholder: isLogin ? "Username or email (e.g. ricky@instantgram.sf)" : "e.g. ricky_sunset",
     autocomplete: "username",
   });
   const emailInput = el("input", {
     className: "form-input",
     type: "email",
-    placeholder: "e.g. marcus@collegium-ostia.org",
+    placeholder: "e.g. ricky@instantgram.sf",
     autocomplete: "email",
   });
   const displayInput = el("input", {
     className: "form-input",
     type: "text",
-    placeholder: "e.g. Marcus of Ostia",
+    placeholder: "e.g. Big Ricky",
   });
   const passwordInput = el("input", {
     className: "form-input",
@@ -1022,7 +1026,7 @@ function renderAuthView() {
       appState.csrfToken = res.csrfToken || null;
       applyUserDefaultBoardView(res.user.settings);
       await refreshPortalOverview();
-      showToast(`Salve, ${res.user.displayName}! Welcome to the Collegium Mercatorum.`);
+      showToast(`Welcome, ${res.user.displayName}! Entered the InstantGram SF Portal.`);
       renderApp();
       await handlePendingInviteDeepLink();
     } catch (err) {
@@ -1030,23 +1034,8 @@ function renderAuthView() {
     }
   };
 
-  const handleQuickDemo = async () => {
-    try {
-      const res = await apiRequest("/api/auth/demo", "POST", {});
-      appState.user = res.user;
-      appState.csrfToken = res.csrfToken || null;
-      applyUserDefaultBoardView(res.user.settings);
-      await refreshPortalOverview();
-      showToast(`Signed in to local sandbox as ${res.user.displayName}!`);
-      renderApp();
-      await handlePendingInviteDeepLink();
-    } catch (err) {
-      showToast(err.message, true);
-    }
-  };
-
-  const pajouHoverTitle =
-    "ISIS Dying in his Mother's Arms, Jacques-Augustin-Catherine Pajou, 1766–1828 (Staatsgalerie Stuttgart)";
+  const sfMapHoverTitle =
+    "San Francisco After Dark — 36 Neighborhoods from the Golden Gate to Hunters Point";
 
   const showcaseCard = el(
     "section",
@@ -1055,26 +1044,25 @@ function renderAuthView() {
       "div",
       { className: "panel-title fresco-banner-header fresco-griffin" },
       el("span", { text: "🚙 San Francisco, After Dark — InstantGram SF" }),
-      el("span", { style: { fontSize: "0.78rem", color: "#fde6b0" }, text: "2–6 Merchants • Strategy Board Game" })
+      el("span", { style: { fontSize: "0.78rem", color: "#fde6b0" }, text: "2–6 Dealers • Strategy Board Game" })
     ),
     el(
       "figure",
       {
         className: "landing-pajou-figure",
-        title: pajouHoverTitle,
+        title: sfMapHoverTitle,
       },
       el("img", {
         className: "landing-pajou-img",
-        src: "/assets/rome_art/isis_dying_pajou.jpg",
-        alt: pajouHoverTitle,
-        title: pajouHoverTitle,
+        src: "/assets/icons/rome_211_map_bg_v2.jpg",
+        alt: sfMapHoverTitle,
       }),
       el(
         "figcaption",
         { className: "landing-pajou-caption" },
-        el("em", { text: "ISIS Dying in his Mother's Arms" }),
+        el("em", { text: "San Francisco After Dark" }),
         el("span", {
-          text: " — Jacques-Augustin-Catherine Pajou, 1766–1828 (Staatsgalerie Stuttgart)",
+          text: " — 36 Neighborhoods from the Golden Gate Bridge to Hunters Point",
         })
       )
     ),
@@ -1083,11 +1071,11 @@ function renderAuthView() {
       { className: "landing-blurb-body" },
       el("p", {
         className: "landing-blurb-lead",
-        text: "Emperor Septimius Severus is dead in Britain, leaving Rome in the volatile grip of his feuding sons, MAGA and ISIS. By day, Julius Caesar's Lex Iulia Municipalis bars heavy freight wagons from the capital's streets. Only when dusk saturdays at 8:00 P.M. do the city gates swing open—and the Night Merchants roll in.",
+        text: "It's Thursday night in San Francisco. From the neon fog of the Tenderloin and the open-air markets of the Mission to billionaire compounds in Pac Heights, five warring factions—MAGA, ISIS, TECH, DSA, and MS13—are vying for control of the city's underground economy. When dusk falls at 8:00 P.M., the Safe House Motel opens its suitcases and the Night Merchants roll out.",
       }),
       el("p", {
         className: "landing-blurb-text",
-        text: "Bid for Grain, Wine, Marble, Weapons, and Exotic Beasts at Portus Ostiae, hire gladiators and henchmen, and thread 36 torchlit neighborhoods across five ancient stone bridges of the Tiber before the 6:00 A.M. sunrise curfew. Court five rival Severan factions—Empress Julia TECH, exiled DSA, the old MS13 Senate, and the warring co-emperors—before December 211's bloody Sunday Reckoning crowns Rome's wealthiest purveyor.",
+        text: "Stock your SUV with Weed, Party favors, Uppers, Opiates, and Weapons at the Safe House Motel, recruit local Henchmen, and navigate 36 gridlocked neighborhoods across five city entry highways before the 6:00 A.M. sunrise sweep. Complete high-stakes Jobs, work your social media Influence on InstantGram, ClockTok, and FaceSpace, and survive Sunday Morning's Political Climate Reckoning with the fattest crypto wallet in the Bay.",
       }),
       el(
         "div",
@@ -1103,7 +1091,7 @@ function renderAuthView() {
         }),
         el("span", {
           className: "landing-cta-note",
-          text: "Play solo against 5 distinct Roman AI personas or host live & async 2–6 player games.",
+          text: "Play solo against 5 distinct SF AI personas or host live & async 2–6 player games.",
         })
       )
     )
@@ -1114,7 +1102,7 @@ function renderAuthView() {
     { className: "auth-card landing-auth-card" },
     el("h2", {
       className: "panel-title fresco-banner-header fresco-merchants",
-      text: "🏛️ Collegium Mercatorum — Members Portal",
+      text: "🚙 Members Portal",
     }),
     appState.pendingInviteGameId
       ? el(
@@ -1129,13 +1117,13 @@ function renderAuthView() {
             fontSize: "0.84rem",
             color: "var(--text-main)",
           },
-          text: `✉️ Expedition Invitation (#${appState.pendingInviteGameId}): Sign in with your invited Collegium account to claim your seat.`,
+          text: `✉️ Game Invitation (#${appState.pendingInviteGameId}): Sign in with your invited InstantGram SF account to claim your seat.`,
         }
       )
       : null,
     el("p", {
       style: { color: "var(--text-muted)", fontSize: "0.88rem", marginTop: "0" },
-      text: "Sign in with your Email, Username, or Google Account to host multiplayer games, challenge AI merchants, customize your suv, and climb the Imperial Leaderboard.",
+      text: "Sign in with your Email, Username, or Google Account to host multiplayer games, challenge AI dealers, customize your SUV, and climb the InstantGram SF Leaderboard.",
     }),
     el(
       "div",
@@ -1183,31 +1171,18 @@ function renderAuthView() {
         ? el("div", { className: "form-group" }, el("label", { text: "Email Address (Required)" }), emailInput)
         : null,
       !isLogin
-        ? el("div", { className: "form-group" }, el("label", { text: "Roman Merchant Title / Display Name" }), displayInput)
+        ? el("div", { className: "form-group" }, el("label", { text: "Dealer Handle / Display Name" }), displayInput)
         : null,
       !isLogin
-        ? el("div", { className: "form-group" }, el("label", { text: "Preferred Merchant SUV" }), colorPickerGrid)
+        ? el("div", { className: "form-group" }, el("label", { text: "Preferred Dealer SUV" }), colorPickerGrid)
         : null,
       el("div", { className: "form-group" }, el("label", { text: "Password (8+ characters)" }), passwordInput),
       el(
         "button",
         { type: "submit", className: "btn btn-primary", style: { width: "100%", padding: "0.65rem" } },
-        isLogin ? "Enter the Port of Ostia" : "Register Account & Enter Portal"
+        isLogin ? "Enter the Safe House" : "Register Account & Enter Portal"
       )
-    ),
-    !isFirebaseClientConfigured()
-      ? el(
-        "div",
-        { style: { marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border-subtle)", textAlign: "center" } },
-        el("button", {
-          type: "button",
-          className: "btn btn-crimson",
-          style: { width: "100%" },
-          text: "⚡ Instant One-Click Local Sandbox Login",
-          onClick: handleQuickDemo,
-        })
-      )
-      : null
+    )
   );
 
   return el(
@@ -1218,11 +1193,11 @@ function renderAuthView() {
 }
 
 const DEFAULT_BOT_PERSONAS = [
-  { strategy: "balanced", name: "Marcus Mercator", title: "Ostia Grain & Wine Syndic" },
-  { strategy: "luxury", name: "Cornelia Severa", title: "Palatine Marble Purveyor" },
-  { strategy: "aggressive", name: "Titus Valerius", title: "Gladiator & Beasts Contractor" },
-  { strategy: "missions", name: "Julia Lucilla", title: "Senatorial Courier" },
-  { strategy: "opportunist", name: "Gaius Fulvius", title: "Subura Night Runner" },
+  { strategy: "balanced", name: "Big Ricky", title: "Sunset Weed & Party Wholesaler" },
+  { strategy: "luxury", name: "Svetlana", title: "Pac Heights High-End Purveyor" },
+  { strategy: "aggressive", name: "Lil' Rosco", title: "Bayview Muscle & Heavy Iron" },
+  { strategy: "missions", name: "Trixie", title: "Mission Express Runner" },
+  { strategy: "opportunist", name: "Clean Cut Kennie", title: "FiDi Late-Night Hustler" },
 ];
 
 function getBotPersonasCatalog() {
@@ -1248,7 +1223,7 @@ function buildPortalLeaderboardNodes() {
     return [
       el("p", {
         style: { color: "var(--text-muted)", fontSize: "0.82rem", margin: "0.35rem 0" },
-        text: "No multiplayer expeditions (2+ human merchants) completed yet. Solo vs. AI games remain recorded in your personal Completed Games ledger.",
+        text: "No multiplayer games (2+ human dealers) completed yet. Solo vs. AI games remain recorded in your personal Completed Games ledger.",
       }),
     ];
   }
@@ -1314,7 +1289,7 @@ function renderPortalView() {
   const nameInput = el("input", {
     className: "form-input",
     type: "text",
-    value: appState.portalDraftName || `${appState.user.displayName}'s Expedition`,
+    value: appState.portalDraftName || `${appState.user.displayName}'s Weekend Run`,
     onInput: (e) => {
       appState.portalDraftName = e.target.value;
     },
@@ -1328,7 +1303,7 @@ function renderPortalView() {
       },
     },
     ...[2, 3, 4, 5, 6].map((n) =>
-      el("option", { value: String(n), selected: n === initialMaxP, text: `${n} Merchants (Max Seats)` })
+      el("option", { value: String(n), selected: n === initialMaxP, text: `${n} Dealers (Max Seats)` })
     )
   );
 
@@ -1421,7 +1396,7 @@ function renderPortalView() {
       invitePillsSlot.replaceChildren(
         el("span", {
           style: { fontSize: "0.7rem", color: "var(--text-muted)" },
-          text: "Enter one or more registered Night Merchant usernames above.",
+          text: "Enter one or more registered InstantGram SF usernames above.",
         })
       );
       return;
@@ -1435,7 +1410,7 @@ function renderPortalView() {
   const invitedUsernamesInput = el("input", {
     className: "form-input",
     type: "text",
-    placeholder: "e.g. marcus_ms13, cornelia_severa",
+    placeholder: "e.g. big_ricky, svetlana_sf",
     value: appState.portalInvitedUsernames || "",
     onInput: (e) => {
       appState.portalInvitedUsernames = e.target.value;
@@ -1547,7 +1522,7 @@ function renderPortalView() {
         enqueueNewNpcEvents(res.state, true);
         seedSeenScoutIds(res.state);
         appState.activeTab = "tabletop";
-        showToast("Expedition launched! Select 2 Missions & 2 Influence cards to discard.");
+        showToast("Game launched! Select 2 Jobs & 2 Influence cards to discard.");
       } else if (modeToSend === "invite_only") {
         appState.portalInvitedUsernames = "";
         invitedUsernamesInput.value = "";
@@ -1570,8 +1545,8 @@ function renderPortalView() {
   const createPanel = el(
     "div",
     { className: "panel" },
-    el("h3", { className: "panel-title fresco-banner-header fresco-merchants", text: "⚓ Launch New Game / Lobby" }),
-    el("div", { className: "form-group" }, el("label", { text: "Convivium / Table Name" }), nameInput),
+    el("h3", { className: "panel-title fresco-banner-header fresco-merchants", text: "🚙 Launch New Game / Lobby" }),
+    el("div", { className: "form-group" }, el("label", { text: "Crew / Table Name" }), nameInput),
     el("div", { className: "form-group" }, el("label", { text: "Maximum Players (2–6)" }), maxPlayersSelect),
     el("div", { className: "form-group" }, el("label", { text: "Initial AI Bot Opponents" }), botCountSelect),
     botStrategiesBox,
@@ -1595,8 +1570,8 @@ function renderPortalView() {
     el(
       "div",
       { style: { marginTop: "1.1rem", fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: "1.4" } },
-      el("strong", { style: { color: "var(--gold-bright)" }, text: "211 A.D. Overview: " }),
-      "Each game spans 3 Nights (Thursday, Friday, Saturday) plus the December 211 Purge. Buy Goods & Henchmen at Portus Ostiae, enter Rome at dusk to navigate 36 nocturnal neighborhoods, fulfill Missions, court 5 Severan Factions, and exit before Sunrise!"
+      el("strong", { style: { color: "var(--gold-bright)" }, text: "Weekend Overview: " }),
+      "Each game spans 3 Nights (Thursday, Friday, Saturday) plus the Sunday Reckoning. Stock up on Goods & Henchmen at the Safe House Market, enter San Francisco at 8:00 P.M. to navigate 36 neighborhoods, complete Jobs, play 5 SF Factions, and escape before the 6:00 A.M. Curfew!"
     )
   );
 
@@ -1622,10 +1597,10 @@ function renderPortalView() {
   const leaderboardPanel = el(
     "div",
     { className: "panel" },
-    el("h3", { className: "panel-title fresco-banner-header fresco-griffin", text: "🏆 Imperial Merchant Leaderboard" }),
+    el("h3", { className: "panel-title fresco-banner-header fresco-griffin", text: "🏆 Bay Area Dealer Leaderboard" }),
     el("div", {
       style: { fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: "0.55rem" },
-      text: "Multiplayer standings across completed games with 2+ human merchants.",
+      text: "Multiplayer standings across completed games with 2+ human dealers.",
     }),
     el(
       "div",
@@ -2018,8 +1993,8 @@ const DEFAULT_HOTKEYS = {
 const HOTKEY_SPECS = [
   {
     key: "moveToTile",
-    label: "Move Cart to Selected Tile",
-    desc: "Moves your Cart into the selected adjacent neighborhood (or opens the Move/Scout action prompt).",
+    label: "Move SUV to Selected Tile",
+    desc: "Moves your SUV into the selected adjacent neighborhood (or opens the Move/Scout action prompt).",
   },
   {
     key: "scoutTile",
@@ -2029,12 +2004,12 @@ const HOTKEY_SPECS = [
   {
     key: "scoutDeck",
     label: "Scout Encounter Deck Card",
-    desc: "Opens or triggers the Encounter Deck Scout picker (Patricii, Legiones, Nefarii).",
+    desc: "Opens or triggers the Encounter Deck Scout picker (Celebrities, Cops, Criminals).",
   },
   {
     key: "endTurn",
-    label: "End Nocturnal Turn",
-    desc: "Ends your current hourly Delivery turn in Rome.",
+    label: "End Night Turn",
+    desc: "Ends your current hourly Delivery turn in San Francisco.",
   },
   {
     key: "closeModal",
@@ -2043,23 +2018,23 @@ const HOTKEY_SPECS = [
   },
   {
     key: "toggleCartNav",
-    label: "Toggle Cart Mat / Navigate Tab",
-    desc: "Switches between your Cart Mat and the 8-direction Compass / Tile Inspector (Numpad 5 also toggles).",
+    label: "Toggle SUV Mat / Navigate Tab",
+    desc: "Switches between your SUV Mat and the 8-direction Compass / Tile Inspector (Numpad 5 also toggles).",
   },
   {
     key: "viewRomeBoard",
-    label: "Focus Rome Night Board",
-    desc: "Switches the tabletop view between Rome Night Board Only and Auto view.",
+    label: "Focus SF Night Board",
+    desc: "Switches the tabletop view between SF Night Board Only and Auto view.",
   },
   {
     key: "viewMarketBoard",
-    label: "Focus Ostia Market Board",
-    desc: "Switches the tabletop view between Ostia Market Board Only and Auto view.",
+    label: "Focus Safe House Market Board",
+    desc: "Switches the tabletop view between Safe House Market Board Only and Auto view.",
   },
   {
     key: "viewClimateBoard",
-    label: "Focus Political Climate Board",
-    desc: "Switches the tabletop view between Political Climate Senate Board and Auto view.",
+    label: "Focus Ballot Initiatives Board",
+    desc: "Switches the tabletop view between Ballot Initiatives Board and Auto view.",
   },
   {
     key: "viewAllBoards",
@@ -2129,21 +2104,21 @@ function renderProfileView() {
     className: "form-input",
     type: "text",
     value: user.displayName || "",
-    placeholder: "Your Roman Merchant Title",
+    placeholder: "Your Street Handle / Display Name",
   });
   const emailInput = el("input", {
     className: "form-input",
     type: "email",
     value: user.email || "",
-    placeholder: "merchant@collegium-ostia.org",
+    placeholder: "dealer@instantgram-sf.com",
   });
   const defaultBoardSelect = el(
     "select",
     { className: "form-input" },
-    el("option", { value: "auto", selected: (userSettings.defaultBoardView || "auto") === "auto", text: "Auto-Switch by Game Phase (Market / Rome)" }),
+    el("option", { value: "auto", selected: (userSettings.defaultBoardView || "auto") === "auto", text: "Auto-Switch by Game Phase (Market / SF Night)" }),
     el("option", { value: "both", selected: userSettings.defaultBoardView === "both", text: "Show Both Boards Stacked" }),
-    el("option", { value: "rome", selected: userSettings.defaultBoardView === "rome", text: "Rome Night Board Only" }),
-    el("option", { value: "market", selected: userSettings.defaultBoardView === "market", text: "Ostia Market Board Only" })
+    el("option", { value: "rome", selected: userSettings.defaultBoardView === "rome", text: "SF Night Board Only" }),
+    el("option", { value: "market", selected: userSettings.defaultBoardView === "market", text: "Safe House Market Board Only" })
   );
   const autoPromptCargoCheckbox = el("input", {
     type: "checkbox",
@@ -2314,7 +2289,7 @@ function renderProfileView() {
       applyUserDefaultBoardView(res.user.settings);
       currentPasswordInput.value = "";
       newPasswordInput.value = "";
-      showToast("Player profile, hotkeys, and merchant cart settings saved!");
+      showToast("Player profile, hotkeys, and SUV settings saved!");
       renderApp();
     } catch (err) {
       showToast(err.message, true);
@@ -2324,7 +2299,7 @@ function renderProfileView() {
   const summaryPanel = el(
     "div",
     { className: "panel" },
-    el("h3", { className: "panel-title", text: "🏛️ Merchant Dossier" }),
+    el("h3", { className: "panel-title", text: "🚙 Dealer Dossier" }),
     el(
       "div",
       {
@@ -2352,13 +2327,13 @@ function renderProfileView() {
           el(
             "span",
             { className: "badge" },
-            user.authProvider === "google" ? "🔗 Linked with Google" : "🔑 Collegium Password Account"
+            user.authProvider === "google" ? "🔗 Linked with Google" : "🔑 InstantGram Password Account"
           ),
           user.isAdmin
             ? el("span", {
               className: "badge",
               style: { borderColor: "var(--gold-bright)", color: "var(--gold-bright)" },
-              text: "🦅 Collegium Admin",
+              text: "⚡ InstantGram Admin",
             })
             : null
         )
@@ -2375,7 +2350,7 @@ function renderProfileView() {
           onClick: () => openCompletedGamesPage(),
         },
         el("div", { className: "stat-val", text: String(user.gamesPlayed || 0) }),
-        el("div", { className: "stat-lbl", text: "Expeditions Played" })
+        el("div", { className: "stat-lbl", text: "Weekends Played" })
       ),
       el(
         "div",
@@ -2385,7 +2360,7 @@ function renderProfileView() {
           onClick: () => openCompletedGamesPage(),
         },
         el("div", { className: "stat-val", text: String(user.gamesWon || 0) }),
-        el("div", { className: "stat-lbl", text: "Imperial Victories" })
+        el("div", { className: "stat-lbl", text: "Bay Area Victories" })
       ),
       el(
         "div",
@@ -2395,7 +2370,7 @@ function renderProfileView() {
           onClick: () => openCompletedGamesPage(),
         },
         el("div", { className: "stat-val", text: `${user.bestWealth || 0}(d)` }),
-        el("div", { className: "stat-lbl", text: "Highest Treasury" })
+        el("div", { className: "stat-lbl", text: "Highest Wallet" })
       )
     ),
     el(
@@ -2420,7 +2395,7 @@ function renderProfileView() {
       el(
         "div",
         { className: "form-group" },
-        el("label", { text: "Permanent Collegium Username (Used for Game Invitations)" }),
+        el("label", { text: "Permanent Handle (Used for Game Invitations)" }),
         el("input", {
           className: "form-input",
           type: "text",
@@ -2430,9 +2405,9 @@ function renderProfileView() {
           style: { opacity: "0.85", fontWeight: "700", cursor: "not-allowed" },
         })
       ),
-      el("div", { className: "form-group" }, el("label", { text: "Roman Merchant Title / Display Name" }), displayNameInput),
+      el("div", { className: "form-group" }, el("label", { text: "Street Handle / Display Name" }), displayNameInput),
       el("div", { className: "form-group" }, el("label", { text: "Account Email Address (Required)" }), emailInput),
-      el("div", { className: "form-group" }, el("label", { text: "Merchant Cart Icon & Token Color" }), colorGrid),
+      el("div", { className: "form-group" }, el("label", { text: "SUV Icon & Token Color" }), colorGrid),
       el("div", { className: "form-group" }, el("label", { text: "Default Tabletop Board View" }), defaultBoardSelect),
       el(
         "div",
@@ -2442,13 +2417,13 @@ function renderProfileView() {
           "label",
           { style: { display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: "400", cursor: "pointer", marginBottom: "0.4rem" } },
           autoPromptCargoCheckbox,
-          el("span", { text: "Ask via popup when Delivery Mission cargo can be loaded at my current neighborhood" })
+          el("span", { text: "Ask via popup when Delivery Job cargo can be loaded at my current neighborhood" })
         ),
         el(
           "label",
           { style: { display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: "400", cursor: "pointer", marginBottom: "0.4rem" } },
           animateDiceCheckbox,
-          el("span", { text: "Show 3D Roman numeral dice roll overlay animations" })
+          el("span", { text: "Show 3D dice roll overlay animations" })
         ),
         el(
           "label",
@@ -2460,7 +2435,7 @@ function renderProfileView() {
           "label",
           { style: { display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: "400", cursor: "pointer", marginBottom: "0.4rem" } },
           soundEffectsCheckbox,
-          el("span", { text: "Play subtle tabletop sound effects (dice, coins, combat, turn chime)" })
+          el("span", { text: "Play subtle tabletop sound effects (dice, cash, combat, turn chime)" })
         ),
         el(
           "label",
@@ -2472,7 +2447,7 @@ function renderProfileView() {
           "label",
           { style: { display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: "400", cursor: "pointer" } },
           skipMissionPopupsCheckbox,
-          el("span", { text: 'Skip mission completion notification popups ("Do not show this again")' })
+          el("span", { text: 'Skip job completion notification popups ("Do not show this again")' })
         )
       ),
       el(
@@ -2516,7 +2491,7 @@ function renderProfileView() {
         ),
         el("p", {
           style: { fontSize: "0.76rem", color: "var(--text-muted)", margin: "0 0 0.6rem 0", lineHeight: "1.35" },
-          text: "Click any shortcut box below and press a key to customize it. Built-in directional & overlay keys: Numpad 1–9 steers your Cart in 8 compass directions (7=NW, 8=N, 9=NE, 4=W, 6=E, 1=SW, 2=S, 3=SE; 5 toggles Cart/Navigate), Space/Enter advances settled Dice & AI Turn overlays, and Esc always closes open windows.",
+          text: "Click any shortcut box below and press a key to customize it. Built-in directional & overlay keys: Numpad 1–9 steers your SUV in 8 compass directions (7=NW, 8=N, 9=NE, 4=W, 6=E, 1=SW, 2=S, 3=SE; 5 toggles SUV/Navigate), Space/Enter advances settled Dice & AI Turn overlays, and Esc always closes open windows.",
         }),
         el(
           "div",
