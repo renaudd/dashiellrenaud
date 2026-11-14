@@ -1,5 +1,5 @@
-import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=120";
-import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=120";
+import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=121";
+import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=121";
 
 const GOOD_CATEGORY_DISPLAY_MAP = {
   Grain: "Weed",
@@ -73,21 +73,21 @@ function createStackWatermarkIconNode(kind) {
   if (kLow === "criminals" || kLow === "nefarii") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/criminals_icon.png?v=120",
+      src: "/assets/icons/criminals_icon.png?v=121",
       alt: "Criminals",
     });
   }
   if (kLow === "celebrities" || kLow === "patricii") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/celebrities_icon.png?v=120",
+      src: "/assets/icons/celebrities_icon.png?v=121",
       alt: "Celebrities",
     });
   }
   if (kLow === "cops" || kLow === "legiones") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/cops_icon.png?v=120",
+      src: "/assets/icons/cops_icon.png?v=121",
       alt: "Cops",
     });
   }
@@ -609,11 +609,7 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
             onClick: () => {
               if (!canScoutTile) return;
               closeModal();
-              if (isEntryPhase) {
-                sendGameAction({ type: "initial_scout", targetType: "tile", cell: coord });
-              } else {
-                sendGameAction({ type: "delivery_scout", targetType: "tile", targetKey: coord });
-              }
+              executeInstantScout(gs, viewer, "tile", coord, isEntryPhase);
             },
           }),
           el("button", {
@@ -1191,7 +1187,11 @@ function openScoutResultModal(si) {
           el("strong", { style: { color: "var(--gold-bright)" }, text: "Encounter / Properties: " }),
           [
             rData.encounter ? EDGE_LABELS[rData.encounter] || rData.encounter : "No Center Encounter",
-            rData.persistent ? "Persistent (⤹)" : "Refreshes at Dawn (↻)",
+            rData.persistent
+              ? "Persistent (⤹)"
+              : rData.refresh
+                ? "Refresh (↻ — Draw & resolve next tile)"
+                : "Standard Tile",
             rData.gamble ? "Stadium Gambling (🎲)" : null,
           ]
             .filter(Boolean)
@@ -2152,7 +2152,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Celebrities",
     subtitle: "Tech Founders, A-Listers & VIPs",
     defaultTotal: 30,
-    img: "/assets/icons/card_back_celebrities.png?v=120",
+    img: "/assets/icons/card_back_celebrities.png?v=121",
     shortDesc: "High-society patrons & influencers; rewards favor with Jobs, Cash, and Influence.",
   },
   {
@@ -2160,7 +2160,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Criminals",
     subtitle: "Syndicates, Boosters & Street Crews",
     defaultTotal: 29,
-    img: "/assets/icons/card_back_criminals.png?v=120",
+    img: "/assets/icons/card_back_criminals.png?v=121",
     shortDesc: "Underworld crews & fences; risky shakedowns or black-market deals and shortcuts.",
   },
   {
@@ -2168,7 +2168,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Cops",
     subtitle: "SFPD, DEA, Feds & Task Forces",
     defaultTotal: 30,
-    img: "/assets/icons/card_back_cops.png?v=120",
+    img: "/assets/icons/card_back_cops.png?v=121",
     shortDesc: "Law enforcement checkpoints; contraband sweeps, fines, and combat threats.",
   },
   {
@@ -2176,7 +2176,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Goods",
     subtitle: "Weed, Party, Uppers, Opiates, Weapons & Henchmen",
     defaultTotal: 112,
-    img: "/assets/icons/card_back_goods.png?v=120",
+    img: "/assets/icons/card_back_goods.png?v=121",
     shortDesc: "Next Cargo, Weapon, or Henchman card drawn into the Wholesale Market tracks.",
   },
   {
@@ -2184,7 +2184,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Jobs",
     subtitle: "Deliveries, Drops, Hits & Contracts",
     defaultTotal: 56,
-    img: "/assets/icons/card_back_missions.png?v=120",
+    img: "/assets/icons/card_back_missions.png?v=121",
     shortDesc: "Next Delivery, Sale, or Contract Job card drawn.",
   },
   {
@@ -2192,7 +2192,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Influence",
     subtitle: "Burner Apps, Bribes, Tips & Schemes",
     defaultTotal: 43,
-    img: "/assets/icons/card_back_influence.png?v=120",
+    img: "/assets/icons/card_back_influence.png?v=121",
     shortDesc: "Next tactical Influence card drawn or purchased at Dawn.",
   },
 ];
@@ -2455,11 +2455,7 @@ function openEncounterDecksOverviewModal(gs, focusDeck = null) {
                 onClick: () => {
                   if (!canScoutDeck || rem <= 0) return;
                   closeModal();
-                  sendGameAction({
-                    type: isEntryPhase ? "initial_scout" : "delivery_scout",
-                    targetType: "deck",
-                    targetKey: dk,
-                  });
+                  executeInstantScout(gs, viewer, "deck", dk, isEntryPhase);
                 },
               }),
               el("button", {
@@ -2829,7 +2825,74 @@ function openGambleModal(viewer) {
   );
 }
 
+function executeInstantScout(gs, viewer, targetType, targetKey, isEntryPhase) {
+  const normKey = String(targetKey || "").trim();
+  const vp = viewer || (gs && gs.players ? gs.players[gs.viewerPlayerIndex || 0] : null);
+  let preData = null;
+  let label = "";
+  let summary = "";
+
+  if (targetType === "tile") {
+    const coord = normKey.toUpperCase();
+    const cellObj = gs && gs.romeBoard ? gs.romeBoard[coord] : null;
+    preData = cellObj && cellObj.topTile ? cellObj.topTile : null;
+    label = isEntryPhase ? `Initial Scout (${coord})` : `Tile Stack ${coord}`;
+    summary = (preData && preData.summary) || "";
+    appState.inspectedCell = coord;
+  } else {
+    const dk = normKey.toLowerCase();
+    preData = gs && gs.deckTopCards ? gs.deckTopCards[dk] : null;
+    const deckNames = {
+      celebrities: "Celebrities",
+      cops: "Cops",
+      criminals: "Criminals",
+      market: "Goods",
+      missions: "Jobs",
+      influence: "Influence",
+    };
+    const dLbl = deckNames[dk] || normKey;
+    label = isEntryPhase ? `Initial Scout (${dLbl} Deck)` : `${dLbl} Deck`;
+    if (preData) {
+      summary = `${preData.name || "Card"} — ${preData.actionText || preData.effectText || preData.text || preData.category || ""}`;
+    }
+  }
+
+  if (preData && vp) {
+    const optId = `scout_opt_${Date.now()}`;
+    const siObj = {
+      id: optId,
+      turn: isEntryPhase ? 0 : (gs ? gs.turn : 1),
+      targetType,
+      targetKey: targetType === "tile" ? normKey.toUpperCase() : normKey.toLowerCase(),
+      label,
+      summary,
+      revealedData: preData,
+    };
+    vp.scoutedThisTurn = true;
+    if (!Array.isArray(vp.scoutedInfo)) vp.scoutedInfo = [];
+    vp.scoutedInfo.push(siObj);
+    appState.shownScoutIds.add(optId);
+    appState.lastOptimisticScoutKey = `${targetType}:${normKey.toUpperCase()}`;
+    openScoutResultModal(siObj);
+  }
+
+  if (isEntryPhase) {
+    if (targetType === "tile") {
+      sendGameAction({ type: "initial_scout", targetType: "tile", cell: normKey.toUpperCase() });
+    } else {
+      sendGameAction({ type: "initial_scout", targetType: "deck", targetKey: normKey.toLowerCase() });
+    }
+  } else {
+    sendGameAction({
+      type: "delivery_scout",
+      targetType,
+      targetKey: targetType === "tile" ? normKey.toUpperCase() : normKey.toLowerCase(),
+    });
+  }
+}
+
 function openScoutModal(gs, _viewer) {
+  const viewer = _viewer || (gs && gs.players ? gs.players[gs.viewerPlayerIndex || 0] : null);
   const isEntryPhase = gs.phase === "delivery_entry";
   const cellSelect = el(
     "select",
@@ -2872,11 +2935,7 @@ function openScoutModal(gs, _viewer) {
           ALL_PICKER_DECK_SPECS,
           (dk) => {
             closeModal();
-            sendGameAction({
-              type: isEntryPhase ? "initial_scout" : "delivery_scout",
-              targetType: "deck",
-              targetKey: dk,
-            });
+            executeInstantScout(gs, viewer, "deck", dk, isEntryPhase);
           },
           "👆 Tap Deck to Scout"
         )
@@ -2905,11 +2964,7 @@ function openScoutModal(gs, _viewer) {
           text: "👁️ Scout Selected Neighborhood Stack",
           onClick: () => {
             closeModal();
-            if (isEntryPhase) {
-              sendGameAction({ type: "initial_scout", targetType: "tile", cell: cellSelect.value });
-            } else {
-              sendGameAction({ type: "delivery_scout", targetType: "tile", targetKey: cellSelect.value });
-            }
+            executeInstantScout(gs, viewer, "tile", cellSelect.value, isEntryPhase);
           },
         })
       )

@@ -1,6 +1,6 @@
-import { maskEmailClient, isFirebaseClientConfigured, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, FACTION_META, SUV_COLOR_PALETTE, renderSUVIconNode, renderGoogleLogoSvg, appState, el, showToast, closeModal, showModal } from "./core_ui.js?v=120";
-import { apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, refreshPortalOverview, seedSeenScoutIds, openGame, renderApp } from "./app.js?v=120";
-import { stopNpcTurnPacing, enqueueNewNpcEvents } from "./dice_and_sfx.js?v=120";
+import { maskEmailClient, isFirebaseClientConfigured, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, FACTION_META, SUV_COLOR_PALETTE, renderSUVIconNode, renderGoogleLogoSvg, appState, el, showToast, closeModal, showModal } from "./core_ui.js?v=121";
+import { apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, refreshPortalOverview, seedSeenScoutIds, openGame, renderApp } from "./app.js?v=121";
+import { stopNpcTurnPacing, enqueueNewNpcEvents } from "./dice_and_sfx.js?v=121";
 
 function buildFallbackFinalStandings(state) {
   if (!state || !Array.isArray(state.players)) return [];
@@ -398,7 +398,7 @@ function openFinalScoringModal(standings, meta = {}) {
       { className: "final-scoring-banner" },
       el("img", {
         className: "final-scoring-mori-thumb",
-        src: "/assets/icons/sf_logo_icon.png?v=120",
+        src: "/assets/icons/sf_logo_icon.png?v=121",
         alt: "InstantGram SF",
       }),
       el(
@@ -1597,7 +1597,7 @@ function renderPortalView() {
   const leaderboardPanel = el(
     "div",
     { className: "panel" },
-    el("h3", { className: "panel-title fresco-banner-header fresco-griffin", text: "🏆 Bay Area Dealer Leaderboard" }),
+    el("h3", { className: "panel-title fresco-banner-header fresco-griffin", text: "🏆 Bay Area Dealerboard" }),
     el("div", {
       style: { fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: "0.55rem" },
       text: "Multiplayer standings across completed games with 2+ human dealers.",

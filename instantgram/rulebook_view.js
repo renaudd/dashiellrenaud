@@ -1,5 +1,5 @@
-import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=120";
-import { renderApp } from "./app.js?v=120";
+import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=121";
+import { renderApp } from "./app.js?v=121";
 
 const RULEBOOK_SECTIONS = [
   {
@@ -138,15 +138,15 @@ const RULEBOOK_SECTIONS = [
       {
         img: "./assets/icons/persist.png",
         title: "Persistent Tile Icon",
-        desc: "Landmarks marked with the Persistent icon stay face-up on the SF board between Nights instead of returning to their stack at Dawn.",
+        desc: "Tiles marked with the Persistent icon stay face-up when another dealer enters that neighborhood during the Night instead of revealing a new tile (all face-up tiles are discarded at Dawn).",
       },
       {
         img: "./assets/icons/refresh.png",
         title: "Refresh Tile Icon",
-        desc: "Volatile streets marked with the Refresh icon discard after their encounter resolves, immediately revealing the next tile beneath.",
+        desc: "Special tiles containing only a Center Encounter icon and the Refresh symbol below it (no edge icons). After completing the center-tile encounter, immediately reveal and resolve the next tile in the stack.",
       },
       {
-        img: "./assets/icons/sf_logo_icon.png?v=120",
+        img: "./assets/icons/sf_logo_icon.png?v=121",
         title: "Wholesale Spot / First Player",
         desc: "Marks San Francisco's 3 central Wholesale Spots (C3 Civic Center, D3 Tenderloin, D4 Mission) where Goods are sold to dealers, as well as the First Player emblem.",
       },
@@ -180,32 +180,32 @@ const RULEBOOK_SECTIONS = [
     ],
     iconGrid: [
       {
-        img: "./assets/icons/celebrities_icon.png?v=120",
+        img: "./assets/icons/celebrities_icon.png?v=121",
         title: "Celebrities Encounter (Always 1×)",
         desc: "Tech founders, politicians, and influencers (gold hoodie icon). Always singular (X=1). Friendly Celebrities offer lucrative Jobs or trade deals; Hostile Celebrities make demands.",
       },
       {
-        img: "./assets/icons/cops_icon.png?v=120",
+        img: "./assets/icons/cops_icon.png?v=121",
         title: "Cops Encounter (1–4× Icons)",
         desc: "SFPD, DEA, CHP, and federal agents (cobalt blue police hat icon). Has 1–4 icons on the tile/edge, setting X for the card's combat formula. Heavily aligned with MAGA.",
       },
       {
-        img: "./assets/icons/criminals_icon.png?v=120",
+        img: "./assets/icons/criminals_icon.png?v=121",
         title: "Criminals Encounter (1–4× Icons)",
         desc: "Stick-up crews, cartel enforcers, and street gangs (white A-shirt icon). Has 1–4 icons on the tile/edge, setting X for the card's combat formula.",
       },
       {
-        img: "./assets/icons/angry_mob.png?v=120",
+        img: "./assets/icons/angry_mob.png?v=121",
         title: "Protesters (1R Chart)",
         desc: "Orange megaphone icon. Roll 1(R): 0 = Lose all Opiates; 1 = Lose all Weed; 2 = Lose your most expensive Good; 3 = Escape unharmed.",
       },
       {
-        img: "./assets/icons/theater_masks.png?v=120",
+        img: "./assets/icons/theater_masks.png?v=121",
         title: "Open Mic (1R Chart)",
         desc: "Dark gray microphone icon. Roll 1(R): 0 = Lose all positive Favor; 1 = Lose all negative Favor; 2 = Lose rest of turn & next turn; 3 = Draw 1(R) Influence.",
       },
       {
-        img: "./assets/icons/schizophrenic_icon.png?v=120",
+        img: "./assets/icons/schizophrenic_icon.png?v=121",
         title: "Schizophrenic Encounter",
         desc: "Purple silhouette icon. Draws a mandatory Schizophrenic Job and seals 1(R) face-down Influence cards beneath it until you finish the Job.",
       },

@@ -908,7 +908,7 @@ select {
   grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-template-rows: repeat(6, minmax(174px, auto));
   min-width: 820px;
-  background-image: url("./assets/icons/ostia_market_board_bg.jpg?v=120");
+  background-image: url("./assets/icons/ostia_market_board_bg.jpg?v=121");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -1499,7 +1499,7 @@ select {
   gap: 0;
   padding: 0;
   aspect-ratio: 1 / 1;
-  background-image: url("./assets/icons/rome_211_map_bg_v2.jpg?v=120");
+  background-image: url("./assets/icons/rome_211_map_bg_v2.jpg?v=121");
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
@@ -2333,7 +2333,7 @@ select {
   height: 100%;
   aspect-ratio: 1 / 1;
   background-color: #f2eef6;
-  background-image: url("./assets/icons/rome_211_map_bg_face.jpg?v=120");
+  background-image: url("./assets/icons/rome_211_map_bg_face.jpg?v=121");
   background-size: 600% 600%;
   background-repeat: no-repeat;
   border: 1.5px solid rgba(88, 56, 26, 0.65);
@@ -2366,7 +2366,7 @@ select {
   margin: 0 auto;
   border-radius: 8px;
   border: 2px solid var(--gold);
-  background-image: url("./assets/icons/rome_211_map_bg_v2.jpg?v=120");
+  background-image: url("./assets/icons/rome_211_map_bg_v2.jpg?v=121");
   background-size: 600% 600%;
   background-repeat: no-repeat;
   position: relative;
@@ -2774,10 +2774,16 @@ select {
   transform: translate(-50%, -50%);
   z-index: 2;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
   pointer-events: none;
+}
+
+.dyn-tile-center-enc.is-refresh-tile-center {
+  top: 52%;
+  gap: 5px;
 }
 
 .dyn-tile-center-enc.is-grid-2x2 {
@@ -2790,6 +2796,26 @@ select {
   align-items: center;
   justify-content: center;
   gap: 3px;
+}
+
+.dyn-center-refresh-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.dyn-center-refresh-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.95));
+}
+
+.inspector-preview .dyn-center-refresh-icon {
+  width: 30px;
+  height: 30px;
 }
 
 .dyn-center-enc-icon {
@@ -2812,11 +2838,11 @@ select {
   height: 44px;
 }
 
-/* Bottom Persistent/Refresh, Gamble Dice, and Tile ID — equidistant from bottom & side edges */
+/* Bottom Persistent Icon & Gamble Dice — positioned closer to the center of the tile so they never overlap SW/SE corner edge encounters */
 .dyn-tile-bottom-left {
   position: absolute;
-  bottom: 6px;
-  left: 6px;
+  bottom: 24px;
+  left: 24px;
   z-index: 3;
   display: flex;
   align-items: center;
@@ -2825,14 +2851,20 @@ select {
 }
 
 .dyn-tile-card.has-edge-sw .dyn-tile-bottom-left {
-  bottom: 18px;
-  left: 18px;
+  bottom: 26px;
+  left: 26px;
+}
+
+.inspector-preview .dyn-tile-bottom-left,
+.inspector-preview.dyn-tile-card.has-edge-sw .dyn-tile-bottom-left {
+  bottom: 42px;
+  left: 42px;
 }
 
 .dyn-tile-bottom-right {
   position: absolute;
-  bottom: 6px;
-  right: 6px;
+  bottom: 24px;
+  right: 24px;
   z-index: 3;
   display: flex;
   align-items: center;
@@ -2841,8 +2873,14 @@ select {
 }
 
 .dyn-tile-card.has-edge-se .dyn-tile-bottom-right {
-  bottom: 18px;
-  right: 18px;
+  bottom: 26px;
+  right: 26px;
+}
+
+.inspector-preview .dyn-tile-bottom-right,
+.inspector-preview.dyn-tile-card.has-edge-se .dyn-tile-bottom-right {
+  bottom: 42px;
+  right: 42px;
 }
 
 .dyn-bottom-icon {
@@ -5397,7 +5435,7 @@ select {
   border: 2px solid #9e6c1e;
   background:
     linear-gradient(160deg, rgba(254, 243, 199, 0.78), rgba(242, 230, 204, 0.88)),
-    url("./assets/rome_art/marble_veined_panel.jpg?v=120");
+    url("./assets/rome_art/marble_veined_panel.jpg?v=121");
   background-size: 100% 100%, 360px 360px;
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.9),
@@ -5821,7 +5859,7 @@ select {
   background-color: var(--bg-panel);
   background-image:
     linear-gradient(90deg, rgba(251, 238, 205, 0.88), rgba(238, 224, 198, 0.9)),
-    url("./assets/rome_art/marble_veined_panel.jpg?v=120");
+    url("./assets/rome_art/marble_veined_panel.jpg?v=121");
   background-size: 100% 100%, 360px 360px;
   border: 2px solid #8c5612;
   box-shadow: var(--bevel-panel);
@@ -5957,7 +5995,7 @@ select {
   border-radius: 10px;
   border: 2.5px solid var(--suv-trim-color, #9b7ed4);
   background-color: #160c26;
-  background-image: url("./assets/icons/suv_mat_board_bg.jpg?v=120");
+  background-image: url("./assets/icons/suv_mat_board_bg.jpg?v=121");
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
@@ -5987,7 +6025,7 @@ select {
 .physical-suv-mat.is-extended {
   background-color: #160c26;
   background-image:
-    url("./assets/icons/suv_mat_board_bg.jpg?v=120"),
+    url("./assets/icons/suv_mat_board_bg.jpg?v=121"),
     repeating-linear-gradient(90deg,
       #221638 0px,
       #221638 34px,
@@ -6314,7 +6352,7 @@ select {
   background-color: #210a3b;
   background-image:
     linear-gradient(180deg, rgba(16, 6, 34, 0.06) 0%, rgba(16, 6, 34, 0.24) 36%, rgba(16, 6, 34, 0.32) 100%),
-    url("./assets/rome_art/senate_211_board_bg.jpg?v=120");
+    url("./assets/rome_art/senate_211_board_bg.jpg?v=121");
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
