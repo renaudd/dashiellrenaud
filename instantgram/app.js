@@ -1,8 +1,8 @@
-import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=111";
-import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=111";
-import { openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=111";
-import { renderRulebookView } from "./rulebook_view.js?v=111";
-import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=111";
+import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=112";
+import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=112";
+import { openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=112";
+import { renderRulebookView } from "./rulebook_view.js?v=112";
+import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=112";
 
 function navigateToMarketBoardForCategory(category) {
   appState.highlightedMarketTrack = category || null;
@@ -63,20 +63,20 @@ function buildEncounterFigureNodes(encStr, iconClass) {
   if (!encStr || encStr === "None") return [];
   const s = String(encStr);
   if (s === "mob") {
-    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=111", alt: "Protesters" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=112", alt: "Protesters" })];
   }
   if (s === "theater") {
-    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=111", alt: "Open Mic" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=112", alt: "Open Mic" })];
   }
   if (s === "schizophrenic") {
-    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=111", alt: "Schizophrenic" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=112", alt: "Schizophrenic" })];
   }
   const [deckType, countRaw] = s.split("_");
   const isMultiIconDeck = deckType === "cops" || deckType === "criminals" || deckType === "legionaries" || deckType === "nefarious";
   const count = isMultiIconDeck ? Math.max(1, Math.min(4, Number(countRaw) || 1)) : 1;
-  let iconUrl = "/assets/icons/celebrities_icon.png?v=111";
-  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=111";
-  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=111";
+  let iconUrl = "/assets/icons/celebrities_icon.png?v=112";
+  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=112";
+  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=112";
 
   const figs = [];
   for (let i = 0; i < count; i++) {
@@ -1415,7 +1415,7 @@ function checkPostActionModals(state) {
           ? state.finalStandings
           : buildFallbackFinalStandings(state);
       openFinalScoringModal(standings, {
-        gameName: appState.gameSummary ? appState.gameSummary.name : "Roman Expedition",
+        gameName: appState.gameSummary ? appState.gameSummary.name : "InstantGram SF",
         winnerName: state.winner,
         night: state.night,
       });
@@ -2167,7 +2167,7 @@ function renderClockAndTurnBanner(gs, viewer, activePlayer) {
           className: `btn btn-sm ${appState.boardViewMode === mode ? "btn-primary" : ""}`,
           title:
             mode === "climate"
-              ? "Switch to the 6×3 Roman Senate Political Climate Board"
+              ? "Switch to the 6×3 Ballot Initiatives Board"
               : undefined,
           text:
             mode === "auto"
@@ -2320,7 +2320,7 @@ function renderContextualPromptBanner(gs, viewer, activePlayer) {
               ? gs.finalStandings
               : buildFallbackFinalStandings(gs);
           openFinalScoringModal(standings, {
-            gameName: appState.gameSummary ? appState.gameSummary.name : "Roman Expedition",
+            gameName: appState.gameSummary ? appState.gameSummary.name : "InstantGram SF",
             winnerName: gs.winner,
             night: gs.night,
           });
@@ -3818,7 +3818,7 @@ function renderPendingEncounterPanelCore(gs, viewer) {
   if (stage === "combat_consumable_pre_roll") {
     const consumables = Array.isArray(pend.consumableItems)
       ? pend.consumableItems
-      : (encPlayer.suv || []).filter((it) => it && it.combat && it.combat.consumable);
+      : (encPlayer.suv || []).filter((it) => it && it.combat && it.combat.consumable && !it.combat.ignoreWoundsFlat && !it.combat.ignoreWoundsDice);
     if (!appState._stageConsumableSelection || appState._stageConsumableEncounterCardId !== card.id) {
       appState._stageConsumableEncounterCardId = card.id;
       appState._stageConsumableSelection = new Set();
@@ -4402,9 +4402,9 @@ function renderPendingEncounterPanelCore(gs, viewer) {
     if (c.dice) parts.push(`+${c.dice}(R)`);
     if (c.negDice) parts.push(`-${c.negDice}(R)`);
     if (c.flat) parts.push(formatSignedFlat(c.flat) + " CP");
-    if (c.ignoreWoundsFlat) parts.push(`Ignore ${c.ignoreWoundsFlat} Wound${c.ignoreWoundsFlat === 1 ? "" : "s"}`);
-    if (c.ignoreWoundsDice) parts.push(`Ignore ${c.ignoreWoundsDice}(R) Wound(s)`);
-    if (c.consumable) parts.push("Optional — Destroyed if Used");
+    if (c.ignoreWoundsFlat) parts.push(`Absorb ${c.ignoreWoundsFlat} Wound${c.ignoreWoundsFlat === 1 ? "" : "s"}`);
+    if (c.ignoreWoundsDice) parts.push(`Absorb ${c.ignoreWoundsDice === 1 ? "" : c.ignoreWoundsDice}(R) Wounds`);
+    if (c.consumable) parts.push((c.ignoreWoundsFlat || c.ignoreWoundsDice) ? "Destroyed when used" : "Optional — Destroyed if Used");
     if (parts.length > 0) {
       gearCombatEffects.push(`${it.item || it.name || "Gear"} (${parts.join(", ")})`);
     }
@@ -4646,6 +4646,7 @@ function renderPendingEncounterPanelCore(gs, viewer) {
           el("span", { className: "badge", text: `Merchant: ${encPlayer.name}` }),
           el("span", { className: "badge", text: `Faction: ${card.faction || "Unaligned"}` }),
           el("span", { className: "badge", text: `Effective Favor: ${pend.favorScore > 0 ? `+${pend.favorScore}` : pend.favorScore}` }),
+          el("span", { className: "badge", text: `X: ${pend.xCount ?? 1}` }),
           el("span", {
             className: "badge",
             text: `Active Tier: ${pend.matchedTier
@@ -6329,7 +6330,7 @@ function renderOstiaMarketBoard(gs, viewer) {
           { className: `track-header-plaque ${trackClass}` },
           el("div", { className: "track-title", text: trackName }),
           el("div", { style: { fontSize: "0.7rem", color: "#e6d8c0" }, text: `${meta.count}/6 Bays Stocked` }),
-          el("span", { className: "scarcity-pill", text: `Sells At: ${meta.scarcityLabel}` }),
+          el("span", { className: "scarcity-pill", text: `${trackName === "Henchmen" ? "Salaries At" : "Sells At"}: ${meta.scarcityLabel}` }),
           isForumSellingTrack
             ? el("span", {
               className: "scarcity-pill",

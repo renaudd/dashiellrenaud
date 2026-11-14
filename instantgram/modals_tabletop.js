@@ -1,5 +1,5 @@
-import { EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=111";
-import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=111";
+import { EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=112";
+import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=112";
 
 /**
  * Displays the up-close view of a face-up tile (or the tile currently occupied by the player's SUV),
@@ -1593,7 +1593,7 @@ function triggerMissionCargoLoadWithOverflow(m, viewer) {
       subcategory: `Mission Cargo (${m.name})`,
       track: m.category || "Grain",
       blocks: reqBlocks,
-      sell: m.source !== "soothsayer" ? m.fencedSell : null,
+      sell: (m.source !== "soothsayer" && m.source !== "schizophrenic") ? m.fencedSell : null,
       combatText: m.combatText || null,
     },
     reqBlocks,
@@ -1747,7 +1747,7 @@ function openProphecyTargetModal(gs, viewer, card) {
       { style: { display: "flex", flexDirection: "column", gap: "0.75rem" } },
       el("p", {
         style: { fontSize: "0.88rem", color: "var(--text-main)", margin: "0" },
-        text: "Trigger a Soothsayer encounter for any player (including yourself or a rival merchant).",
+        text: "Trigger a Schizophrenic encounter for any player (including yourself or a rival dealer).",
       }),
       el(
         "div",
@@ -1905,12 +1905,12 @@ function renderDeckCardBackPickerGrid(gs, deckSpecs, onSelectDeck, tapPillLabel 
 
 function openInformantsTargetModal(gs, _viewer, card) {
   const allDeckSpecs = [
-    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=111" },
-    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=111" },
-    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=111" },
-    { key: "market", label: "Goods & Henchmen", img: "/assets/icons/card_back_goods.png?v=111" },
-    { key: "missions", label: "Jobs", img: "/assets/icons/card_back_missions.png?v=111" },
-    { key: "influence", label: "Influence", img: "/assets/icons/card_back_influence.png?v=111" },
+    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=112" },
+    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=112" },
+    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=112" },
+    { key: "market", label: "Goods & Henchmen", img: "/assets/icons/card_back_goods.png?v=112" },
+    { key: "missions", label: "Jobs", img: "/assets/icons/card_back_missions.png?v=112" },
+    { key: "influence", label: "Influence", img: "/assets/icons/card_back_influence.png?v=112" },
   ];
 
   const cellSelect = el(
@@ -2241,9 +2241,9 @@ function openScoutModal(gs, _viewer) {
   );
 
   const encounterDeckSpecs = [
-    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=111" },
-    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=111" },
-    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=111" },
+    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=112" },
+    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=112" },
+    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=112" },
   ];
 
   showModal(
@@ -2334,9 +2334,9 @@ function openTrashModal(gs, viewer) {
     )
   );
   const encounterDeckSpecs = [
-    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=111" },
-    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=111" },
-    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=111" },
+    { key: "celebrities", label: "Celebrities", img: "/assets/icons/card_back_celebrities.png?v=112" },
+    { key: "criminals", label: "Criminals", img: "/assets/icons/card_back_criminals.png?v=112" },
+    { key: "cops", label: "Cops", img: "/assets/icons/card_back_cops.png?v=112" },
   ];
 
   showModal(

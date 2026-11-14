@@ -1,5 +1,5 @@
-import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=111";
-import { renderApp } from "./app.js?v=111";
+import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=112";
+import { renderApp } from "./app.js?v=112";
 
 const RULEBOOK_SECTIONS = [
   {
@@ -65,12 +65,12 @@ const RULEBOOK_SECTIONS = [
     iconGrid: [
       {
         symbolType: "sell_sym",
-        title: "Bold Green +₿ (Sell / Fence Row)",
+        title: "Bold Green +₿ Retail (Sell / Fence Row)",
         desc: "The top price row on a Good Card. Shows the Bitcoin you RECEIVE when selling that Good in San Francisco (or Fencing Encounter Job Cargo) at each Scarcity column (<< to >>).",
       },
       {
         symbolType: "buy_sym",
-        title: "Italic Red -₿ (Buy / Hire Row)",
+        title: "Italic Red -₿ Wholesale (Buy / Hire Row)",
         desc: "The bottom price row on a Good or Henchman Card. Shows the Bitcoin you PAY to buy that Good at the Safe House Market (or a Wholesale Spot) or to hire/retain a Henchman.",
       },
       {
@@ -146,7 +146,7 @@ const RULEBOOK_SECTIONS = [
         desc: "Volatile streets marked with the Refresh icon discard after their encounter resolves, immediately revealing the next tile beneath.",
       },
       {
-        img: "./assets/icons/sf_logo_icon.png?v=111",
+        img: "./assets/icons/sf_logo_icon.png?v=112",
         title: "Wholesale Spot / First Player",
         desc: "Marks San Francisco's 3 central Wholesale Spots (C3 Civic Center, D3 Tenderloin, D4 Mission) where Goods are sold to dealers, as well as the First Player emblem.",
       },
@@ -180,32 +180,32 @@ const RULEBOOK_SECTIONS = [
     ],
     iconGrid: [
       {
-        img: "./assets/icons/celebrities_icon.png?v=111",
+        img: "./assets/icons/celebrities_icon.png?v=112",
         title: "Celebrities Encounter (Always 1×)",
         desc: "Tech founders, politicians, and influencers (gold hoodie icon). Always singular (X=1). Friendly Celebrities offer lucrative Jobs or trade deals; Hostile Celebrities make demands.",
       },
       {
-        img: "./assets/icons/cops_icon.png?v=111",
+        img: "./assets/icons/cops_icon.png?v=112",
         title: "Cops Encounter (1–4× Icons)",
         desc: "SFPD, DEA, CHP, and federal agents (cobalt blue police hat icon). Has 1–4 icons on the tile/edge, setting X for the card's combat formula. Heavily aligned with MAGA.",
       },
       {
-        img: "./assets/icons/criminals_icon.png?v=111",
+        img: "./assets/icons/criminals_icon.png?v=112",
         title: "Criminals Encounter (1–4× Icons)",
         desc: "Stick-up crews, cartel enforcers, and street gangs (white A-shirt icon). Has 1–4 icons on the tile/edge, setting X for the card's combat formula.",
       },
       {
-        img: "./assets/icons/angry_mob.png?v=111",
+        img: "./assets/icons/angry_mob.png?v=112",
         title: "Protesters (1R Chart)",
         desc: "Orange megaphone icon. Roll 1(R): 0 = Lose all Opiates; 1 = Lose all Weed; 2 = Lose your most expensive Good; 3 = Escape unharmed.",
       },
       {
-        img: "./assets/icons/theater_masks.png?v=111",
+        img: "./assets/icons/theater_masks.png?v=112",
         title: "Open Mic (1R Chart)",
         desc: "Dark gray microphone icon. Roll 1(R): 0 = Lose all positive Favor; 1 = Lose all negative Favor; 2 = Lose rest of turn & next turn; 3 = Draw 1(R) Influence.",
       },
       {
-        img: "./assets/icons/schizophrenic_icon.png?v=111",
+        img: "./assets/icons/schizophrenic_icon.png?v=112",
         title: "Schizophrenic Encounter",
         desc: "Purple silhouette icon. Draws a mandatory Schizophrenic Job and seals 1(R) face-down Influence cards beneath it until you finish the Job.",
       },
@@ -221,7 +221,7 @@ const RULEBOOK_SECTIONS = [
       },
       {
         symbolType: "rome_die",
-        title: "Action Die (R)",
+        title: "Rome Die (R)",
         desc: "6-sided custom die with faces 0, 0, 1, 1, 2, 3 (mean roll = 1.0). Rolled for Combat, Charts, and Dice Game wagers.",
       },
       {
@@ -231,7 +231,7 @@ const RULEBOOK_SECTIONS = [
       },
     ],
     bullets: [
-      "Friendly vs. Hostile Encounters: Determined by your uncapped net Favor with the NPC's Faction. ! means refusal costs Favor; !! means refusal triggers Combat; ? is an optional Deal or Job.",
+      "Friendly vs. Hostile Encounters & Reputation Tiers: Determined by your uncapped net Favor with the NPC's Faction. There are three interaction tiers: !! means comply or fight; ! means comply or accept hostile encounter consequences with no fight; and ? means comply or decline with no penalty for rejecting the offer (if you accept a ? Job and later fail or abandon that Job, you suffer the encounter's hostile Favor consequences).",
       "Combat Power (CP) & Cargo Gear: Both sides roll Action Dice (R) plus Henchmen, Weapons, mandatory Uppers (stimulants in your SUV always add/roll their CP in combat!), and Influence modifiers (plus +1 CP per positive Ruby & +2 CP to Cops if Back the Blue is active). Note that Body Armor carries 0 CP in street ambushes (it absorbs wounds instead). If Player CP ≥ Opponent CP against an NPC, you win!",
       "Armor, Henchmen, & Dealer Fate (Damage Deficit Note): If Opponent CP > Player CP, suffer Raw Wounds = (Opponent CP − Player CP). Body Armor/Shields reduce Wounds first; each remaining Wound kills 1 Henchman. If an unblocked Wound reaches you, roll 1(R) on the Dealer Fate Chart: 0 = Wasted (lose all Goods & your night ends); 1 = Left for dead (lose all Goods); 2 = Jumped & robbed (lose all Bitcoin); 3 = Begged for mercy (lose all Influence cards).",
       "1(R) Street Charts: Protesters (0: lose all Opiates; 1: lose all Weed; 2: lose most expensive Good; 3: safe), Open Mic (0: undo all Positive-outcome gem changes; 1: undo all Hostile-outcome gem changes; 2: lose rest of turn & next turn; 3: draw 1(R) Influence), Schizophrenic (take mandatory Job + seal 1(R) Influence cards).",
@@ -270,15 +270,15 @@ const RULEBOOK_SECTIONS = [
           "Series A: End of game: Most TECH favor gains +20% wealth.",
           "Billionaire Tax: End of game: Most DSA favor steals 15(d) from the wealthiest rival.",
           "Protection Racket: End of game: Most MS13 favor gains 25(d).",
-          "Five-Star Courier: End of game: Most completed Jobs gains 30(d).",
+          "Five-Star Courier: End of game: Most net completed Jobs (completed minus failed) gains 30(d).",
         ],
         [
           "Recall Election: End of game: Lose 10(d) per +Ruby; gain 5(d) per -Ruby.",
           "Jihad: End of game: +15(d) per +Emerald if MAGA ≤ 0, or -10(d) if ≥ +1; -5(d) per -Emerald.",
           "Conflict of Interest: End of game: Lose 15(d) per +Diamond and 15(d) per -Diamond.",
-          "Mutual Aid: End of game: Gain 10(d) per completed Job with +Sapphire or a DSA patron.",
+          "Mutual Aid: End of game: Gain 10(d) per net completed Job with +Sapphire or a DSA patron.",
           "Plata o Plomo: End of game: Gain 10(d) per +Amethyst and 10(d) per -Amethyst.",
-          "Full Time Employee: End of game: receive A × B Bitcoin (A = your gems of one faction, B = jobs completed for that faction).",
+          "Full Time Employee: End of game: receive A × B Bitcoin (A = your gems of one faction, B = net positive jobs completed for that faction).",
         ],
         [
           "Back the Blue: Cops gain +2 CP. Each +Ruby gives your SUV +1 CP.",
@@ -331,24 +331,39 @@ const RULEBOOK_SECTIONS = [
           "Each ■ occupies 1 Cargo block on your SUV (max 6■); each ▲ occupies 1 Henchman seat (max 2▲).",
         ],
         [
-          "(R) Action Die / (M) Move / (T) Tx",
+          "(R) Rome Die / (M) Move / (T) Tx",
           "Cards, Tiles, & Rules",
-          "(R) rolls a 6-sided Action die (0, 0, 1, 1, 2, 3); (M) grants/uses a Move step; (T) grants/uses an hourly Transaction.",
+          "(R) rolls a 6-sided Rome die (0, 0, 1, 1, 2, 3); (M) grants/uses a Move step; (T) grants/uses an hourly Transaction.",
         ],
         [
-          "(COMBAT_ICON) / !! / ! / ?",
+          "(COMBAT_ICON) Immediate Combat",
           "Encounter Reputation Tiers",
-          "(COMBAT_ICON) initiates immediate Combat; !! is a Threat (comply or fight); ! is a Demand (comply or lose Favor); ? is an optional Deal or Job.",
+          "(COMBAT_ICON) initiates immediate Combat (no negotiation).",
+        ],
+        [
+          "!! (Double Exclamation)",
+          "Encounter Reputation Tiers",
+          "Threat — Comply or Fight: You must comply with the demand/job or immediately fight the NPC in Combat.",
+        ],
+        [
+          "! (Single Exclamation)",
+          "Encounter Reputation Tiers",
+          "Demand — Comply or Accept Hostile Consequences (No Fight): You must comply with the demand/job or refuse and suffer the encounter card's hostile Favor consequences with no fight.",
+        ],
+        [
+          "? (Question Mark)",
+          "Encounter Reputation Tiers",
+          "Offer — Comply or Not (No Refusal Penalty): You may comply or reject the offer with no penalty for declining (if you accept a ? Job and later fail or abandon that Job, you suffer the encounter card's hostile Favor consequences).",
         ],
         [
           "(QUEST_ICON)!! / (QUEST_ICON)! / (QUEST_ICON)?",
           "Encounter Reputation Tiers",
-          "Cash Stack — threatened (!!), mandatory (!), or optional (?) Job printed directly in the Encounter card's description box.",
+          "Cash Stack — On-Card Job printed in the Encounter card's description box: !! = accept Job or fight; ! = accept Job or suffer hostile Favor consequences with no fight; ? = optional Job with no penalty for declining (failing it later still triggers hostile Favor consequences).",
         ],
         [
           "(DECK_ICON)(QUEST_ICON)!! / (DECK_ICON)(QUEST_ICON)! / (DECK_ICON)(QUEST_ICON)?",
           "Encounter Reputation Tiers",
-          "Laptop + Cash Stack — threatened (!!), mandatory (!), or optional (?) unseen Job drawn from the top of the Jobs deck.",
+          "Laptop + Cash Stack — Unseen Job drawn from the top of the Jobs deck: !! = accept Job or fight; ! = accept Job or suffer hostile Favor consequences with no fight; ? = optional Job with no penalty for declining (failing it later still triggers hostile Favor consequences).",
         ],
         [
           "Green / Red Bar",
@@ -569,25 +584,15 @@ function renderRulebookView() {
     },
   });
 
-  const tocSidebar = el(
-    "aside",
-    { className: "panel rulebook-toc" },
-    el("h3", { className: "panel-title", text: "📜 Rulebook Index" }),
-    !appState.user
-      ? el(
-        "button",
-        {
-          type: "button",
-          className: "btn btn-primary",
-          style: { width: "100%", marginBottom: "0.75rem" },
-          onClick: () => {
-            appState.activeTab = "portal";
-            renderApp();
-          },
-        },
-        "← Back to Welcome & Sign In"
-      )
-      : null,
+  if (typeof appState.rulebookTocCollapsed !== "boolean") {
+    appState.rulebookTocCollapsed = typeof window !== "undefined" && window.innerWidth <= 980;
+  }
+
+  const tocBody = el(
+    "div",
+    {
+      className: `rulebook-toc-body ${appState.rulebookTocCollapsed ? "collapsed" : ""}`,
+    },
     el("div", { className: "form-group", style: { marginBottom: "0.75rem" } }, searchInput),
     ...RULEBOOK_SECTIONS.map((sec) =>
       el("button", {
@@ -599,14 +604,60 @@ function renderRulebookView() {
           appState.rulebookSearch = "";
           searchInput.value = "";
           sectionsContainer.replaceChildren(...buildRulebookSectionNodes(""));
-          tocSidebar.querySelectorAll(".rulebook-toc-btn").forEach((btn, idx) => {
+          tocBody.querySelectorAll(".rulebook-toc-btn").forEach((btn, idx) => {
             btn.classList.toggle("active", RULEBOOK_SECTIONS[idx] && RULEBOOK_SECTIONS[idx].id === sec.id);
           });
+          if (typeof window !== "undefined" && window.innerWidth <= 980) {
+            appState.rulebookTocCollapsed = true;
+            tocBody.classList.add("collapsed");
+            tocToggleBtn.textContent = "▼ Expand Index";
+          }
           const targetEl = document.getElementById(`rulebook-sec-${sec.id}`);
           if (targetEl) targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
         },
       })
     )
+  );
+
+  const tocToggleBtn = el(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-sm rulebook-toc-toggle",
+      onClick: () => {
+        appState.rulebookTocCollapsed = !appState.rulebookTocCollapsed;
+        tocBody.classList.toggle("collapsed", appState.rulebookTocCollapsed);
+        tocToggleBtn.textContent = appState.rulebookTocCollapsed ? "▼ Expand Index" : "▲ Collapse Index";
+      },
+    },
+    appState.rulebookTocCollapsed ? "▼ Expand Index" : "▲ Collapse Index"
+  );
+
+  const tocSidebar = el(
+    "aside",
+    { className: "panel rulebook-toc" },
+    el(
+      "div",
+      { className: "rulebook-toc-header" },
+      el("h3", { className: "panel-title", style: { marginBottom: "0" }, text: "📜 Rulebook Index" }),
+      tocToggleBtn
+    ),
+    !appState.user
+      ? el(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-primary",
+          style: { width: "100%", marginTop: "0.55rem", marginBottom: "0.55rem" },
+          onClick: () => {
+            appState.activeTab = "portal";
+            renderApp();
+          },
+        },
+        "← Back to Welcome & Sign In"
+      )
+      : null,
+    tocBody
   );
 
   return el(

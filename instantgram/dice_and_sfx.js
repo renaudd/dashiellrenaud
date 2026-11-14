@@ -1,5 +1,5 @@
-import { resolveAssetUrl, COLS, ROWS, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getPlayerHexColor, renderSUVIconNode, ROME_DIE_ROMAN_FACES, appState, replaceDenariiTokens, el, resolveGoodCardArtUrl, resolveFullGoodCardFaceUrl, resolveFullEncounterCardFaceUrl } from "./core_ui.js?v=111";
-import { checkPostActionModals, sendGameAction, renderApp, armDieCardAction, handleDieSelectionClick, renderOpponentPublicSUVSummaryNode, getCellOffBoardDirs } from "./app.js?v=111";
+import { resolveAssetUrl, COLS, ROWS, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getPlayerHexColor, renderSUVIconNode, ROME_DIE_ROMAN_FACES, appState, replaceDenariiTokens, el, resolveGoodCardArtUrl, resolveFullGoodCardFaceUrl, resolveFullEncounterCardFaceUrl } from "./core_ui.js?v=112";
+import { checkPostActionModals, sendGameAction, renderApp, armDieCardAction, handleDieSelectionClick, renderOpponentPublicSUVSummaryNode, getCellOffBoardDirs } from "./app.js?v=112";
 
 function toRomanDieSymbol(val) {
   if (typeof val === "string" && ["0", "I", "II", "III", "IV", "V", "VI"].includes(val)) {
@@ -484,7 +484,7 @@ function getDieClickMetaForOverlay(ev, _grp, gIdx, dIdx) {
     const cType = pend.chartType || "death";
     const twistCard = (viewer.influence || []).find((c) => String(c.name || "") === "Twist Of Fate");
     const luckyCard =
-      cType !== "soothsayer"
+      cType !== "soothsayer" && cType !== "schizophrenic"
         ? (viewer.influence || []).find((c) => String(c.name || "") === "Lucky Break")
         : null;
     if (!twistCard && !luckyCard) return null;
@@ -682,7 +682,7 @@ function buildDiceOverlayInteractiveControls() {
     const postChartCards = (viewer.influence || []).filter((c) => {
       const nm = String(c.name || "");
       if (nm === "Twist Of Fate") return true;
-      if (nm === "Lucky Break" && cType !== "soothsayer") return true;
+      if (nm === "Lucky Break" && cType !== "soothsayer" && cType !== "schizophrenic") return true;
       if (!isOtherPlayerEncounter && cType === "mob" && nm === "Man Of The People") return true;
       if (!isOtherPlayerEncounter && cType === "theater" && nm === "Dramaturge") return true;
       return false;
@@ -696,7 +696,7 @@ function buildDiceOverlayInteractiveControls() {
         text:
           postChartCards.length > 0
             ? isOtherPlayerEncounter
-              ? `⚡ Intervention Window on ${encPlayer.name}'s ${cType === "soothsayer" ? "Soothsayer" : "Chart"} Roll: Click the die above to modify/re-roll, or pass!`
+              ? `⚡ Intervention Window on ${encPlayer.name}'s ${(cType === "soothsayer" || cType === "schizophrenic") ? "Schizophrenic" : "Chart"} Roll: Click the die above to modify/re-roll, or pass!`
               : `🃏 Post-Roll Influence Available: Click the die above to modify/re-roll, or confirm outcome!`
             : `Confirm Roll Outcome:`,
       }),
@@ -811,7 +811,7 @@ function buildDiceOutcomeCard(ev, isRolling) {
     { className: "dice-outcome-card" },
     el("div", {
       className: "dice-outcome-title",
-      text: isRolling ? "🎲 Rolling the Roman Bones of Fate..." : ev.outcomeTitle || "Roll Complete",
+      text: isRolling ? "🎲 Rolling the Rome Dice..." : ev.outcomeTitle || "Roll Complete",
     }),
     !isRolling && detailText
       ? el("div", { className: "dice-outcome-detail", text: detailText })
@@ -822,7 +822,7 @@ function buildDiceOutcomeCard(ev, isRolling) {
           text:
             groups.length > 1
               ? "All combat dice for both sides are tumbling simultaneously..."
-              : "6-sided Roman numeral dice (0, I, II, III) in motion...",
+              : "6-sided Rome Dice (0, 0, I, I, II, III) in motion...",
         })
         : null,
     interactiveControls,
@@ -924,7 +924,7 @@ function renderDiceOverlay() {
   const headerNode = el(
     "div",
     { className: "dice-overlay-header" },
-    el("div", { className: "dice-overlay-title", text: ev.title || "Roman Dice Roll" }),
+    el("div", { className: "dice-overlay-title", text: ev.title || "Rome Dice Roll" }),
     ev.subtitle ? el("div", { className: "dice-overlay-subtitle", text: ev.subtitle }) : null
   );
   const stageNode = el("div", { className: "dice-stage-container" }, ...stageItems);
@@ -1200,7 +1200,7 @@ function getNpcBubbleOutcomeTone(ev) {
   if (act === "sell" || act === "deliver" || out === "sell" || out === "gift") return "is-gain";
   if (act === "market_buy" || act === "buy" || out === "buy") return "is-spend";
   if (act === "pickup") return "is-cargo";
-  if (act === "mission" || out === "mission" || vis.chartType === "soothsayer") return "is-quest";
+  if (act === "mission" || out === "mission" || vis.chartType === "soothsayer" || vis.chartType === "schizophrenic") return "is-quest";
   return "is-neutral";
 }
 
@@ -1232,7 +1232,7 @@ function buildNpcSpeechBubbleVisualNodes(ev) {
         ? "/assets/icons/angry_mob.png"
         : vis.chartType === "theater"
           ? "/assets/icons/theater_masks.png"
-          : "/assets/icons/soothsayer_icon.png";
+          : "/assets/icons/schizophrenic_icon.png";
     thumbs.push(
       el(
         "div",

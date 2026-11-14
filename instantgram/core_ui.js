@@ -52,8 +52,15 @@ let _fbCurrentUser = null;
 
 function getStoredSessionToken() {
   try {
-    if (typeof window !== "undefined" && window.sessionStorage) {
-      return window.sessionStorage.getItem("nm_session_token") || null;
+    if (typeof window !== "undefined") {
+      if (window.sessionStorage) {
+        const sTok = window.sessionStorage.getItem("nm_session_token");
+        if (sTok) return sTok;
+      }
+      if (window.localStorage) {
+        const lTok = window.localStorage.getItem("nm_session_token");
+        if (lTok) return lTok;
+      }
     }
   } catch (_e) {}
   return null;
@@ -64,11 +71,14 @@ function setStoredSessionToken(tok) {
     appState.sessionToken = tok || null;
   }
   try {
-    if (typeof window !== "undefined" && window.sessionStorage) {
-      if (tok) {
-        window.sessionStorage.setItem("nm_session_token", String(tok));
-      } else {
-        window.sessionStorage.removeItem("nm_session_token");
+    if (typeof window !== "undefined") {
+      if (window.sessionStorage) {
+        if (tok) window.sessionStorage.setItem("nm_session_token", String(tok));
+        else window.sessionStorage.removeItem("nm_session_token");
+      }
+      if (window.localStorage) {
+        if (tok) window.localStorage.setItem("nm_session_token", String(tok));
+        else window.localStorage.removeItem("nm_session_token");
       }
     }
   } catch (_e) {}
@@ -601,8 +611,8 @@ const DEFAULT_POLITICAL_CLIMATE_OPTIONS = [
     optionNumber: 1,
     timing: "endgame",
     title: "Five-Star Courier",
-    shortText: "Most completed Missions gains 30d",
-    description: "End of game: Most completed Missions gains 30d.",
+    shortText: "Most net completed Jobs gains 30d",
+    description: "End of game: Most net completed Jobs (completed minus failed, min 0) gains 30d.",
   },
   {
     id: "missions_2",
@@ -612,8 +622,8 @@ const DEFAULT_POLITICAL_CLIMATE_OPTIONS = [
     optionNumber: 2,
     timing: "endgame",
     title: "Full Time Employee",
-    shortText: "Receive (gems of one faction × missions done for it) ₿",
-    description: "End of game: each player receives A × B 10d. A = gems of any one faction, B = missions completed for that faction.",
+    shortText: "Receive (gems of one faction × net jobs done for it) ₿",
+    description: "End of game: each player receives A × B 10d. A = gems of any one faction, B = net jobs completed for that faction (completed minus failed, min 0).",
   },
   {
     id: "missions_3",
@@ -1251,6 +1261,7 @@ const SF_RESKIN_RULES = [
   [/\bDecree\b/g, "Ballot Initiative"],
   [/\bProtesterss?\b/g, "Protesters"],
   [/\bTheat(?:er|re) Troupes?\b/g, "Stand-Up Comic"],
+  [/\bSoothsayers?\b/gi, "Schizophrenic"],
   [/\bSchizophrenics?\b/g, "Schizophrenic"],
   [/\bMerchants\b/g, "Dealers"],
   [/\bMerchant\b/g, "Dealer"],
@@ -1286,7 +1297,19 @@ function sfReskinText(rawValue) {
   let out = String(rawValue);
   if (out.trim() === "Mission") return out;
   const NEIGHBORHOOD_MISSION = "__SF_D4_MISSION_NEIGHBORHOOD__";
+  const ROME_DICE_CAP = "__SF_ROME_DICE_CAP__";
+  const ROME_DIE_CAP = "__SF_ROME_DIE_CAP__";
+  const ROME_DICE_LOW = "__SF_ROME_DICE_LOW__";
+  const ROME_DIE_LOW = "__SF_ROME_DIE_LOW__";
+  const ROMAN_NUMERAL_CAP = "__SF_ROMAN_NUMERAL_CAP__";
+  const ROMAN_NUMERAL_LOW = "__SF_ROMAN_NUMERAL_LOW__";
   out = out
+    .replace(/\b(?:Rome|Roman)\s+Dice\b/g, ROME_DICE_CAP)
+    .replace(/\b(?:Rome|Roman)\s+Die\b/g, ROME_DIE_CAP)
+    .replace(/\b(?:Rome|Roman)\s+dice\b/g, ROME_DICE_LOW)
+    .replace(/\b(?:Rome|Roman)\s+die\b/g, ROME_DIE_LOW)
+    .replace(/\bRoman\s+Numeral/g, ROMAN_NUMERAL_CAP)
+    .replace(/\bRoman\s+numeral/g, ROMAN_NUMERAL_LOW)
     .replace(/\bMission District\b/g, `${NEIGHBORHOOD_MISSION} District`)
     .replace(/\b(D4\s*(?:—|–|-|:|\()\s*)Mission\b/g, `$1${NEIGHBORHOOD_MISSION}`)
     .replace(/\bMission(\s*\(D4\))/g, `${NEIGHBORHOOD_MISSION}$1`)
@@ -1294,7 +1317,14 @@ function sfReskinText(rawValue) {
     .replace(/\b(Move to|Scout|Enter|Leave|at|in|to|from|near|into|around|The|the)\s+Mission\b/g, `$1 ${NEIGHBORHOOD_MISSION}`)
     .replace(/(—|–)\s*Mission\b/g, `$1 ${NEIGHBORHOOD_MISSION}`);
   for (const [re, rep] of SF_RESKIN_RULES) out = out.replace(re, rep);
-  return out.replaceAll(NEIGHBORHOOD_MISSION, "Mission");
+  return out
+    .replaceAll(NEIGHBORHOOD_MISSION, "Mission")
+    .replaceAll(ROME_DICE_CAP, "Rome Dice")
+    .replaceAll(ROME_DIE_CAP, "Rome Die")
+    .replaceAll(ROME_DICE_LOW, "Rome dice")
+    .replaceAll(ROME_DIE_LOW, "Rome die")
+    .replaceAll(ROMAN_NUMERAL_CAP, "Roman Numeral")
+    .replaceAll(ROMAN_NUMERAL_LOW, "Roman numeral");
 }
 
 function appendTextWithRomeDice(parentNode, rawValue, isOptionTag = false) {
@@ -1525,7 +1555,7 @@ const GOODS_NAME_TO_ID = {
   "brass knuckles": "wpn_1", "riot shield": "wpn_2", "switchblade": "wpn_3", "glawk 19": "wpn_4",
   "ar-15": "wpn_5", "desert eagle": "wpn_6", "stab vest": "wpn_7", "ballistic helmet": "wpn_8",
   "hunting rifle": "wpn_9", "molotov cocktail": "wpn_10", "pipe bomb": "wpn_11", "ballistic vest": "wpn_12",
-  "mac-10": "wpn_13", "mavberg 500": "wpn_14", "draco ak": "wpn_15", "bearcat .50 cal": "wpn_16",
+  "mac-10": "wpn_13", "mavberg 500": "wpn_14", "draco ak": "wpn_15", "bearcat .50 cal": "wpn_16", "ceramic plate": "wpn_17",
   "rush": "mrb_1", "liquid g": "mrb_2", "whippets": "mrb_3", "tusi": "mrb_4", "bunk molly": "mrb_5",
   "blue punishas": "mrb_6", "pink tezlas": "mrb_7", "red mitsubushis": "mrb_8", "special k": "mrb_9",
   "blue dolphins": "mrb_10", "nexus": "mrb_11", "champagne molly": "mrb_12",
@@ -1596,29 +1626,29 @@ function resolveFullGoodCardFaceUrl(cardOrItem, trackName = "") {
   const rawId = String(c.id || "").trim();
   const mStd = rawId.match(/^((?:grn|mrb|ma|ea|cw|fw|wpn|grd)_\d+)/i);
   if (mStd) {
-    return `/assets/fp/cards/goods/${mStd[1].toLowerCase()}.jpg?v=111`;
+    return `/assets/fp/cards/goods/${mStd[1].toLowerCase()}.jpg?v=112`;
   }
   const mCargo = rawId.match(/^mcargo_(?:enc_)?((?:mis|pat|leg|nef)_\d+)/i);
   if (mCargo) {
-    return `/assets/fp/cards/goods/mcargo_${mCargo[1].toLowerCase()}.jpg?v=111`;
+    return `/assets/fp/cards/goods/mcargo_${mCargo[1].toLowerCase()}.jpg?v=112`;
   }
   if (c.missionId) {
     const mMid = String(c.missionId).match(/(?:enc_)?((?:mis|pat|leg|nef)_\d+)/i);
     if (mMid) {
-      return `/assets/fp/cards/goods/mcargo_${mMid[1].toLowerCase()}.jpg?v=111`;
+      return `/assets/fp/cards/goods/mcargo_${mMid[1].toLowerCase()}.jpg?v=112`;
     }
   }
   const lowerName = String(c.name || "").trim().toLowerCase();
   if (GOODS_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/goods/${GOODS_NAME_TO_ID[lowerName]}.jpg?v=111`;
+    return `/assets/fp/cards/goods/${GOODS_NAME_TO_ID[lowerName]}.jpg?v=112`;
   }
   const tr = String(c.track || c.category || trackName || "").toLowerCase();
-  if (tr.includes("hench") || tr.includes("guard")) return "/assets/fp/cards/goods/grd_1.jpg?v=111";
-  if (tr.includes("weapon")) return "/assets/fp/cards/goods/wpn_4.jpg?v=111";
-  if (tr.includes("opiate") || tr.includes("wine")) return "/assets/fp/cards/goods/cw_2.jpg?v=111";
-  if (tr.includes("upper") || tr.includes("animal")) return "/assets/fp/cards/goods/ea_8.jpg?v=111";
-  if (tr.includes("party") || tr.includes("marble")) return "/assets/fp/cards/goods/mrb_12.jpg?v=111";
-  return "/assets/fp/cards/goods/grn_1.jpg?v=111";
+  if (tr.includes("hench") || tr.includes("guard")) return "/assets/fp/cards/goods/grd_1.jpg?v=112";
+  if (tr.includes("weapon")) return "/assets/fp/cards/goods/wpn_4.jpg?v=112";
+  if (tr.includes("opiate") || tr.includes("wine")) return "/assets/fp/cards/goods/cw_2.jpg?v=112";
+  if (tr.includes("upper") || tr.includes("animal")) return "/assets/fp/cards/goods/ea_8.jpg?v=112";
+  if (tr.includes("party") || tr.includes("marble")) return "/assets/fp/cards/goods/mrb_12.jpg?v=112";
+  return "/assets/fp/cards/goods/grn_1.jpg?v=112";
 }
 
 function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
@@ -1636,55 +1666,55 @@ function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
 }
 
 function resolveFullJobCardFaceUrl(m) {
-  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=111";
+  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=112";
   if (m.source === "encounter" && m.encounterCard && !m.hasDrawnMissionCard) {
     return resolveFullEncounterCardFaceUrl(m.encounterCard);
   }
   const rawId = String(m.id || "").trim();
   const mJob = rawId.match(/^(mis_\d+)/i);
   if (mJob) {
-    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=111`;
+    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=112`;
   }
   const mEnc = rawId.match(/^enc_((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=111`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=112`;
   }
   const lowerName = String(m.name || "").trim().toLowerCase();
   if (JOBS_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=111`;
+    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=112`;
   }
-  return "/assets/fp/cards/jobs/mis_1.jpg?v=111";
+  return "/assets/fp/cards/jobs/mis_1.jpg?v=112";
 }
 
 function resolveFullInfluenceCardFaceUrl(c) {
-  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=111";
+  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=112";
   const rawId = String(c.id || "").trim();
   const mInf = rawId.match(/^(inf_\d+)/i);
   if (mInf) {
-    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=111`;
+    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=112`;
   }
   const lowerName = String(c.name || "").trim().toLowerCase();
   if (INF_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=111`;
+    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=112`;
   }
-  return "/assets/fp/cards/influence/inf_1.jpg?v=111";
+  return "/assets/fp/cards/influence/inf_1.jpg?v=112";
 }
 
 function resolveFullEncounterCardFaceUrl(card, deckKey = "") {
-  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=111";
+  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=112";
   const rawId = String(card.id || "").trim();
   const mEnc = rawId.match(/^((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=111`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=112`;
   }
   const lowerName = String(card.name || "").trim().toLowerCase();
   if (ENC_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=111`;
+    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=112`;
   }
   const dk = String(deckKey || card.deck || "").toLowerCase();
-  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=111";
-  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=111";
-  return "/assets/fp/cards/encounters/pat_2.jpg?v=111";
+  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=112";
+  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=112";
+  return "/assets/fp/cards/encounters/pat_2.jpg?v=112";
 }
 
 const FACTION_FAVOR_INFLUENCE_SPECS = {
