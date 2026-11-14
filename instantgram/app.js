@@ -1,8 +1,8 @@
-import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=112";
-import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=112";
-import { openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=112";
-import { renderRulebookView } from "./rulebook_view.js?v=112";
-import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=112";
+import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=113";
+import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=113";
+import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=113";
+import { renderRulebookView } from "./rulebook_view.js?v=113";
+import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=113";
 
 function navigateToMarketBoardForCategory(category) {
   appState.highlightedMarketTrack = category || null;
@@ -63,20 +63,20 @@ function buildEncounterFigureNodes(encStr, iconClass) {
   if (!encStr || encStr === "None") return [];
   const s = String(encStr);
   if (s === "mob") {
-    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=112", alt: "Protesters" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=113", alt: "Protesters" })];
   }
   if (s === "theater") {
-    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=112", alt: "Open Mic" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=113", alt: "Open Mic" })];
   }
   if (s === "schizophrenic") {
-    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=112", alt: "Schizophrenic" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=113", alt: "Schizophrenic" })];
   }
   const [deckType, countRaw] = s.split("_");
   const isMultiIconDeck = deckType === "cops" || deckType === "criminals" || deckType === "legionaries" || deckType === "nefarious";
   const count = isMultiIconDeck ? Math.max(1, Math.min(4, Number(countRaw) || 1)) : 1;
-  let iconUrl = "/assets/icons/celebrities_icon.png?v=112";
-  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=112";
-  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=112";
+  let iconUrl = "/assets/icons/celebrities_icon.png?v=113";
+  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=113";
+  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=113";
 
   const figs = [];
   for (let i = 0; i < count; i++) {
@@ -2162,6 +2162,13 @@ function renderClockAndTurnBanner(gs, viewer, activePlayer) {
             : "↩️ Undo Turn",
         onClick: () => sendGameAction({ type: "request_undo_turn" }),
       }),
+      el("button", {
+        type: "button",
+        className: "btn btn-sm",
+        title: "Open Decks Interface (Celebrities, Criminals, Cops, Goods, Jobs & Influence)",
+        text: "🃏 Decks",
+        onClick: () => openEncounterDecksOverviewModal(gs),
+      }),
       ...["auto", "rome", "market", "climate", "both"].map((mode) =>
         el("button", {
           className: `btn btn-sm ${appState.boardViewMode === mode ? "btn-primary" : ""}`,
@@ -2292,9 +2299,16 @@ function renderContextualPromptBanner(gs, viewer, activePlayer) {
         el("button", {
           type: "button",
           className: "btn btn-sm",
-          text: "🗑️ Trash Top Tile/Card",
+          text: "🗑️ Trash Tile / Card",
           disabled: viewer.trashedThisTurn || viewer.influence.length === 0,
           onClick: () => openTrashModal(gs, viewer),
+        }),
+        el("button", {
+          type: "button",
+          className: "btn btn-sm",
+          title: "Open Decks Interface (Celebrities, Criminals, Cops, Goods, Jobs & Influence)",
+          text: "🃏 Decks",
+          onClick: () => openEncounterDecksOverviewModal(gs),
         }),
         el("button", {
           type: "button",
@@ -6894,11 +6908,7 @@ function renderRomeNightBoard(gs, viewer) {
           moveDir: reachableDirsByCell[coord] || null,
           adjInfo: adjacentDirInfoByCell[coord] || null,
         };
-        if (isCurrent || rev) {
-          openFaceUpTileUpCloseModal(gs, viewer, coord, cell, rev || scoutedTopTile, moveOpts);
-          return;
-        }
-        openConfirmScoutNeighborhoodModal(gs, viewer, coord, cell, moveOpts);
+        openFaceUpTileUpCloseModal(gs, viewer, coord, cell, rev || scoutedTopTile, moveOpts);
       };
 
       const handleCellMouseEnter = (e) => {
