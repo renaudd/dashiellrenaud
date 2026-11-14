@@ -13,18 +13,18 @@
 
   window.NIGHTMERCHANT_CONFIG = window.NIGHTMERCHANT_CONFIG || {
     // Cloud Run backend URL in production; "" on localhost/127.0.0.1 for local server dev
-    apiBaseUrl: isLocalDev ? "" : "https://nightmerchant-api-208043966891.us-west2.run.app",
+    apiBaseUrl: isLocalDev ? "" : "https://instantgramsf-api-935380114521.us-west2.run.app",
 
     // Non-secret Firebase project identifiers.
     // NOTE: Do NOT commit a Google/Firebase Web API key here — the client receives
     // firebaseConfig dynamically at runtime from GET /api/auth/me on Cloud Run.
     firebaseConfig: {
-      authDomain: "nightmerchant-f183d.firebaseapp.com",
-      projectId: "nightmerchant-f183d",
-      storageBucket: "nightmerchant-f183d.firebasestorage.app",
-      messagingSenderId: "208043966891",
-      appId: "1:208043966891:web:109f98abb8a060359f12ee",
-      measurementId: "G-C0T498L6M7",
+      authDomain: "instantgramsf.firebaseapp.com",
+      projectId: "instantgramsf",
+      storageBucket: "instantgramsf.firebasestorage.app",
+      messagingSenderId: "935380114521",
+      appId: "1:935380114521:web:ea07f0698cdc4629d9a548",
+      measurementId: "G-YN00GM5M78",
     },
   };
 })();
