@@ -2575,6 +2575,12 @@ select {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
+.dyn-edge-E .dyn-edge-enc-group,
+.dyn-edge-W .dyn-edge-enc-group {
+  flex-direction: column;
+  padding: 2px 1px;
+}
+
 .dyn-edge-enc-icon {
   height: 14px;
   width: auto;
@@ -2582,8 +2588,18 @@ select {
   display: block;
 }
 
+.dyn-edge-E .dyn-edge-enc-group.enc-count-4 .dyn-edge-enc-icon,
+.dyn-edge-W .dyn-edge-enc-group.enc-count-4 .dyn-edge-enc-icon {
+  height: 11px;
+}
+
 .inspector-preview .dyn-edge-enc-icon {
   height: 20px;
+}
+
+.inspector-preview .dyn-edge-E .dyn-edge-enc-group.enc-count-4 .dyn-edge-enc-icon,
+.inspector-preview .dyn-edge-W .dyn-edge-enc-group.enc-count-4 .dyn-edge-enc-icon {
+  height: 16px;
 }
 
 /* Trade Banners (Buys & Sells) on Revealed Tile */
@@ -2718,6 +2734,18 @@ select {
   pointer-events: none;
 }
 
+.dyn-tile-center-enc.is-grid-2x2 {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dyn-center-enc-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
 .dyn-center-enc-icon {
   height: 36px;
   width: auto;
@@ -2726,8 +2754,16 @@ select {
   filter: drop-shadow(0 1px 2px rgba(255, 252, 242, 0.95)) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 }
 
+.dyn-tile-center-enc.is-grid-2x2 .dyn-center-enc-icon {
+  height: 26px;
+}
+
 .inspector-preview .dyn-center-enc-icon {
   height: 58px;
+}
+
+.inspector-preview .dyn-tile-center-enc.is-grid-2x2 .dyn-center-enc-icon {
+  height: 44px;
 }
 
 /* Bottom Persistent/Refresh, Gamble Dice, and Tile ID — equidistant from bottom & side edges */
@@ -4629,6 +4665,12 @@ select {
   border: 1px solid rgba(120, 53, 15, 0.55);
   border-radius: 3px;
   padding: 0 2px;
+}
+
+.rome-exit-edge-strip.exit-dir-e .exit-strip-enc-badge,
+.rome-exit-edge-strip.exit-dir-w .exit-strip-enc-badge {
+  flex-direction: column;
+  padding: 2px 1px;
 }
 
 .exit-strip-enc-icon {

@@ -1,8 +1,8 @@
-import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=114";
-import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=114";
-import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=114";
-import { renderRulebookView } from "./rulebook_view.js?v=114";
-import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=114";
+import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=115";
+import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=115";
+import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=115";
+import { renderRulebookView } from "./rulebook_view.js?v=115";
+import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=115";
 
 function navigateToMarketBoardForCategory(category) {
   appState.highlightedMarketTrack = category || null;
@@ -62,21 +62,21 @@ function getSellCategoryClass(cat) {
 function buildEncounterFigureNodes(encStr, iconClass) {
   if (!encStr || encStr === "None") return [];
   const s = String(encStr);
-  if (s === "mob") {
-    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=114", alt: "Protesters" })];
+  if (s === "mob" || s === "protesters" || s === "angry_mob") {
+    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=115", alt: "Protesters" })];
   }
-  if (s === "theater") {
-    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=114", alt: "Open Mic" })];
+  if (s === "theater" || s === "open_mic") {
+    return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=115", alt: "Open Mic" })];
   }
-  if (s === "schizophrenic") {
-    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=114", alt: "Schizophrenic" })];
+  if (s === "schizophrenic" || s === "soothsayer") {
+    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=115", alt: "Schizophrenic" })];
   }
   const [deckType, countRaw] = s.split("_");
   const isMultiIconDeck = deckType === "cops" || deckType === "criminals" || deckType === "legionaries" || deckType === "nefarious";
   const count = isMultiIconDeck ? Math.max(1, Math.min(4, Number(countRaw) || 1)) : 1;
-  let iconUrl = "/assets/icons/celebrities_icon.png?v=114";
-  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=114";
-  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=114";
+  let iconUrl = "/assets/icons/celebrities_icon.png?v=115";
+  if (deckType === "cops" || deckType === "legionaries") iconUrl = "/assets/icons/cops_icon.png?v=115";
+  else if (deckType === "criminals" || deckType === "nefarious") iconUrl = "/assets/icons/criminals_icon.png?v=115";
 
   const figs = [];
   for (let i = 0; i < count; i++) {
@@ -98,7 +98,7 @@ function renderDynamicEdgeSlotNode(dir, edgeVal) {
   } else {
     const figs = buildEncounterFigureNodes(edgeVal, "dyn-edge-enc-icon");
     if (figs.length > 0) {
-      inner = el("span", { className: "dyn-edge-enc-group" }, ...figs);
+      inner = el("span", { className: `dyn-edge-enc-group enc-count-${figs.length}` }, ...figs);
     }
   }
   if (!inner) return null;
@@ -214,7 +214,16 @@ function renderDynamicTileCardNode(tile, coord, mode = "board") {
     },
     ...edgeNodes,
     tradeBannerNodes.length > 0 ? el("div", { className: "dyn-tile-trade-stack" }, ...tradeBannerNodes) : null,
-    centerFigures.length > 0 ? el("div", { className: "dyn-tile-center-enc" }, ...centerFigures) : null,
+    centerFigures.length === 4
+      ? el(
+          "div",
+          { className: "dyn-tile-center-enc is-grid-2x2" },
+          el("div", { className: "dyn-center-enc-row" }, centerFigures[0], centerFigures[1]),
+          el("div", { className: "dyn-center-enc-row" }, centerFigures[2], centerFigures[3])
+        )
+      : centerFigures.length > 0
+        ? el("div", { className: "dyn-tile-center-enc" }, ...centerFigures)
+        : null,
     bottomLeftNode,
     bottomRightNode
   );
@@ -1367,6 +1376,88 @@ function checkPostActionModals(state) {
     }
   } else {
     appState.promptedNpcOfferId = null;
+  }
+
+  // 0C. Check if a mandatory Schizophrenic Job pushed active missions above 5 (must fail 1 non-Schizophrenic job, or 1 Schizophrenic job if holding 6 Schizophrenic jobs)
+  if (
+    state.phase !== "setup_discard" &&
+    state.phase !== "setup_climate" &&
+    state.phase !== "finished" &&
+    !state.pendingEncounter &&
+    !appState.activeDiceOverlay &&
+    Array.isArray(vp.missions) &&
+    vp.missions.length > 5
+  ) {
+    const ovfSig = vp.missions.map((m) => m.id).join(",");
+    if (appState.promptedMissionOverflowSig !== ovfSig) {
+      appState.promptedMissionOverflowSig = ovfSig;
+      const schizoList = vp.missions.filter((m) => m.source === "schizophrenic");
+      const regularList = vp.missions.filter((m) => m.source !== "schizophrenic");
+      const isSixSchizo = schizoList.length > 5;
+      const failableList = isSixSchizo ? schizoList : regularList;
+      showModal(
+        isSixSchizo
+          ? "🔮 6th Schizophrenic Job Triggered — Fail 1 Schizophrenic Job"
+          : "📋 5-Job Limit Exceeded — Fail 1 Active Job",
+        el(
+          "div",
+          {},
+          el("p", {
+            style: { fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "0.85rem", color: "#ffffff" },
+            text: isSixSchizo
+              ? "You already held 5 active Schizophrenic Jobs and triggered a 6th Schizophrenic Job! Because the maximum hand is 5 active Jobs, you must select one of your 6 Schizophrenic Jobs below to fail:"
+              : "A mandatory Schizophrenic Job was assigned while you already held 5 active Jobs! Because Schizophrenic Jobs are unfailable unless you hold 6 of them, you must select one of your non-Schizophrenic Jobs below to fail:",
+          }),
+          el(
+            "div",
+            { style: { display: "flex", flexDirection: "column", gap: "0.55rem", marginBottom: "1rem" } },
+            ...failableList.map((m) => {
+              const isEnc = m.source === "encounter";
+              const isSch = m.source === "schizophrenic";
+              const hFav = Array.isArray(m.hostileFavor) && m.hostileFavor.length > 0 ? m.hostileFavor.join(", ") : "None";
+              const penLabel = isSch
+                ? "Schizophrenic Job — 6th Schizophrenic Overflow (Counts as Failed Job)"
+                : isEnc
+                  ? `Encounter Job — Failure Penalty: ${hFav} Favor`
+                  : "Starting Job — No Favor Penalty";
+              return el(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                    padding: "0.6rem 0.75rem",
+                    background: "rgba(26, 10, 48, 0.92)",
+                    border: "1px solid #ff2e9f",
+                    borderRadius: "6px",
+                  },
+                },
+                el(
+                  "div",
+                  {},
+                  el("div", { style: { fontWeight: "700", color: "#00f0ff", fontSize: "0.9rem" }, text: m.name || "Job" }),
+                  el("div", { style: { fontSize: "0.82rem", color: "#ffffff" }, text: m.description || m.text || "" }),
+                  el("div", { style: { fontSize: "0.75rem", color: "#ff9ed2", marginTop: "0.15rem" }, text: penLabel })
+                ),
+                el("button", {
+                  className: "btn btn-crimson",
+                  text: "✕ Fail This Job",
+                  onClick: () => {
+                    closeModal();
+                    sendGameAction({ type: "cancel_mission", missionId: m.id });
+                  },
+                })
+              );
+            })
+          )
+        )
+      );
+      return;
+    }
+  } else {
+    appState.promptedMissionOverflowSig = null;
   }
 
   // 1. Check if a new scouted tile/card was just revealed
@@ -4531,11 +4622,53 @@ function renderPendingEncounterPanelCore(gs, viewer) {
         !isNpcBuy &&
         !isNpcSell &&
         (Boolean(mRaw) || !String(card.actionText || "").trim()));
-    const activeRegularJobs = (encPlayer.missions || []).filter((m) => m.source !== "schizophrenic");
-    if (isJobAssignment && activeRegularJobs.length >= 5) {
+    const allActiveJobs = encPlayer.missions || [];
+    const activeRegularJobs = allActiveJobs.filter((m) => m.source !== "schizophrenic");
+    const activeSchizoJobs = allActiveJobs.filter((m) => m.source === "schizophrenic");
+    if (isJobAssignment && allActiveJobs.length >= 5) {
       const isStrictThreat =
         rType === "deck_quest_strict" || rType === "mission_strict" || Boolean(pend.combatThreatened);
-      openModal(
+      if (activeRegularJobs.length === 0) {
+        showModal(
+          "🔒 5 Unfailable Schizophrenic Jobs Active",
+          el(
+            "div",
+            {},
+            el("p", {
+              style: { fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "0.85rem", color: "#ffffff" },
+              text: `All 5 of your active Jobs are mandatory Schizophrenic Jobs! Because Schizophrenic Jobs can only be failed if a 6th Schizophrenic Job is triggered, you cannot fail any of your active Jobs to accept ${card.name}'s Job.`,
+            }),
+            el(
+              "div",
+              { style: { display: "flex", justifyContent: "flex-end", gap: "0.6rem", marginTop: "1rem" } },
+              isStrictThreat
+                ? el("button", {
+                    className: "btn btn-crimson",
+                    text: "⚔️ Fight in Combat!",
+                    onClick: () => {
+                      closeModal();
+                      initiateCombatWithConsumablePrompt(viewer, { type: "resolve_encounter", decision: "refuse" });
+                    },
+                  })
+                : el("button", {
+                    className: "btn btn-crimson",
+                    text: "Refuse Job",
+                    onClick: () => {
+                      closeModal();
+                      sendGameAction({ type: "resolve_encounter", decision: "refuse" });
+                    },
+                  }),
+              el("button", {
+                className: "btn",
+                text: "Close",
+                onClick: () => closeModal(),
+              })
+            )
+          )
+        );
+        return;
+      }
+      showModal(
         "📋 5-Job Limit Reached — Fail an Active Job to Accept",
         el(
           "div",
@@ -4543,8 +4676,8 @@ function renderPendingEncounterPanelCore(gs, viewer) {
           el("p", {
             style: { fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "0.85rem", color: "#ffffff" },
             text: isStrictThreat
-              ? `${card.name} is threatening you with a Job (!!), and you already hold the maximum of 5 active Jobs. To accept this Job and avoid Combat, you must choose one of your 5 active Jobs to fail right now (applying its failure penalty), or refuse and fight in Combat!`
-              : `You already hold the maximum of 5 active Jobs. To accept this new Job from ${card.name}, select one of your 5 active Jobs below to fail (applying its failure penalty):`,
+              ? `${card.name} is threatening you with a Job (!!), and you already hold the maximum of 5 active Jobs. To accept this Job and avoid Combat, you must choose one of your failable (non-Schizophrenic) Jobs below to fail right now, or refuse and fight in Combat!`
+              : `You already hold the maximum of 5 active Jobs. To accept this new Job from ${card.name}, select one of your failable (non-Schizophrenic) Jobs below to fail (applying its failure penalty):`,
           }),
           el(
             "div",
@@ -4589,7 +4722,31 @@ function renderPendingEncounterPanelCore(gs, viewer) {
                   },
                 })
               );
-            })
+            }),
+            ...activeSchizoJobs.map((m) =>
+              el(
+                "div",
+                {
+                  style: {
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                    padding: "0.55rem 0.75rem",
+                    background: "rgba(18, 8, 34, 0.65)",
+                    border: "1px dashed rgba(152, 43, 245, 0.65)",
+                    borderRadius: "6px",
+                    opacity: "0.78",
+                  },
+                },
+                el(
+                  "div",
+                  {},
+                  el("div", { style: { fontWeight: "700", color: "#d8b4fe", fontSize: "0.88rem" }, text: `🔮 ${m.name || "Schizophrenic Job"}` }),
+                  el("div", { style: { fontSize: "0.76rem", color: "#e9d5ff" }, text: "🔒 Mandatory Schizophrenic Job — Cannot Fail" })
+                )
+              )
+            )
           ),
           el(
             "div",
@@ -7759,10 +7916,10 @@ function renderPlayerSidebar(gs, viewer) {
         {
           key: "schizophrenic",
           title: `Schizophrenic (${schizophrenicMissions.length})`,
-          sub: canCancelSchizophrenic ? "Cancel 1 Free" : bondedCouriersActive ? "🔒 2× Cash / -10d" : "🔒 Mandatory",
+          sub: canCancelSchizophrenic ? "6th Job Overflow — Fail 1" : bondedCouriersActive ? "🔒 2× Cash / -10d" : "🔒 Unfailable",
           missions: schizophrenicMissions,
           canCancel: canCancelSchizophrenic,
-          cancelLabel: "✕ Cancel Overflow (Free)",
+          cancelLabel: "✕ Fail 6th Schizophrenic Job",
         },
       ].filter((g) => g.missions.length > 0);
 
@@ -7826,7 +7983,7 @@ function renderPlayerSidebar(gs, viewer) {
                 borderRadius: "4px",
                 fontWeight: "700",
               },
-              text: "⚠️ 6 Schizophrenic Missions — Cancel 1 Free!",
+              text: "⚠️ 6 Schizophrenic Jobs — Fail 1 Now!",
             })
             : el("span", {
               style: {

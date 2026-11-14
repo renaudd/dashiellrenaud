@@ -1,5 +1,5 @@
-import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=114";
-import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=114";
+import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=115";
+import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=115";
 
 const GOOD_CATEGORY_DISPLAY_MAP = {
   Grain: "Weed",
@@ -73,21 +73,21 @@ function createStackWatermarkIconNode(kind) {
   if (kLow === "criminals" || kLow === "nefarii") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/criminals_icon.png?v=114",
+      src: "/assets/icons/criminals_icon.png?v=115",
       alt: "Criminals",
     });
   }
   if (kLow === "celebrities" || kLow === "patricii") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/celebrities_icon.png?v=114",
+      src: "/assets/icons/celebrities_icon.png?v=115",
       alt: "Celebrities",
     });
   }
   if (kLow === "cops" || kLow === "legiones") {
     return el("img", {
       className: "tile-watermark-img",
-      src: "/assets/icons/cops_icon.png?v=114",
+      src: "/assets/icons/cops_icon.png?v=115",
       alt: "Cops",
     });
   }
@@ -1328,7 +1328,7 @@ function openLoadCargoPromptModal(m, viewer) {
 
 function openDeliverCargoPromptModal(m, _viewer) {
   const reqBlocks = Number(m.blocks || 1);
-  const canFence = Array.isArray(m.fencedSell) && m.fencedSell.length >= 5 && m.source !== "schizophrenic";
+  const canFence = m.source === "encounter" && Array.isArray(m.fencedSell) && m.fencedSell.length >= 5;
 
   showModal(
     `🏛️ Delivery Destination Reached — ${m.name}`,
@@ -1376,22 +1376,22 @@ function openDeliverCargoPromptModal(m, _viewer) {
 function openCancelMissionConfirmModal(m, schizophrenicTotalCount = 0) {
   const src = m.source || "starting";
   if (src === "schizophrenic" && schizophrenicTotalCount <= 5) {
-    showToast("Canceling or failing a Schizophrenic mission is impossible unless you already have 5 active Schizophrenic missions and take on a 6th!", true);
+    showToast("Canceling or failing a Schizophrenic job is impossible unless you already have 5 active Schizophrenic jobs and trigger a 6th!", true);
     return;
   }
 
   const cargoWarning = m.pickedUp
-    ? `⚠️ Because you have already picked up "${m.item || "the delivery cargo"}", canceling this mission will throw the item away (it cannot be sold).`
+    ? `⚠️ Because you have already picked up "${m.item || "the delivery cargo"}", canceling this job will throw the item away (it cannot be sold).`
     : null;
 
   let ruleExplanation = "";
   if (src === "encounter") {
     const hList = formatHostileFavorPenaltyText(m);
-    ruleExplanation = `Per the rulebook, canceling or failing an Encounter Mission incurs its Thumbs-Down reputational consequences (${hList}).`;
+    ruleExplanation = `Per the rulebook, canceling or failing an Encounter Job incurs its Thumbs-Down reputational consequences (${hList}).`;
   } else if (src === "schizophrenic") {
-    ruleExplanation = "Because you hold more than 5 active Schizophrenic missions, you may cancel one active Schizophrenic mission with no penalty.";
+    ruleExplanation = "Because you hold 6 active Schizophrenic jobs (after triggering a 6th), you must fail one of your Schizophrenic jobs to return to the 5-job limit.";
   } else {
-    ruleExplanation = "Per the rulebook, Starting Missions can be canceled voluntarily at any time with no penalty.";
+    ruleExplanation = "Per the rulebook, Starting Jobs can be canceled voluntarily at any time with no Favor penalty.";
   }
 
   showModal(
@@ -1900,7 +1900,7 @@ function triggerMissionCargoLoadWithOverflow(m, viewer) {
       subcategory: `Mission Cargo (${m.name})`,
       track: m.category || "Grain",
       blocks: reqBlocks,
-      sell: (m.source !== "soothsayer" && m.source !== "schizophrenic") ? m.fencedSell : null,
+      sell: m.source === "encounter" ? m.fencedSell : null,
       combatText: m.combatText || null,
     },
     reqBlocks,
@@ -2148,7 +2148,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Celebrities",
     subtitle: "Tech Founders, A-Listers & VIPs",
     defaultTotal: 30,
-    img: "/assets/icons/card_back_celebrities.png?v=114",
+    img: "/assets/icons/card_back_celebrities.png?v=115",
     shortDesc: "High-society patrons & influencers; rewards favor with Jobs, Cash, and Influence.",
   },
   {
@@ -2156,7 +2156,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Criminals",
     subtitle: "Syndicates, Boosters & Street Crews",
     defaultTotal: 29,
-    img: "/assets/icons/card_back_criminals.png?v=114",
+    img: "/assets/icons/card_back_criminals.png?v=115",
     shortDesc: "Underworld crews & fences; risky shakedowns or black-market deals and shortcuts.",
   },
   {
@@ -2164,7 +2164,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Cops",
     subtitle: "SFPD, DEA, Feds & Task Forces",
     defaultTotal: 30,
-    img: "/assets/icons/card_back_cops.png?v=114",
+    img: "/assets/icons/card_back_cops.png?v=115",
     shortDesc: "Law enforcement checkpoints; contraband sweeps, fines, and combat threats.",
   },
   {
@@ -2172,7 +2172,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Goods",
     subtitle: "Weed, Party, Uppers, Opiates, Weapons & Henchmen",
     defaultTotal: 112,
-    img: "/assets/icons/card_back_goods.png?v=114",
+    img: "/assets/icons/card_back_goods.png?v=115",
     shortDesc: "Next Cargo, Weapon, or Henchman card drawn into the Wholesale Market tracks.",
   },
   {
@@ -2180,7 +2180,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Jobs",
     subtitle: "Deliveries, Drops, Hits & Contracts",
     defaultTotal: 56,
-    img: "/assets/icons/card_back_missions.png?v=114",
+    img: "/assets/icons/card_back_missions.png?v=115",
     shortDesc: "Next Delivery, Sale, or Contract Job card drawn.",
   },
   {
@@ -2188,7 +2188,7 @@ const ALL_PICKER_DECK_SPECS = [
     label: "Influence",
     subtitle: "Burner Apps, Bribes, Tips & Schemes",
     defaultTotal: 43,
-    img: "/assets/icons/card_back_influence.png?v=114",
+    img: "/assets/icons/card_back_influence.png?v=115",
     shortDesc: "Next tactical Influence card drawn or purchased at Dawn.",
   },
 ];
