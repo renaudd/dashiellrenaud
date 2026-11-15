@@ -1,5 +1,5 @@
-import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=121";
-import { renderApp } from "./app.js?v=121";
+import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=124";
+import { renderApp } from "./app.js?v=124";
 
 const RULEBOOK_SECTIONS = [
   {
@@ -156,7 +156,7 @@ const RULEBOOK_SECTIONS = [
       "Step 2 — Movement (1 Step (M)): Move along a passable outgoing edge to an adjacent neighborhood (revealing its top tile if face-down) or out an exterior perimeter edge to Exit San Francisco.",
       "Step 3 — Edge Cost / Hazard: Pay any 2(d) road toll or resolve any Edge Encounter crossed.",
       "Step 4 — Job Cargo Pickup & Delivery: Upon arriving in a neighborhood—BEFORE any Center Tile Encounter triggers—you may load or deliver matching Job Cargo!",
-      "Step 5 — Center Tile Encounter: Resolve any Center Encounter on the tile (Celebrities, Cops, Criminals, Protesters, Open Mic, or Schizophrenic).",
+      "Step 5 — Center Tile Encounter: Resolve any Center Encounter on the tile (Celebrities, Cops, Criminals, Protest, Open Mic, or Prophet).",
       "Step 6 — One Transaction (1 Good/Hr (T), or Bulk Weed!): Sell AT MOST 1 Good card matching a buyer ('Buys:') on your current tile (or an active Sell Job here) at its bold Green (SELL_SYM) price—EXCEPT for non-fenced WEED, where 1 hourly Transaction may sell ANY NUMBER (or all!) of your Weed cards together at the current Weed scarcity modifier! Alternatively, Purchase 1 Good at a Wholesale Spot ('Sells:' at C3, D3, or D4) at its italic Red (BUY_SYM) price, OR Gamble once at a Dice Game tile (up to 20(d) wager).",
       "Step 7 — End-of-Turn Scout: After completing your Move and Transaction actions, you may Scout one time at the end of your turn by peeking at the top unrevealed tile of any neighborhood stack or the top card of any deck. Committing to your Scout action immediately advances the turn so the next dealer in sequence can begin their turn while you finish examining the scouted tile or card.",
     ],
@@ -168,7 +168,7 @@ const RULEBOOK_SECTIONS = [
       "5-Active-Job Limit: A dealer can hold at most 5 active Jobs at a time. If an NPC threatens you with a Job (!!) while you already hold 5 Jobs, you must choose one of your active Jobs to fail (taking that failed Job's favor penalty) to make room for the new Job—or else face the NPC in Combat!",
       "Starting Jobs: Kept during Setup (3 per dealer). Can be canceled voluntarily without Favor penalty (unless Surge Pricing is active, which fines -10(d) on any failed/canceled/unfinished job!). Starting Job Cargo can NEVER be sold or fenced.",
       "Encounter Jobs: Drawn from NPC encounters or assigned directly by an NPC. Encounter Job Cargo displays a bold Green (SELL_SYM) Fence price row—fencing it to a matching buyer sells 1 card for quick Bitcoin, applies Patron Hostile Favor, and FAILS the job (unless Clique Fence is active, which boosts Fence Scarcity by +1 step and prevents fencing from counting as a Failed Job!).",
-      "Schizophrenic Jobs: Mandatory side-quests with 1(R) face-down Influence cards sealed underneath until completed. Cannot be voluntarily canceled unless holding 6 Schizophrenic Jobs simultaneously.",
+      "Prophet Jobs: Mandatory side-quests with 1(R) face-down Influence cards sealed underneath until completed. Cannot be voluntarily canceled unless holding 6 Prophet Jobs simultaneously.",
       "Regime Change & Witness Protection ('Any Player' Clauses): Two high-stakes Encounter Jobs—Regime Change and Witness Protection—trigger if ANY Player defeats Donald Trump or Jared Kushner in combat while you hold the Job! Witness Protection triggers FIRST, awarding ₿2 (+2 Rubies, +1 Diamond) and canceling every active Regime Change job in the game; otherwise, completing Regime Change immediately ends the game in an instant victory for the holder!",
     ],
   },
@@ -196,7 +196,7 @@ const RULEBOOK_SECTIONS = [
       },
       {
         img: "./assets/icons/angry_mob.png?v=121",
-        title: "Protesters (1R Chart)",
+        title: "Protest (1R Chart)",
         desc: "Orange megaphone icon. Roll 1(R): 0 = Lose all Opiates; 1 = Lose all Weed; 2 = Lose your most expensive Good; 3 = Escape unharmed.",
       },
       {
@@ -205,9 +205,9 @@ const RULEBOOK_SECTIONS = [
         desc: "Dark gray microphone icon. Roll 1(R): 0 = Lose all positive Favor; 1 = Lose all negative Favor; 2 = Lose rest of turn & next turn; 3 = Draw 1(R) Influence.",
       },
       {
-        img: "./assets/icons/schizophrenic_icon.png?v=121",
-        title: "Schizophrenic Encounter",
-        desc: "Purple silhouette icon. Draws a mandatory Schizophrenic Job and seals 1(R) face-down Influence cards beneath it until you finish the Job.",
+        img: "./assets/icons/prophet_icon.png?v=121",
+        title: "Prophet Encounter",
+        desc: "Purple silhouette icon. Draws a mandatory Prophet Job and seals 1(R) face-down Influence cards beneath it until you finish the Job.",
       },
       {
         img: "./assets/icons/combat.png",
@@ -234,8 +234,8 @@ const RULEBOOK_SECTIONS = [
       "Friendly vs. Hostile Encounters & Reputation Tiers: Determined by your uncapped net Favor with the NPC's Faction. There are three interaction tiers: !! means comply or fight; ! means comply or accept hostile encounter consequences with no fight; and ? means comply or decline with no penalty for rejecting the offer (refusing an Offer always returns the encounter card to the bottom of its encounter deck, applies neither friendly nor hostile consequences, and does not count as a completed Job; if you accept a ? Job and later fail or abandon that Job, you suffer the encounter's hostile Favor consequences).",
       "Combat Power (CP), Cargo Gear, & Pre-Roll Strike (Pipe Bomb): Both sides roll Action Dice (R) plus Henchmen, Weapons, mandatory Uppers, and Influence modifiers (plus +1 CP per positive Ruby & +2 CP to Cops if Back the Blue is active). Note that Body Armor carries 0 CP in street ambushes (it absorbs wounds instead). Pipe Bomb is a one-time use Pre-Roll (R) Strike weapon used immediately before combat: each unabsorbed wound kills a Henchman or reduces the opponent's count X by 1 (if X reaches 0, if X cannot be reduced, or if a Henchman cannot be killed, the opponent or player is defeated outright!). If Player CP ≥ Opponent CP against an NPC, you win!",
       "Addiction Rule (Mandatory Uppers & Open Mic Sets): Dealers cannot resist dipping into their own stash of stimulants. Any Uppers loaded in your SUV are automatically used in combat (adding both their positive CP rolls/bonuses and any negative crash penalties), and if you encounter an Open Mic on a tile edge or center, you must stop in for a mandatory 1(R) set!",
-      "Armor, Henchmen, & Dealer Fate (Damage Deficit Note): If Opponent CP > Player CP, suffer Raw Wounds = (Opponent CP − Player CP). Body Armor/Shields reduce Wounds first; each remaining Wound kills 1 Henchman. If an unblocked Wound reaches you, roll 1(R) on the Dealer Fate Chart: 0 = Wasted (lose all Goods & your night ends); 1 = Left for dead (lose all Goods); 2 = Jumped & robbed (lose all Bitcoin); 3 = Begged for mercy (lose all Influence cards).",
-      "1(R) Street Charts: Protesters (0: lose all Opiates; 1: lose all Weed; 2: lose most expensive Good; 3: safe), Open Mic (0: undo all Positive-outcome gem changes; 1: undo all Hostile-outcome gem changes; 2: lose rest of turn & next turn; 3: draw 1(R) Influence), Schizophrenic (take mandatory Job + seal 1(R) Influence cards).",
+      "Armor, Henchmen, & Dealer Fate (Damage Deficit Note): If Opponent CP > Player CP, suffer Raw Wounds = (Opponent CP − Player CP). Body Armor/Shields reduce Wounds first; each remaining Wound kills 1 Henchman. If an unblocked Wound reaches you, roll 1(R) on the Dealer Fate Chart: 0 = Out for the night (your night ends without losing any Goods or Bitcoin); 1 = Left for dead (lose all Goods); 2 = Jumped & robbed (lose all Bitcoin); 3 = Begged for mercy (lose all Influence cards).",
+      "1(R) Street Charts: Protest (0: lose all Opiates; 1: lose all Weed; 2: lose most expensive Good; 3: safe), Open Mic (0: undo all Positive-outcome gem changes; 1: undo all Hostile-outcome gem changes; 2: lose rest of turn & next turn; 3: draw 1(R) Influence), Prophet (take mandatory Job + seal 1(R) Influence cards).",
       "Street Dice Gambling: On a tile with the Dice icon, wager 1(d) to 20(d) (capped at 20(d) per gamble action) and roll 1(R) to win Wager × Roll!",
     ],
   },
@@ -245,7 +245,7 @@ const RULEBOOK_SECTIONS = [
     bullets: [
       "6:00 A.M. Dawn Curfew Fine: Any dealer still inside San Francisco after Turn 10 (5:00 A.M.) pays a nightly curfew fine—Thursday 12(d), Friday 20(d), Saturday 32(d)—halved to 6(d) / 10(d) / 16(d) if standing on one of the 5 Entry Point tiles (B1, F1, F5, D6, A5)!",
       "Tile Cleanup: Persistent tiles (⤹) stay face-up for future nights; Refresh tiles (↻) discard after encounters; ordinary revealed tiles return to the bottom of their stacks at Dawn.",
-      "Buy Influence Cards: Cost scales by your current Influence hand size (including face-down Schizophrenic cards): 0–1 cards = 2(d), 2–3 cards = 4(d), 4 cards = 6(d), 5+ cards = 8(d).",
+      "Buy Influence Cards: Cost scales by your current Influence hand size (including face-down Prophet cards): 0–1 cards = 2(d), 2–3 cards = 4(d), 4 cards = 6(d), 5+ cards = 8(d).",
       "Loans: Thursday Loan grants +20(d) (repay 30(d) at end of Friday, or 45(d) at end of Saturday / Sunday Morning Reckoning). Friday Loan grants +40(d) (repay 60(d) at end of Saturday / Sunday Morning Reckoning).",
       "Henchmen Salaries & Sunday Tie-Breaker Policy: Pay each retained Henchman's current Market hiring cost (or release them to the bottom of the Market deck). During Saturday Clean-Up, you may also toggle whether your crew is authorized to expend Combat Influence cards during Sunday Morning Reckoning PvP tie-breakers.",
     ],

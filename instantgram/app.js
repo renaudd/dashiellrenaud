@@ -1,8 +1,8 @@
-import { getNightMerchantApiBaseUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=121";
-import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=121";
-import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=121";
-import { renderRulebookView } from "./rulebook_view.js?v=121";
-import { toRomanDieSymbol, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=121";
+import { getNightMerchantApiBaseUrl, resolveAssetUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, sfReskinText, appendTextWithRomeDice, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, getInfluenceCardEffectText, getInfluenceCardFavorList, getInfluenceCardMiniEffectText, formatMiniJobRewardText, formatMiniJobFullDescriptionText, abbreviateAtTwoLines12Font, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=124";
+import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=124";
+import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=124";
+import { renderRulebookView } from "./rulebook_view.js?v=124";
+import { toRomanDieSymbol, resolveDieSymbolColor, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=124";
 
 function navigateToMarketBoardForCategory(category) {
   appState.highlightedMarketTrack = category || null;
@@ -63,13 +63,13 @@ function buildEncounterFigureNodes(encStr, iconClass) {
   if (!encStr || encStr === "None") return [];
   const s = String(encStr);
   if (s === "mob" || s === "protesters" || s === "angry_mob") {
-    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=121", alt: "Protesters" })];
+    return [el("img", { className: iconClass, src: "/assets/icons/angry_mob.png?v=121", alt: "Protest" })];
   }
   if (s === "theater" || s === "open_mic") {
     return [el("img", { className: iconClass, src: "/assets/icons/theater_masks.png?v=121", alt: "Open Mic" })];
   }
-  if (s === "schizophrenic" || s === "soothsayer") {
-    return [el("img", { className: iconClass, src: "/assets/icons/schizophrenic_icon.png?v=121", alt: "Schizophrenic" })];
+  if (s === "Prophet" || s === "soothsayer") {
+    return [el("img", { className: iconClass, src: "/assets/icons/prophet_icon.png?v=121", alt: "Prophet" })];
   }
   const [deckType, countRaw] = s.split("_");
   const isMultiIconDeck = deckType === "cops" || deckType === "criminals" || deckType === "legionaries" || deckType === "nefarious";
@@ -107,7 +107,7 @@ function renderDynamicEdgeSlotNode(dir, edgeVal) {
       s === "angry_mob" ||
       s === "theater" ||
       s === "open_mic" ||
-      s === "schizophrenic" ||
+      s === "Prophet" ||
       s === "soothsayer" ||
       s.startsWith("celebrities") ||
       s.startsWith("patricians");
@@ -116,8 +116,8 @@ function renderDynamicEdgeSlotNode(dir, edgeVal) {
         ? "protesters"
         : s === "theater" || s === "open_mic"
           ? "open-mic"
-          : s === "schizophrenic" || s === "soothsayer"
-            ? "schizophrenic"
+          : s === "Prophet" || s === "soothsayer"
+            ? "Prophet"
             : s.startsWith("celebrities") || s.startsWith("patricians")
               ? "celebrities"
               : s.startsWith("cops") || s.startsWith("legionaries")
@@ -327,8 +327,8 @@ function renderBuriedInfluenceStackCardBackNode(m, buriedCount) {
           className: "phys-inf-back-sub",
           text:
             safeCount > 0
-              ? `Face-down beneath "${m.name || "Schizophrenic Mission"}". Claimed into your hand upon completion.`
-              : `No Influence cards are currently buried beneath "${m.name || "Schizophrenic Mission"}".`,
+              ? `Face-down beneath "${m.name || "Prophet Mission"}". Claimed into your hand upon completion.`
+              : `No Influence cards are currently buried beneath "${m.name || "Prophet Mission"}".`,
         })
       ),
       el(
@@ -340,6 +340,300 @@ function renderBuriedInfluenceStackCardBackNode(m, buriedCount) {
   );
 }
 
+function shouldUseMiniCards() {
+  return typeof window !== "undefined" && Number(window.innerWidth) > 0 && window.innerWidth < 900;
+}
+
+function getAbbrevMerchantName(player) {
+  const raw = String((player && (player.name || player.displayName || player.label)) || "Player").trim();
+  if (!raw) return "Player";
+  const firstWord = raw.split(/\s+/)[0];
+  return firstWord.length > 8 ? `${firstWord.slice(0, 7)}…` : firstWord;
+}
+
+function createSectionCollapseToggleBtn(sectionKey, isCollapsed, labelText) {
+  return el("button", {
+    type: "button",
+    className: "collapse-toggle-btn",
+    "data-collapse-section": sectionKey,
+    title: labelText,
+    "aria-label": labelText,
+    text: isCollapsed ? "+" : "−",
+    onClick: (e) => {
+      e.stopPropagation();
+      if (!appState.collapsedSections) {
+        appState.collapsedSections = { clockBoard: false, merchantsInRome: false, factionStandings: false };
+      }
+      appState.collapsedSections[sectionKey] = !Boolean(appState.collapsedSections[sectionKey]);
+      renderApp();
+    },
+  });
+}
+
+function refreshAllMiniJobCardDescriptions() {
+  if (typeof document === "undefined") return;
+  const nodes = document.querySelectorAll(".mini-phone-job-desc[data-full-desc]");
+  nodes.forEach((node) => {
+    const fullDesc = node.getAttribute("data-full-desc") || "";
+    const w = node.clientWidth || (node.parentElement && node.parentElement.clientWidth) || 64;
+    if (w > 20) {
+      const nextTxt = abbreviateAtTwoLines12Font(fullDesc, w - 2);
+      if (node.textContent !== nextTxt) {
+        node.textContent = nextTxt;
+      }
+    }
+  });
+}
+
+function openFullCardImageModal(cardOrMission, kind = "job", opts = {}) {
+  if (!cardOrMission) return;
+  const isJob = kind === "job";
+  const titleName = sfReskinText(cardOrMission.name || (isJob ? "Job Card" : "Influence Card"));
+  const fullImgUrl = isJob
+    ? resolveFullJobCardFaceUrl(cardOrMission)
+    : resolveFullInfluenceCardFaceUrl(cardOrMission);
+
+  const modalActionBtns = [];
+  if (opts && typeof opts.onClick === "function" && opts.selectable) {
+    const isCurrentlySelected = Boolean(opts.selected);
+    modalActionBtns.push(
+      el("button", {
+        type: "button",
+        className: `btn ${isCurrentlySelected ? "btn-crimson" : "btn-primary"}`,
+        text: isCurrentlySelected ? "↩ Keep Card (Unmark Discard)" : "🗑️ Mark Card to Discard",
+        onClick: () => {
+          closeModal();
+          opts.onClick();
+        },
+      })
+    );
+  }
+  if (opts && Array.isArray(opts.modalActions)) {
+    for (const actBtn of opts.modalActions) {
+      if (actBtn) modalActionBtns.push(actBtn);
+    }
+  }
+
+  let secondaryCardNode = null;
+  if (isJob && cardOrMission.source === "encounter" && cardOrMission.encounterCard && cardOrMission.hasDrawnMissionCard) {
+    const encUrl = resolveFullEncounterCardFaceUrl(cardOrMission.encounterCard);
+    secondaryCardNode = el(
+      "div",
+      { className: "full-card-modal-secondary" },
+      el("div", {
+        className: "full-card-modal-sublabel",
+        text: `Attached Patron: ${sfReskinText(cardOrMission.encounterCard.name || cardOrMission.patronName || "Encounter")}`,
+      }),
+      el(
+        "div",
+        { className: "phys-card phys-full-bleed-card full-card-modal-frame" },
+        el("img", {
+          className: "phys-full-bleed-card-img",
+          src: encUrl,
+          alt: cardOrMission.encounterCard.name || "Encounter",
+        })
+      )
+    );
+  } else if (isJob && cardOrMission.source === "Prophet") {
+    const buriedCount = Number(
+      cardOrMission.underInfluenceCount !== undefined
+        ? cardOrMission.underInfluenceCount
+        : Array.isArray(cardOrMission.underInfluence)
+          ? cardOrMission.underInfluence.length
+          : 0
+    );
+    secondaryCardNode = el(
+      "div",
+      {
+        style: {
+          padding: "0.5rem 0.75rem",
+          borderRadius: "6px",
+          background: "rgba(59, 7, 100, 0.85)",
+          border: "1px solid #c084fc",
+          color: "#f3e8ff",
+          fontSize: "0.82rem",
+          textAlign: "center",
+          fontWeight: "700",
+        },
+      },
+      `🔮 Prophet Job • ${buriedCount} Sealed Influence Card${buriedCount === 1 ? "" : "s"} Beneath (Unlocked on Completion)`
+    );
+  }
+
+  const bodyNode = el(
+    "div",
+    { className: "full-card-modal-body" },
+    el(
+      "div",
+      { className: "full-card-modal-showcase" },
+      el(
+        "div",
+        { className: "phys-card phys-full-bleed-card full-card-modal-frame" },
+        el("img", {
+          className: "phys-full-bleed-card-img",
+          src: fullImgUrl,
+          alt: titleName,
+        })
+      ),
+      secondaryCardNode
+    ),
+    modalActionBtns.length > 0
+      ? el("div", { className: "full-card-modal-actions" }, ...modalActionBtns)
+      : null,
+    el(
+      "div",
+      { style: { display: "flex", justifyContent: "flex-end", marginTop: "0.65rem" } },
+      el("button", {
+        type: "button",
+        className: "btn",
+        text: "Close",
+        onClick: closeModal,
+      })
+    )
+  );
+
+  showModal(`${isJob ? "📱 Job Card" : "🃏 Influence Card"} — ${titleName}`, bodyNode);
+}
+
+function renderMiniJobCardFaceNode(m, opts = {}) {
+  const { selectable = false, selected = false } = opts;
+  const titleStr = sfReskinText(m.name || "Job");
+  const rewardStr = formatMiniJobRewardText(m);
+  const fullDesc = formatMiniJobFullDescriptionText(m);
+  const initialDesc = abbreviateAtTwoLines12Font(fullDesc, 62);
+  const gemNodes = renderFactionGemNodes(m.favor || []);
+
+  const rewTextSpan = el("span", { className: "mini-job-reward-text" });
+  appendTextWithRomeDice(rewTextSpan, `: ${rewardStr}`);
+
+  const descNode = el("div", {
+    className: "mini-phone-job-desc",
+    "data-full-desc": fullDesc,
+    text: initialDesc,
+  });
+
+  const srcKey = String(m.source || "starting").toLowerCase();
+  const statusClasses = [
+    "phys-card",
+    "phys-mission-card",
+    "phys-mini-phone-card",
+    `job-src-${srcKey}`,
+    selectable ? "selectable" : "",
+    selected ? "selected-discard" : "",
+    m.pickedUp ? "is-picked-up" : "",
+    m.canDeliverCargo || (Array.isArray(m.completableSells) && m.completableSells.length > 0) ? "is-can-complete" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const node = el(
+    "div",
+    {
+      className: statusClasses,
+      title: `${titleStr} — Tap to view full card`,
+      onClick: (e) => {
+        e.stopPropagation();
+        openFullCardImageModal(m, "job", opts);
+      },
+    },
+    selected ? el("div", { className: "phys-card-discard-ribbon", text: "DISCARD" }) : null,
+    el(
+      "div",
+      { className: "mini-phone-top-bezel" },
+      el("span", { className: "mini-phone-speaker-pill" }),
+      el("span", { className: "mini-phone-camera-dot" })
+    ),
+    el(
+      "div",
+      { className: "mini-phone-screen mini-screen-job" },
+      el("div", { className: "mini-phone-title mini-job-title", text: titleStr }),
+      el(
+        "div",
+        { className: "mini-phone-job-reward" },
+        el("img", {
+          className: "phys-inline-icon mini-card-cash-icon",
+          src: resolveAssetUrl("/assets/icons/cash_white.png"),
+          alt: "[cash]",
+        }),
+        rewTextSpan
+      ),
+      descNode,
+      gemNodes.length > 0
+        ? el("div", { className: "mini-phone-gems" }, ...gemNodes)
+        : null
+    ),
+    el(
+      "div",
+      { className: "mini-phone-bottom-bezel" },
+      el("span", { className: "mini-phone-home-bar" })
+    )
+  );
+
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => {
+      if (descNode.isConnected) {
+        const w = descNode.clientWidth || 62;
+        descNode.textContent = abbreviateAtTwoLines12Font(fullDesc, w - 2);
+      }
+    });
+  }
+
+  return node;
+}
+
+function renderMiniInfluenceCardFaceNode(c, opts = {}) {
+  const { selectable = false, selected = false } = opts;
+  const titleStr = sfReskinText(c.name || "Influence");
+  const effectStr = getInfluenceCardMiniEffectText(c);
+  const gemNodes = renderFactionGemNodes(getInfluenceCardFavorList(c));
+
+  const effectNode = el("div", { className: "mini-phone-inf-effect" });
+  appendTextWithRomeDice(effectNode, effectStr);
+
+  const statusClasses = [
+    "phys-card",
+    "phys-influence-card",
+    "phys-mini-phone-card",
+    selectable ? "selectable" : "",
+    selected ? "selected-discard" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return el(
+    "div",
+    {
+      className: statusClasses,
+      title: `${titleStr} — Tap to view full card`,
+      onClick: (e) => {
+        e.stopPropagation();
+        openFullCardImageModal(c, "influence", opts);
+      },
+    },
+    selected ? el("div", { className: "phys-card-discard-ribbon", text: "DISCARD" }) : null,
+    el(
+      "div",
+      { className: "mini-phone-top-bezel" },
+      el("span", { className: "mini-phone-speaker-pill" }),
+      el("span", { className: "mini-phone-camera-dot" })
+    ),
+    el(
+      "div",
+      { className: "mini-phone-screen mini-screen-influence" },
+      el("div", { className: "mini-phone-title mini-inf-title", text: titleStr }),
+      effectNode,
+      gemNodes.length > 0
+        ? el("div", { className: "mini-phone-gems" }, ...gemNodes)
+        : null
+    ),
+    el(
+      "div",
+      { className: "mini-phone-bottom-bezel" },
+      el("span", { className: "mini-phone-home-bar" })
+    )
+  );
+}
+
 function renderPhysicalMissionCardNode(m, opts = {}) {
   const {
     selectable = false,
@@ -347,9 +641,11 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
     onClick = null,
     showStatusTag = false,
     canCancel = false,
-    cancelLabel = "✕ Cancel Mission",
-    schizophrenicTotalCount = 0,
+    cancelLabel = "✕ Cancel",
+    ProphetTotalCount = 0,
+    fullImage = false,
   } = opts;
+  const useFullCard = Boolean(fullImage || !shouldUseMiniCards());
   const reqBlocks = Math.max(1, Number(m.blocks) || 1);
   const buriedCount = Number(
     m.underInfluenceCount !== undefined
@@ -359,54 +655,63 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
         : 0
   );
 
-  const deliveryStatusBadgeNode =
-    showStatusTag && m.kind === "delivery"
-      ? el("span", {
-        style: {
-          fontSize: "0.55rem",
-          background: m.canDeliverCargo
-            ? "#15803d"
-            : m.pickedUp
-              ? "#16a34a"
-              : m.canLoadCargo
-                ? "#d97706"
-                : "rgba(74, 52, 32, 0.78)",
-          color: "#fff",
-          padding: "1px 4px",
-          borderRadius: "3px",
-          fontWeight: "800",
-        },
-        text: m.canDeliverCargo
-          ? `DELIVER @ ${m.deliverCell}`
-          : m.pickedUp
-            ? `CARGO LOADED → ${m.deliverCell}`
-            : m.canLoadCargo
-              ? `READY AT ${m.pickupCell}`
-              : `PICK UP @ ${m.pickupCell}`,
-      })
-      : null;
-
   const externalActions = [];
-  if (m.canLoadCargo) {
+  const modalActions = [];
+
+  if (selectable && typeof onClick === "function" && !useFullCard) {
     externalActions.push(
       el(
         "button",
         {
           type: "button",
-          className: "mission-load-cargo-btn",
+          className: `btn btn-sm mini-card-slot-btn ${selected ? "btn-crimson" : ""}`,
+          onClick: (e) => {
+            e.stopPropagation();
+            onClick();
+          },
+        },
+        selected ? "✓ Discard" : "Discard"
+      )
+    );
+  }
+
+  if (m.canLoadCargo) {
+    const loadHandler = (e) => {
+      if (e) e.stopPropagation();
+      closeModal();
+      const gsCurr = appState.gameState;
+      const viewerCurr =
+        gsCurr && Array.isArray(gsCurr.players)
+          ? gsCurr.players[gsCurr.viewerPlayerIndex || 0]
+          : null;
+      triggerMissionCargoLoadWithOverflow(m, viewerCurr);
+    };
+    externalActions.push(
+      el(
+        "button",
+        {
+          type: "button",
+          className: `mission-load-cargo-btn ${useFullCard ? "" : "mini-card-slot-btn"}`.trim(),
           title:
             m.hasCargoSpace === false
               ? `SUV full — click to discard Goods on your SUV and load ${m.item || "Cargo"} (${reqBlocks}■)`
               : `Load ${m.item || "Cargo"} (${reqBlocks}■) onto your SUV`,
-          onClick: (e) => {
-            e.stopPropagation();
-            const gsCurr = appState.gameState;
-            const viewerCurr =
-              gsCurr && Array.isArray(gsCurr.players)
-                ? gsCurr.players[gsCurr.viewerPlayerIndex || 0]
-                : null;
-            triggerMissionCargoLoadWithOverflow(m, viewerCurr);
-          },
+          onClick: loadHandler,
+        },
+        useFullCard
+          ? m.hasCargoSpace === false
+            ? `📦 Load ${m.item || "Cargo"} (${reqBlocks}■ • Swap)`
+            : `📦 Load Cargo (${m.item || "Cargo"} • ${reqBlocks}■)`
+          : `📦 Load (${reqBlocks}■)`
+      )
+    );
+    modalActions.push(
+      el(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-primary",
+          onClick: loadHandler,
         },
         m.hasCargoSpace === false
           ? `📦 Load ${m.item || "Cargo"} (${reqBlocks}■ • Swap)`
@@ -415,18 +720,30 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
     );
   }
   if (m.canDeliverCargo) {
+    const deliverHandler = (e) => {
+      if (e) e.stopPropagation();
+      closeModal();
+      sendGameAction({ type: "delivery_complete_mission", missionId: m.id });
+    };
     externalActions.push(
       el(
         "button",
         {
           type: "button",
-          className: "mission-deliver-cargo-btn",
+          className: `mission-deliver-cargo-btn ${useFullCard ? "" : "mini-card-slot-btn"}`.trim(),
           title: `Deliver ${m.item || "Cargo"} at ${m.deliverCell} to complete Mission "${m.name}"`,
-          onClick: (e) => {
-            e.stopPropagation();
-            closeModal();
-            sendGameAction({ type: "delivery_complete_mission", missionId: m.id });
-          },
+          onClick: deliverHandler,
+        },
+        useFullCard ? `🏛️ Deliver ${m.item || "Cargo"} Here (${m.deliverCell})` : `🏛️ Deliver`
+      )
+    );
+    modalActions.push(
+      el(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-primary",
+          onClick: deliverHandler,
         },
         `🏛️ Deliver ${m.item || "Cargo"} Here (${m.deliverCell})`
       )
@@ -437,79 +754,104 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
     if (bulkGrainSells.length >= 2) {
       const relMod = formatTileModifier(bulkGrainSells[0].modifier || m.modifier || "=");
       const totalBulkPrice = bulkGrainSells.reduce((acc, s) => acc + (Number(s.price) || 0), 0);
+      const bulkHandler = (e) => {
+        if (e) e.stopPropagation();
+        closeModal();
+        sendGameAction({
+          type: "delivery_sell",
+          category: "Weed",
+          bulkGrain: true,
+          cardIds: bulkGrainSells.map((s) => s.cardId),
+          missionId: m.id,
+        });
+      };
       externalActions.push(
         el(
           "button",
           {
             type: "button",
-            className: "mission-sell-complete-btn",
-            title: `Bulk Weed Sale: Sell all ${bulkGrainSells.length} Weed cards in ${m.cell || "this neighborhood"
-              } at ${relMod} (${totalBulkPrice}d total) and complete Job "${m.name}"`,
-            onClick: (e) => {
-              e.stopPropagation();
-              closeModal();
-              sendGameAction({
-                type: "delivery_sell",
-                category: "Weed",
-                bulkGrain: true,
-                cardIds: bulkGrainSells.map((s) => s.cardId),
-                missionId: m.id,
-              });
-            },
+            className: `mission-sell-complete-btn ${useFullCard ? "" : "mini-card-slot-btn"}`.trim(),
+            title: `Bulk Weed Sale: Sell all ${bulkGrainSells.length} Weed cards in ${m.cell || "this neighborhood"} at ${relMod} (${totalBulkPrice}d total) and complete Job "${m.name}"`,
+            onClick: bulkHandler,
           },
-          replaceDenariiTokens(
-            `🌿 Bulk Sell All ${bulkGrainSells.length} Weed (${totalBulkPrice}d @ ${relMod}) — Complete!`
-          )
+          useFullCard
+            ? replaceDenariiTokens(`🌿 Bulk Sell All ${bulkGrainSells.length} Weed (${totalBulkPrice}d @ ${relMod}) — Complete!`)
+            : replaceDenariiTokens(`🌿 All (${totalBulkPrice}d)`)
+        )
+      );
+      modalActions.push(
+        el(
+          "button",
+          { type: "button", className: "btn btn-primary", onClick: bulkHandler },
+          replaceDenariiTokens(`🌿 Bulk Sell All ${bulkGrainSells.length} Weed (${totalBulkPrice}d @ ${relMod}) — Complete!`)
         )
       );
     }
     for (const s of m.completableSells) {
       const relMod = formatTileModifier(s.modifier || m.modifier || "=");
+      const sellHandler = (e) => {
+        if (e) e.stopPropagation();
+        closeModal();
+        sendGameAction({
+          type: "delivery_sell",
+          category: s.category,
+          cardIds: [s.cardId],
+          missionId: m.id,
+        });
+      };
       externalActions.push(
         el(
           "button",
           {
             type: "button",
-            className: "mission-sell-complete-btn",
+            className: `mission-sell-complete-btn ${useFullCard ? "" : "mini-card-slot-btn"}`.trim(),
             title: `Sell ${s.cardName} in ${m.cell || "this neighborhood"} at ${relMod} (${s.price} Denarii) and complete Mission "${m.name}"`,
-            onClick: (e) => {
-              e.stopPropagation();
-              closeModal();
-              sendGameAction({
-                type: "delivery_sell",
-                category: s.category,
-                cardIds: [s.cardId],
-                missionId: m.id,
-              });
-            },
+            onClick: sellHandler,
           },
+          useFullCard
+            ? replaceDenariiTokens(`💰 Sell ${s.cardName} (${s.price}d @ ${relMod}) — Complete!`)
+            : replaceDenariiTokens(`💰 Sell (${s.price}d)`)
+        )
+      );
+      modalActions.push(
+        el(
+          "button",
+          { type: "button", className: "btn btn-primary", onClick: sellHandler },
           replaceDenariiTokens(`💰 Sell ${s.cardName} (${s.price}d @ ${relMod}) — Complete!`)
         )
       );
       if (Array.isArray(s.amethystBoostOptions) && s.amethystBoostOptions.length > 0) {
         for (const boost of s.amethystBoostOptions) {
+          const boostHandler = (e) => {
+            if (e) e.stopPropagation();
+            closeModal();
+            sendGameAction({
+              type: "delivery_sell",
+              category: s.category,
+              cardIds: [s.cardId],
+              missionId: m.id,
+              spendAmethysts: boost.spend,
+            });
+          };
           externalActions.push(
             el(
               "button",
               {
                 type: "button",
-                className: "mission-sell-amethyst-btn",
+                className: `mission-sell-amethyst-btn ${useFullCard ? "" : "mini-card-slot-btn"}`.trim(),
                 title: `Spend ${boost.spend} DSA Sapphire(s) to boost sale price to ${boost.price} Denarii and complete Mission "${m.name}"`,
-                onClick: (e) => {
-                  e.stopPropagation();
-                  closeModal();
-                  sendGameAction({
-                    type: "delivery_sell",
-                    category: s.category,
-                    cardIds: [s.cardId],
-                    missionId: m.id,
-                    spendAmethysts: boost.spend,
-                  });
-                },
+                onClick: boostHandler,
               },
-              replaceDenariiTokens(
-                `🔮 Sell ${s.cardName} (-${boost.spend} Sapphire → ${boost.price}d)`
-              )
+              useFullCard
+                ? replaceDenariiTokens(`🔮 Sell ${s.cardName} (-${boost.spend} Sapphire → ${boost.price}d)`)
+                : replaceDenariiTokens(`🔮 -${boost.spend}💎→${boost.price}d`)
+            )
+          );
+          modalActions.push(
+            el(
+              "button",
+              { type: "button", className: "btn", onClick: boostHandler },
+              replaceDenariiTokens(`🔮 Sell ${s.cardName} (-${boost.spend} Sapphire → ${boost.price}d)`)
             )
           );
         }
@@ -517,93 +859,157 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
     }
   }
   if (m.canClaimExpose) {
+    const claimHandler = (e) => {
+      if (e) e.stopPropagation();
+      closeModal();
+      sendGameAction({ type: "delivery_complete_mission", missionId: m.id });
+    };
     externalActions.push(
       el(
         "button",
         {
           type: "button",
-          className: "mission-deliver-cargo-btn",
+          className: `mission-deliver-cargo-btn ${useFullCard ? "" : "mini-card-slot-btn"}`.trim(),
           title: `Claim completed Expose Mission "${m.name}"`,
-          onClick: (e) => {
-            e.stopPropagation();
-            closeModal();
-            sendGameAction({ type: "delivery_complete_mission", missionId: m.id });
-          },
+          onClick: claimHandler,
         },
-        `✓ Complete Mission (${m.name})`
+        useFullCard ? `✓ Complete Mission (${m.name})` : "✓ Claim"
       )
+    );
+    modalActions.push(
+      el("button", { type: "button", className: "btn btn-primary", onClick: claimHandler }, `✓ Complete Mission (${m.name})`)
     );
   }
   if (m.canFightEncounter) {
     const useCb = Boolean(m.canFightEncounter.useCasusBelli);
     const targetLabel = m.canFightEncounter.npcName || "Target";
+    const fightHandler = (e) => {
+      if (e) e.stopPropagation();
+      closeModal();
+      sendGameAction({
+        type: "resolve_encounter",
+        decision: useCb ? "use_casus_belli" : "fight",
+      });
+    };
     externalActions.push(
       el(
         "button",
         {
           type: "button",
-          className: "mission-fight-complete-btn",
+          className: `mission-fight-complete-btn ${useFullCard ? "" : "mini-card-slot-btn"}`.trim(),
           title: useCb
             ? `Play Casus Belli to initiate combat against ${targetLabel} for Mission "${m.name}"`
             : `Initiate combat against ${targetLabel} for Mission "${m.name}"`,
-          onClick: (e) => {
-            e.stopPropagation();
-            closeModal();
-            sendGameAction({
-              type: "resolve_encounter",
-              decision: useCb ? "use_casus_belli" : "fight",
-            });
-          },
+          onClick: fightHandler,
         },
+        useFullCard ? `⚔️ Fight ${targetLabel}${useCb ? " (Casus Belli)" : ""} — Advance!` : "⚔️ Fight"
+      )
+    );
+    modalActions.push(
+      el(
+        "button",
+        { type: "button", className: "btn btn-crimson", onClick: fightHandler },
         `⚔️ Fight ${targetLabel}${useCb ? " (Casus Belli)" : ""} — Advance!`
       )
     );
   }
   if (canCancel) {
+    const cancelHandler = (e) => {
+      if (e) e.stopPropagation();
+      openCancelMissionConfirmModal(m, ProphetTotalCount);
+    };
     externalActions.push(
       el(
         "button",
         {
           type: "button",
-          className: `mission-cancel-btn ${m.source === "encounter" ? "penalty" : "free"}`,
-          onClick: (e) => {
-            e.stopPropagation();
-            openCancelMissionConfirmModal(m, schizophrenicTotalCount);
-          },
+          className: `mission-cancel-btn ${useFullCard ? "" : "mini-card-slot-btn"} ${m.source === "encounter" ? "penalty" : "free"}`.trim(),
+          title: cancelLabel,
+          onClick: cancelHandler,
         },
+        useFullCard ? cancelLabel : "✕ Cancel"
+      )
+    );
+    modalActions.push(
+      el(
+        "button",
+        { type: "button", className: "btn btn-crimson", onClick: cancelHandler },
         cancelLabel
       )
     );
   }
 
-  const cardFace = el(
-    "div",
-    {
-      className: `phys-card phys-mission-card phys-full-bleed-card ${selectable ? "selectable" : ""} ${selected ? "selected-discard" : ""}`,
-      onClick,
-    },
-    selected ? el("div", { className: "phys-card-discard-ribbon", text: "DISCARD" }) : null,
-    el("img", {
-      className: "phys-full-bleed-card-img",
-      src: resolveFullJobCardFaceUrl(m),
-      alt: m.name || "Job",
-      loading: "lazy",
-    })
-  );
-
-  let visualCardNode = cardFace;
-  if (showStatusTag && m.source === "encounter" && m.encounterCard) {
-    if (!m.hasDrawnMissionCard) {
-      // Embedded Encounter Mission: remains a physical Encounter card on the Mission Board
-      const encNode = renderPhysicalEncounterCardNode(m.encounterCard, null, { interactive: false });
-      visualCardNode = el(
-        "div",
-        { className: "enc-on-mission-board-wrap" },
-        encNode
-      );
-    } else {
-      // Deck Quest: Drawn Mission card sits on top of the Encounter card, with clickable protruding side edge
-      const stackKey = String(m.id || m.name || "enc_stack");
+  let visualCardNode = null;
+  if (useFullCard) {
+    const cardFace = el(
+      "div",
+      {
+        className: `phys-card phys-mission-card phys-full-bleed-card ${selectable ? "selectable" : ""} ${selected ? "selected-discard" : ""}`,
+        style: { cursor: "pointer" },
+        onClick: onClick || (() => openFullCardImageModal(m, "job", { ...opts, modalActions })),
+      },
+      selected ? el("div", { className: "phys-card-discard-ribbon", text: "DISCARD" }) : null,
+      el("img", {
+        className: "phys-full-bleed-card-img",
+        src: resolveFullJobCardFaceUrl(m),
+        alt: m.name || "Job",
+      })
+    );
+    visualCardNode = cardFace;
+    if (showStatusTag && !fullImage && m.source === "encounter" && m.encounterCard) {
+      if (!m.hasDrawnMissionCard) {
+        const encNode = renderPhysicalEncounterCardNode(m.encounterCard, null, { interactive: false });
+        visualCardNode = el(
+          "div",
+          {
+            className: "enc-on-mission-board-wrap",
+            style: { cursor: "pointer" },
+            onClick: () => openFullCardImageModal(m, "job", { ...opts, modalActions }),
+          },
+          encNode
+        );
+      } else {
+        const stackKey = String(m.id || m.name || "enc_stack");
+        const isSwapped = appState.swappedMissionStackIds.has(stackKey);
+        const toggleStackSwap = (e) => {
+          e.stopPropagation();
+          if (appState.swappedMissionStackIds.has(stackKey)) {
+            appState.swappedMissionStackIds.delete(stackKey);
+          } else {
+            appState.swappedMissionStackIds.add(stackKey);
+          }
+          renderApp();
+        };
+        const encDeckKey = String(m.encounterCard.deck || "celebrities").toLowerCase();
+        const patronLabel = m.encounterCard.name || m.patronName || "Encounter";
+        const topNode = isSwapped
+          ? renderPhysicalEncounterCardNode(m.encounterCard, null, { interactive: false })
+          : cardFace;
+        const edgeNode = el(
+          "button",
+          {
+            type: "button",
+            className: `mission-stack-protruding-edge ${isSwapped ? "edge-mission" : `edge-encounter deck-${encDeckKey}`}`,
+            title: isSwapped
+              ? `Click side edge to bring Job "${m.name || "Job"}" to the top`
+              : `Click protruding Encounter edge to inspect "${patronLabel}"`,
+            onClick: toggleStackSwap,
+          },
+          el("span", { className: "protruding-edge-swap-icon", text: "⇄" }),
+          el("span", {
+            className: "protruding-edge-label",
+            text: isSwapped ? `Job: ${m.name || "Job"}` : patronLabel,
+          })
+        );
+        visualCardNode = el(
+          "div",
+          { className: "mission-card-stack-wrap" },
+          el("div", { className: "mission-card-stack-top" }, topNode),
+          edgeNode
+        );
+      }
+    } else if (showStatusTag && !fullImage && m.source === "Prophet") {
+      const stackKey = String(m.id || m.name || "sooth_stack");
       const isSwapped = appState.swappedMissionStackIds.has(stackKey);
       const toggleStackSwap = (e) => {
         e.stopPropagation();
@@ -614,26 +1020,29 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
         }
         renderApp();
       };
-      const encDeckKey = String(m.encounterCard.deck || "celebrities").toLowerCase();
-      const patronLabel = m.encounterCard.name || m.patronName || "Encounter";
-      const topNode = isSwapped
-        ? renderPhysicalEncounterCardNode(m.encounterCard, null, { interactive: false })
-        : cardFace;
+      const topNode = isSwapped ? renderBuriedInfluenceStackCardBackNode(m, buriedCount) : cardFace;
+      const edgeSlices = [];
+      if (!isSwapped) {
+        const sliceCount = Math.min(3, Math.max(1, buriedCount || 1));
+        for (let i = 0; i < sliceCount; i++) {
+          edgeSlices.push(el("span", { className: "protruding-inf-slice", style: { "--slice-idx": String(i) } }));
+        }
+      }
       const edgeNode = el(
         "button",
         {
           type: "button",
-          className: `mission-stack-protruding-edge ${isSwapped ? "edge-mission" : `edge-encounter deck-${encDeckKey}`
-            }`,
+          className: `mission-stack-protruding-edge ${isSwapped ? "edge-mission" : "edge-influence-stack"}`,
           title: isSwapped
-            ? `Click side edge to bring Mission "${m.name || "Quest"}" to the top`
-            : `Click protruding Encounter edge to inspect "${patronLabel}"`,
+            ? `Click side edge to bring Prophet Job "${m.name || "Job"}" to the top`
+            : `Click protruding stack edge to view ${buriedCount} face-down Influence card${buriedCount === 1 ? "" : "s"} buried beneath`,
           onClick: toggleStackSwap,
         },
+        ...edgeSlices,
         el("span", { className: "protruding-edge-swap-icon", text: "⇄" }),
         el("span", {
           className: "protruding-edge-label",
-          text: isSwapped ? `Missio: ${m.name || "Quest"}` : patronLabel,
+          text: isSwapped ? `Job: ${m.name || "Job"}` : `🃏 ×${buriedCount} Buried`,
         })
       );
       visualCardNode = el(
@@ -643,51 +1052,8 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
         edgeNode
       );
     }
-  } else if (showStatusTag && m.source === "schizophrenic") {
-    // Schizophrenic Mission: sits on top of a face-down stack of Influence cards with clickable protruding side edge
-    const stackKey = String(m.id || m.name || "sooth_stack");
-    const isSwapped = appState.swappedMissionStackIds.has(stackKey);
-    const toggleStackSwap = (e) => {
-      e.stopPropagation();
-      if (appState.swappedMissionStackIds.has(stackKey)) {
-        appState.swappedMissionStackIds.delete(stackKey);
-      } else {
-        appState.swappedMissionStackIds.add(stackKey);
-      }
-      renderApp();
-    };
-    const topNode = isSwapped ? renderBuriedInfluenceStackCardBackNode(m, buriedCount) : cardFace;
-    const edgeSlices = [];
-    if (!isSwapped) {
-      const sliceCount = Math.min(3, Math.max(1, buriedCount || 1));
-      for (let i = 0; i < sliceCount; i++) {
-        edgeSlices.push(el("span", { className: "protruding-inf-slice", style: { "--slice-idx": String(i) } }));
-      }
-    }
-    const edgeNode = el(
-      "button",
-      {
-        type: "button",
-        className: `mission-stack-protruding-edge ${isSwapped ? "edge-mission" : "edge-influence-stack"
-          }`,
-        title: isSwapped
-          ? `Click side edge to bring Schizophrenic Mission "${m.name || "Mission"}" back to the top`
-          : "Click protruding Influence stack edge to check the exact number of buried Influence cards",
-        onClick: toggleStackSwap,
-      },
-      ...edgeSlices,
-      el("span", { className: "protruding-edge-swap-icon", text: "⇄" }),
-      el("span", {
-        className: "protruding-edge-label",
-        text: isSwapped ? `Missio: ${m.name || "Schizophrenic"}` : "Influence Stack",
-      })
-    );
-    visualCardNode = el(
-      "div",
-      { className: "mission-card-stack-wrap" },
-      el("div", { className: "mission-card-stack-top" }, topNode),
-      edgeNode
-    );
+  } else {
+    visualCardNode = renderMiniJobCardFaceNode(m, { ...opts, modalActions });
   }
 
   if (externalActions.length === 0) {
@@ -702,38 +1068,79 @@ function renderPhysicalMissionCardNode(m, opts = {}) {
 }
 
 /**
- * Renders an Influence card in the new smartphone social media post format.
+ * Renders an Influence card as a phone-screen mini-card on narrow screens, or full-bleed card when fullImage is true or the screen fits 5 normal cards.
+ * Clicking any card opens the full card image modal.
  */
 function renderPhysicalInfluenceCardNode(c, opts = {}) {
-  const { selectable = false, selected = false, onClick = null, actionButton = null } = opts;
+  const { selectable = false, selected = false, onClick = null, actionButton = null, modalActionButton = null, fullImage = false } = opts;
+  const useFullCard = Boolean(fullImage || !shouldUseMiniCards());
   const rawArtId = c.id && c.id.startsWith("inf_") ? String(c.id) : "inf_1";
   const artId = rawArtId.replace(/([0-9]+)[a-z]+$/i, "$1");
   const numId = Number(String(artId).replace("inf_", "")) || 1;
   const plat = INFLUENCE_SOCIAL_PLATFORMS[(numId - 1) % INFLUENCE_SOCIAL_PLATFORMS.length];
 
-  const cardFace = el(
-    "div",
-    {
-      className: `phys-card phys-influence-card phys-full-bleed-card ${plat.cls} ${selectable ? "selectable" : ""} ${selected ? "selected-discard" : ""}`,
-      onClick,
-    },
-    selected ? el("div", { className: "phys-card-discard-ribbon", text: "DISCARD" }) : null,
-    el("img", {
-      className: "phys-full-bleed-card-img",
-      src: resolveFullInfluenceCardFaceUrl(c),
-      alt: c.name || "Influence",
-      loading: "lazy",
-    })
-  );
+  const modalActions = [];
+  if (modalActionButton) {
+    modalActions.push(modalActionButton);
+  } else if (actionButton && typeof actionButton.cloneNode === "function") {
+    const clonedBtn = actionButton.cloneNode(true);
+    clonedBtn.onclick = (e) => {
+      closeModal();
+      actionButton.click();
+      if (e) e.stopPropagation();
+    };
+    modalActions.push(clonedBtn);
+  }
 
-  if (!actionButton) {
+  let cardFace = null;
+  if (useFullCard) {
+    cardFace = el(
+      "div",
+      {
+        className: `phys-card phys-influence-card phys-full-bleed-card ${plat.cls} ${selectable ? "selectable" : ""} ${selected ? "selected-discard" : ""}`,
+        style: { cursor: "pointer" },
+        onClick: onClick || (() => openFullCardImageModal(c, "influence", { ...opts, modalActions })),
+      },
+      selected ? el("div", { className: "phys-card-discard-ribbon", text: "DISCARD" }) : null,
+      el("img", {
+        className: "phys-full-bleed-card-img",
+        src: resolveFullInfluenceCardFaceUrl(c),
+        alt: c.name || "Influence",
+      })
+    );
+  } else {
+    cardFace = renderMiniInfluenceCardFaceNode(c, { ...opts, modalActions });
+  }
+
+  const slotActions = [];
+  if (selectable && typeof onClick === "function" && !useFullCard) {
+    slotActions.push(
+      el(
+        "button",
+        {
+          type: "button",
+          className: `btn btn-sm mini-card-slot-btn ${selected ? "btn-crimson" : ""}`,
+          onClick: (e) => {
+            e.stopPropagation();
+            onClick();
+          },
+        },
+        selected ? "✓ Discard" : "Discard"
+      )
+    );
+  }
+  if (actionButton) {
+    slotActions.push(actionButton);
+  }
+
+  if (slotActions.length === 0) {
     return cardFace;
   }
   return el(
     "div",
     { className: "phys-card-slot" },
     cardFace,
-    el("div", { className: "phys-card-external-actions" }, actionButton)
+    el("div", { className: "phys-card-external-actions" }, ...slotActions)
   );
 }
 
@@ -961,6 +1368,71 @@ function applyUserDefaultBoardView(settings) {
   }
 }
 
+function isUserNavigatingMarketBoard() {
+  if (appState.marketBoardTouchActive) return true;
+  if (appState.marketBoardLastScrollAt > 0 && Date.now() - appState.marketBoardLastScrollAt < 6000) {
+    return true;
+  }
+  return false;
+}
+
+function triggerCopsPoliceLightsFlash() {
+  if (typeof document === "undefined" || !document.body) return;
+  if (appState._copsSirenFlashTimer) {
+    clearTimeout(appState._copsSirenFlashTimer);
+    appState._copsSirenFlashTimer = null;
+  }
+  document.body.classList.remove("cops-siren-flash-active");
+  const prevOverlay = document.getElementById("cops-police-flash-overlay");
+  if (prevOverlay) prevOverlay.remove();
+
+  void document.body.offsetWidth;
+
+  const overlay = el(
+    "div",
+    {
+      id: "cops-police-flash-overlay",
+      className: "cops-police-flash-overlay",
+      "aria-hidden": "true",
+    },
+    el("div", { className: "cops-siren-beam cops-siren-beam-red" }),
+    el("div", { className: "cops-siren-beam cops-siren-beam-blue" }),
+    el("div", { className: "cops-siren-cabin-reflection" })
+  );
+  document.body.appendChild(overlay);
+  document.body.classList.add("cops-siren-flash-active");
+
+  appState._copsSirenFlashTimer = setTimeout(() => {
+    document.body.classList.remove("cops-siren-flash-active");
+    const elNow = document.getElementById("cops-police-flash-overlay");
+    if (elNow) elNow.remove();
+    appState._copsSirenFlashTimer = null;
+  }, 2000);
+}
+
+if (typeof window !== "undefined") {
+  window.triggerCopsPoliceLightsFlash = triggerCopsPoliceLightsFlash;
+}
+
+function checkAndTriggerCopsSirenFlash(gs) {
+  if (!gs || !gs.pendingEncounter) return;
+  const pend = gs.pendingEncounter;
+  const deckKey = String((pend.deck || (pend.card && pend.card.deck)) || "").toLowerCase();
+  const cardId = String((pend.card && pend.card.id) || "").toLowerCase();
+  const isCops =
+    deckKey === "cops" ||
+    deckKey === "legionaries" ||
+    deckKey === "legiones" ||
+    cardId.startsWith("leg_");
+  if (!isCops) return;
+  const copsKey = `${appState.currentGameId || "local"}:${gs.night || 1}:${gs.turn || 0}:${pend.playerIndex ?? 0}:${(pend.card && (pend.card.id || pend.card.name)) || "cops"
+    }`;
+  if (appState.lastFlashedCopsEncounterKey !== copsKey) {
+    appState.lastFlashedCopsEncounterKey = copsKey;
+    triggerCopsPoliceLightsFlash();
+  }
+}
+
 function syncGameUiTransitions(gs, isSwitchingGame = false) {
   if (!gs) return;
   const gameId = appState.currentGameId;
@@ -988,17 +1460,21 @@ function syncGameUiTransitions(gs, isSwitchingGame = false) {
     }
     appState.pendingScrollToClimate = true;
   } else if (gameChanged || exitedClimatePhase || enteredMarketPhase || exitedMarketPhase) {
-    appState.highlightedMarketTrack = null;
-    const savedPref =
-      appState.user && appState.user.settings && appState.user.settings.defaultBoardView
-        ? String(appState.user.settings.defaultBoardView)
-        : "auto";
-    if (["both", "rome", "market"].includes(savedPref)) {
-      appState.boardViewMode = savedPref;
-    } else if (savedPref === "split") {
-      appState.boardViewMode = "both";
-    } else if (appState.boardViewMode !== "both") {
-      appState.boardViewMode = "auto";
+    if (!gameChanged && isUserNavigatingMarketBoard() && appState.boardViewMode !== "both") {
+      appState.boardViewMode = "market";
+    } else {
+      appState.highlightedMarketTrack = null;
+      const savedPref =
+        appState.user && appState.user.settings && appState.user.settings.defaultBoardView
+          ? String(appState.user.settings.defaultBoardView)
+          : "auto";
+      if (["both", "rome", "market"].includes(savedPref)) {
+        appState.boardViewMode = savedPref;
+      } else if (savedPref === "split") {
+        appState.boardViewMode = "both";
+      } else if (appState.boardViewMode !== "both") {
+        appState.boardViewMode = "auto";
+      }
     }
   }
 
@@ -1040,6 +1516,20 @@ function syncGameUiTransitions(gs, isSwitchingGame = false) {
 function installChronicleViewportScrollWatcher() {
   if (appState._chronicleWatcherInstalled) return;
   appState._chronicleWatcherInstalled = true;
+  appState._lastMiniCardsMode = shouldUseMiniCards();
+  window.addEventListener(
+    "resize",
+    () => {
+      const nextMiniMode = shouldUseMiniCards();
+      if (appState._lastMiniCardsMode !== nextMiniMode) {
+        appState._lastMiniCardsMode = nextMiniMode;
+        renderApp();
+        return;
+      }
+      refreshAllMiniJobCardDescriptions();
+    },
+    { passive: true }
+  );
   window.addEventListener(
     "scroll",
     () => {
@@ -1109,34 +1599,66 @@ async function bootstrap() {
   startPolling();
 }
 
+function buildTabletopSnapshotKey(res) {
+  if (!res) return "";
+  try {
+    return JSON.stringify({ s: res.summary || null, g: res.state || null });
+  } catch (_e) {
+    return String(Date.now());
+  }
+}
+
+async function pollTabletopGameNow() {
+  if (!appState.user || appState.user.needsUsernameSetup) return;
+  if (appState.activeTab !== "tabletop" || !appState.currentGameId) return;
+  if (appState._tabletopPollInFlight || appState._pendingActionCount > 0) return;
+
+  const polledGameId = appState.currentGameId;
+  appState._tabletopPollInFlight = true;
+  try {
+    const res = await apiRequest(`/api/games/${polledGameId}`);
+    if (appState.currentGameId !== polledGameId || appState._pendingActionCount > 0) {
+      return;
+    }
+    const nextKey = buildTabletopSnapshotKey(res);
+    const hasChanged = nextKey !== appState._lastTabletopPollJson;
+    appState.gameSummary = res.summary;
+    appState.gameState = res.state;
+    if (hasChanged) {
+      appState._lastTabletopPollJson = nextKey;
+      syncGameUiTransitions(res.state, false);
+      enqueueNewNpcEvents(res.state, false);
+      enqueueNewDiceEvents(res.state);
+      enqueueNewMissionEvents(res.state);
+      renderApp();
+      if (!document.getElementById("modal-root")?.hasChildNodes()) {
+        checkPostActionModals(res.state);
+      }
+    } else {
+      updateTabTurnTitle();
+    }
+  } catch (err) {
+    if (err && err.message && err.message.includes("Game not found")) {
+      appState.currentGameId = null;
+      appState.gameSummary = null;
+      appState.gameState = null;
+      appState._lastTabletopPollJson = "";
+      appState.activeTab = "portal";
+      await refreshPortalOverview();
+      showToast("This game has been terminated.", true);
+      renderApp();
+    }
+  } finally {
+    appState._tabletopPollInFlight = false;
+  }
+}
+
 function startPolling() {
   if (appState.pollTimer) clearInterval(appState.pollTimer);
   appState.pollTimer = setInterval(async () => {
     if (!appState.user || appState.user.needsUsernameSetup) return;
     if (appState.activeTab === "tabletop" && appState.currentGameId) {
-      try {
-        const res = await apiRequest(`/api/games/${appState.currentGameId}`);
-        appState.gameSummary = res.summary;
-        appState.gameState = res.state;
-        syncGameUiTransitions(res.state, false);
-        enqueueNewNpcEvents(res.state, false);
-        enqueueNewDiceEvents(res.state);
-        enqueueNewMissionEvents(res.state);
-        renderApp();
-        if (!document.getElementById("modal-root")?.hasChildNodes()) {
-          checkPostActionModals(res.state);
-        }
-      } catch (err) {
-        if (err && err.message && err.message.includes("Game not found")) {
-          appState.currentGameId = null;
-          appState.gameSummary = null;
-          appState.gameState = null;
-          appState.activeTab = "portal";
-          await refreshPortalOverview();
-          showToast("This game has been terminated.", true);
-          renderApp();
-        }
-      }
+      await pollTabletopGameNow();
     } else if (appState.activeTab === "portal") {
       try {
         await refreshPortalOverview();
@@ -1272,7 +1794,7 @@ function openMissionCompletionModal(ev) {
     el(
       "div",
       { style: { display: "flex", justifyContent: "center", margin: "0.2rem 0" } },
-      el("div", { style: { width: "250px" } }, renderPhysicalMissionCardNode(m, { showStatusTag: false }))
+      el("div", { style: { width: "250px" } }, renderPhysicalMissionCardNode(m, { showStatusTag: false, fullImage: true }))
     ),
     el(
       "div",
@@ -1424,7 +1946,7 @@ function checkPostActionModals(state) {
     appState.promptedNpcOfferId = null;
   }
 
-  // 0C. Check if a mandatory Schizophrenic Job pushed active missions above 5 (must fail 1 non-Schizophrenic job, or 1 Schizophrenic job if holding 6 Schizophrenic jobs)
+  // 0C. Check if a mandatory Prophet Job pushed active missions above 5 (must fail 1 non-Prophet job, or 1 Prophet job if holding 6 Prophet jobs)
   if (
     state.phase !== "setup_discard" &&
     state.phase !== "setup_climate" &&
@@ -1437,13 +1959,13 @@ function checkPostActionModals(state) {
     const ovfSig = vp.missions.map((m) => m.id).join(",");
     if (appState.promptedMissionOverflowSig !== ovfSig) {
       appState.promptedMissionOverflowSig = ovfSig;
-      const schizoList = vp.missions.filter((m) => m.source === "schizophrenic");
-      const regularList = vp.missions.filter((m) => m.source !== "schizophrenic");
+      const schizoList = vp.missions.filter((m) => m.source === "Prophet");
+      const regularList = vp.missions.filter((m) => m.source !== "Prophet");
       const isSixSchizo = schizoList.length > 5;
       const failableList = isSixSchizo ? schizoList : regularList;
       showModal(
         isSixSchizo
-          ? "🔮 6th Schizophrenic Job Triggered — Fail 1 Schizophrenic Job"
+          ? "🔮 6th Prophet Job Triggered — Fail 1 Prophet Job"
           : "📋 5-Job Limit Exceeded — Fail 1 Active Job",
         el(
           "div",
@@ -1451,18 +1973,18 @@ function checkPostActionModals(state) {
           el("p", {
             style: { fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "0.85rem", color: "#ffffff" },
             text: isSixSchizo
-              ? "You already held 5 active Schizophrenic Jobs and triggered a 6th Schizophrenic Job! Because the maximum hand is 5 active Jobs, you must select one of your 6 Schizophrenic Jobs below to fail:"
-              : "A mandatory Schizophrenic Job was assigned while you already held 5 active Jobs! Because Schizophrenic Jobs are unfailable unless you hold 6 of them, you must select one of your non-Schizophrenic Jobs below to fail:",
+              ? "You already held 5 active Prophet Jobs and triggered a 6th Prophet Job! Because the maximum hand is 5 active Jobs, you must select one of your 6 Prophet Jobs below to fail:"
+              : "A mandatory Prophet Job was assigned while you already held 5 active Jobs! Because Prophet Jobs are unfailable unless you hold 6 of them, you must select one of your non-Prophet Jobs below to fail:",
           }),
           el(
             "div",
             { style: { display: "flex", flexDirection: "column", gap: "0.55rem", marginBottom: "1rem" } },
             ...failableList.map((m) => {
               const isEnc = m.source === "encounter";
-              const isSch = m.source === "schizophrenic";
+              const isSch = m.source === "Prophet";
               const hFav = Array.isArray(m.hostileFavor) && m.hostileFavor.length > 0 ? m.hostileFavor.join(", ") : "None";
               const penLabel = isSch
-                ? "Schizophrenic Job — 6th Schizophrenic Overflow (Counts as Failed Job)"
+                ? "Prophet Job — 6th Prophet Overflow (Counts as Failed Job)"
                 : isEnc
                   ? `Encounter Job — Failure Penalty: ${hFav} Favor`
                   : "Starting Job — No Favor Penalty";
@@ -1573,12 +2095,15 @@ async function openGame(gameId) {
     appState.currentGameId = gameId;
     appState.gameSummary = res.summary;
     appState.gameState = res.state;
+    appState._lastTabletopPollJson = buildTabletopSnapshotKey(res);
     appState.setupDiscardMissions.clear();
     appState.setupDiscardInfluence.clear();
     syncGameUiTransitions(res.state, isSwitchingGame);
     if (isSwitchingGame) {
       appState.marketBoardScrollLeft = 0;
       appState.marketBoardScrollTop = 0;
+      appState.marketBoardLastScrollAt = 0;
+      appState.marketBoardTouchActive = false;
       appState.climateBoardScrollLeft = 0;
       seedSeenScoutIds(res.state);
       stopNpcTurnPacing();
@@ -1616,6 +2141,7 @@ async function openGame(gameId) {
 
 async function sendGameAction(actionPayload) {
   if (!appState.currentGameId) return;
+  appState._pendingActionCount = (appState._pendingActionCount || 0) + 1;
   try {
     const res = await apiRequest(`/api/games/${appState.currentGameId}/action`, "POST", actionPayload);
     if (res.user) {
@@ -1645,6 +2171,7 @@ async function sendGameAction(actionPayload) {
     }
     appState.gameSummary = res.summary;
     appState.gameState = res.state;
+    appState._lastTabletopPollJson = buildTabletopSnapshotKey(res);
     syncGameUiTransitions(res.state, false);
     enqueueNewNpcEvents(res.state, false);
     enqueueNewDiceEvents(res.state);
@@ -1664,6 +2191,8 @@ async function sendGameAction(actionPayload) {
     checkPostActionModals(res.state);
   } catch (err) {
     showToast(err.message, true);
+  } finally {
+    appState._pendingActionCount = Math.max(0, (appState._pendingActionCount || 1) - 1);
   }
 }
 
@@ -1671,6 +2200,8 @@ function renderApp() {
   const root = document.getElementById("app-root");
   if (!root) return;
 
+  const prevWindowScrollX = typeof window !== "undefined" ? window.scrollX || 0 : 0;
+  const prevWindowScrollY = typeof window !== "undefined" ? window.scrollY || 0 : 0;
   const prevMarketMatrixEl = document.querySelector(".ostia-market-board-matrix");
   if (prevMarketMatrixEl) {
     appState.marketBoardScrollLeft = prevMarketMatrixEl.scrollLeft;
@@ -1720,15 +2251,30 @@ function renderApp() {
   } else {
     const marketMatrixEl = document.querySelector(".ostia-market-board-matrix");
     if (marketMatrixEl) {
-      if (typeof appState.marketBoardScrollLeft === "number" && appState.marketBoardScrollLeft > 0) {
-        marketMatrixEl.scrollLeft = appState.marketBoardScrollLeft;
+      const savedLeft = typeof appState.marketBoardScrollLeft === "number" ? appState.marketBoardScrollLeft : 0;
+      const savedTop = typeof appState.marketBoardScrollTop === "number" ? appState.marketBoardScrollTop : 0;
+      marketMatrixEl.scrollLeft = savedLeft;
+      marketMatrixEl.scrollTop = savedTop;
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(() => {
+          if (marketMatrixEl.isConnected) {
+            if (Math.abs(marketMatrixEl.scrollLeft - savedLeft) > 1) {
+              marketMatrixEl.scrollLeft = savedLeft;
+            }
+            if (Math.abs(marketMatrixEl.scrollTop - savedTop) > 1) {
+              marketMatrixEl.scrollTop = savedTop;
+            }
+          }
+        });
       }
-      if (typeof appState.marketBoardScrollTop === "number" && appState.marketBoardScrollTop > 0) {
-        marketMatrixEl.scrollTop = appState.marketBoardScrollTop;
+      if (prevMarketMatrixEl && isUserNavigatingMarketBoard() && typeof window !== "undefined") {
+        if (Math.abs((window.scrollY || 0) - prevWindowScrollY) > 2) {
+          window.scrollTo(prevWindowScrollX, prevWindowScrollY);
+        }
       }
     }
     const climateMatrixEl = document.querySelector(".senate-climate-board-matrix");
-    if (climateMatrixEl && typeof appState.climateBoardScrollLeft === "number" && appState.climateBoardScrollLeft > 0) {
+    if (climateMatrixEl && typeof appState.climateBoardScrollLeft === "number") {
       climateMatrixEl.scrollLeft = appState.climateBoardScrollLeft;
     }
     const logBoxEl = document.getElementById("chronicle-log-box");
@@ -1736,17 +2282,20 @@ function renderApp() {
       logBoxEl.scrollTop = appState.chronicleUserScrolled ? appState.chronicleScrollTop : 0;
     }
     const gs = appState.gameState;
+    checkAndTriggerCopsSirenFlash(gs);
     const pend = gs && gs.pendingEncounter;
     if (pend) {
       const encKey = `${appState.currentGameId || ""}:${pend.stage || "pre_decision"}:${(pend.card && (pend.card.id || pend.card.name)) || pend.chartType || ""
         }`;
       if (appState.lastAutoScrolledEncounterKey !== encKey) {
         appState.lastAutoScrolledEncounterKey = encKey;
-        const encPanelEl = document.getElementById("pending-encounter-panel");
-        if (encPanelEl && typeof encPanelEl.getBoundingClientRect === "function") {
-          const rect = encPanelEl.getBoundingClientRect();
-          if (rect.top < 0 || rect.top > window.innerHeight * 0.7) {
-            encPanelEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (!isUserNavigatingMarketBoard()) {
+          const encPanelEl = document.getElementById("pending-encounter-panel");
+          if (encPanelEl && typeof encPanelEl.getBoundingClientRect === "function") {
+            const rect = encPanelEl.getBoundingClientRect();
+            if (rect.top < 0 || rect.top > window.innerHeight * 0.7) {
+              encPanelEl.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
           }
         }
       }
@@ -1760,6 +2309,7 @@ function renderApp() {
         climateEl.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
+    refreshAllMiniJobCardDescriptions();
   }
   updateTabTurnTitle();
 }
@@ -2172,7 +2722,9 @@ function renderTabletopView() {
   // Determine which board(s) to display
   let effectiveView = appState.boardViewMode;
   if (effectiveView === "auto") {
-    if (appState.activeNpcEvent && appState.activeNpcEvent.phase === "market") {
+    if (isUserNavigatingMarketBoard() && gs.phase !== "setup_climate") {
+      effectiveView = "market";
+    } else if (appState.activeNpcEvent && appState.activeNpcEvent.phase === "market") {
       effectiveView = "market";
     } else if (
       appState.activeNpcEvent &&
@@ -2284,14 +2836,14 @@ function renderClockAndTurnBanner(gs, viewer, activePlayer) {
     el(
       "div",
       { className: "clock-badges" },
-      el("span", { className: "badge badge-night", text: `🏛️ Night: ${gs.night} 211 A.D.` }),
+      el("span", { className: "badge badge-night", text: `${gs.night}` }),
       el("span", { className: "badge badge-phase", text: phaseNames[gs.phase] || gs.phase }),
       gs.phase === "delivery" ? el("span", { className: "badge badge-hour", text: `🕰️ ${gs.turnHourLabel}` }) : null,
-      el("span", { className: "badge", text: `🦅 1st Player: ${firstPlayer.name}` }),
+      el("span", { className: "badge", text: `1st: ${firstPlayer.name}` }),
       el("span", {
         className: "badge",
         style: { borderColor: "#16a34a", color: "#14532d", background: "#ecfdf5" },
-        text: `▶ Active Turn: ${activePlayer.name}`,
+        text: `▶ Active: ${activePlayer.name}`,
       })
     ),
     el(
@@ -2327,11 +2879,11 @@ function renderClockAndTurnBanner(gs, viewer, activePlayer) {
             mode === "auto"
               ? "Auto View"
               : mode === "rome"
-                ? "🗺️ Rome 211 A.D. Board"
+                ? "San Francisco"
                 : mode === "market"
-                  ? "⚓ Ostia Port Market"
+                  ? "Market"
                   : mode === "climate"
-                    ? `🏛️ Political Climate (${activeClimateCount})`
+                    ? `Political Climate (${activeClimateCount})`
                     : "All Boards",
           onClick: () => {
             appState.boardViewMode = mode;
@@ -2882,7 +3434,7 @@ function handleDieSelectionClick(pend, viewer, targetSide = "player", dieIdx = 0
   const stage = pend.stage || "pre_decision";
   const twistCard = hand.find((c) => String(c.name || "") === "Twist Of Fate");
   const luckyCard =
-    (stage === "driver_fate_post_roll" || stage === "chart_post_roll") && pend.chartType !== "schizophrenic"
+    (stage === "driver_fate_post_roll" || stage === "chart_post_roll") && pend.chartType !== "Prophet"
       ? hand.find((c) => String(c.name || "") === "Lucky Break")
       : null;
 
@@ -2950,7 +3502,7 @@ function renderInlineClickableDiceRow(pend, viewer, merchantLabel = "Your") {
   const hasTwist = hand.some((c) => String(c.name || "") === "Twist Of Fate");
   const hasLucky =
     (stage === "driver_fate_post_roll" || stage === "chart_post_roll") &&
-    pend.chartType !== "schizophrenic" &&
+    pend.chartType !== "Prophet" &&
     hand.some((c) => String(c.name || "") === "Lucky Break");
   const canModifyAny = hasTwist || hasLucky;
   const isArmed = Boolean(appState.armedDieAction);
@@ -3786,7 +4338,7 @@ function renderPendingEncounterPanelCore(gs, viewer) {
     );
   }
 
-  // Stage 0B: Table/Chart Encounter Pre-Roll Presentation (Protesters, Open Mic, Schizophrenic)
+  // Stage 0B: Table/Chart Encounter Pre-Roll Presentation (Protest, Open Mic, Prophet)
   if (stage === "chart_pre_roll") {
     const cType = pend.chartType || "mob";
     const iconSrc =
@@ -3794,14 +4346,14 @@ function renderPendingEncounterPanelCore(gs, viewer) {
         ? "/assets/icons/angry_mob.png"
         : cType === "theater"
           ? "/assets/icons/theater_masks.png"
-          : "/assets/icons/schizophrenic_icon.png";
+          : "/assets/icons/prophet_icon.png";
     const chartTitle =
-      cType === "mob" ? "Protesters" : cType === "theater" ? "Open Mic" : "Schizophrenic";
+      cType === "mob" ? "Protest" : cType === "theater" ? "Open Mic" : "Prophet";
     const chartRows =
       cType === "mob"
         ? [
-          { roll: "0", color: "#ff6ec7", bg: "rgba(68, 12, 48, 0.92)", border: "#dc2626", title: "Roll 0 — Opiates Confiscated:", desc: "Protesters confiscate all Opiates on your SUV!" },
-          { roll: "I", color: "#92400e", bg: "#fffbeb", border: "#d97706", title: "Roll I — Weed Looted:", desc: "Protesters loot all Weed on your SUV!" },
+          { roll: "0", color: "#ff6ec7", bg: "rgba(68, 12, 48, 0.92)", border: "#dc2626", title: "Roll 0 — Opiates Confiscated:", desc: "Protest confiscate all Opiates on your SUV!" },
+          { roll: "I", color: "#92400e", bg: "#fffbeb", border: "#d97706", title: "Roll I — Weed Looted:", desc: "Protest loot all Weed on your SUV!" },
           { roll: "II", color: "#7dd3fc", bg: "rgba(14, 42, 84, 0.92)", border: "#ca8a04", title: "Roll II — Cargo Seized:", desc: "Lose the single most expensive Good on your SUV." },
           { roll: "III", color: "#15803d", bg: "#f0fdf4", border: "#16a34a", title: "Roll III — Clamors Noisily:", desc: "Safe passage! No cargo lost — your turn continues." },
         ]
@@ -3929,11 +4481,11 @@ function renderPendingEncounterPanelCore(gs, viewer) {
           "div",
           { style: { display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-start" } },
           visualCardNode,
-          cType === "schizophrenic" && pend.schizophrenicMission
+          cType === "Prophet" && pend.ProphetMission
             ? el(
               "div",
               { style: { width: "225px" } },
-              renderPhysicalMissionCardNode(pend.schizophrenicMission, { showStatusTag: false })
+              renderPhysicalMissionCardNode(pend.ProphetMission, { showStatusTag: false })
             )
             : null
         ),
@@ -4433,8 +4985,8 @@ function renderPendingEncounterPanelCore(gs, viewer) {
         el(
           "div",
           { style: { padding: "0.5rem", background: "rgba(68, 12, 48, 0.92)", borderRadius: "4px", border: "1px solid #dc2626" } },
-          el("strong", { style: { color: "#ff6ec7" }, text: "Roll 0 — Dead:" }),
-          el("div", { style: { color: "var(--text-main)" }, text: "Lose all Goods on SUV; your night ends immediately." })
+          el("strong", { style: { color: "#ff6ec7" }, text: "Roll 0 — Out for the night:" }),
+          el("div", { style: { color: "var(--text-main)" }, text: "Your night ends immediately (no Goods or Cash lost)." })
         ),
         el(
           "div",
@@ -4470,7 +5022,7 @@ function renderPendingEncounterPanelCore(gs, viewer) {
     );
   }
 
-  // Stage 3B / Chart Post-Roll: Modify or Re-Roll Driver Fate / Protesters / Open Mic / Schizophrenic Roll
+  // Stage 3B / Chart Post-Roll: Modify or Re-Roll Driver Fate / Protest / Open Mic / Prophet Roll
   if (stage === "driver_fate_post_roll" || stage === "chart_post_roll") {
     const cType = pend.chartType || "death";
     const cRoll = Number(pend.chartRoll) || 0;
@@ -4478,7 +5030,7 @@ function renderPendingEncounterPanelCore(gs, viewer) {
     const postChartCards = (viewer.influence || []).filter((c) => {
       const nm = String(c.name || "");
       if (nm === "Twist Of Fate") return true;
-      if (nm === "Lucky Break" && cType !== "schizophrenic") return true;
+      if (nm === "Lucky Break" && cType !== "Prophet") return true;
       if (!isOtherPlayerEncounter && cType === "mob" && nm === "Man Of The People") return true;
       if (!isOtherPlayerEncounter && cType === "theater" && nm === "Dramaturge") return true;
       return false;
@@ -4839,20 +5391,20 @@ function renderPendingEncounterPanelCore(gs, viewer) {
         !isNpcSell &&
         (Boolean(mRaw) || !String(card.actionText || "").trim()));
     const allActiveJobs = encPlayer.missions || [];
-    const activeRegularJobs = allActiveJobs.filter((m) => m.source !== "schizophrenic");
-    const activeSchizoJobs = allActiveJobs.filter((m) => m.source === "schizophrenic");
+    const activeRegularJobs = allActiveJobs.filter((m) => m.source !== "Prophet");
+    const activeSchizoJobs = allActiveJobs.filter((m) => m.source === "Prophet");
     if (isJobAssignment && allActiveJobs.length >= 5) {
       const isStrictThreat =
         rType === "deck_quest_strict" || rType === "mission_strict" || Boolean(pend.combatThreatened);
       if (activeRegularJobs.length === 0) {
         showModal(
-          "🔒 5 Unfailable Schizophrenic Jobs Active",
+          "🔒 5 Unfailable Prophet Jobs Active",
           el(
             "div",
             {},
             el("p", {
               style: { fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "0.85rem", color: "#ffffff" },
-              text: `All 5 of your active Jobs are mandatory Schizophrenic Jobs! Because Schizophrenic Jobs can only be failed if a 6th Schizophrenic Job is triggered, you cannot fail any of your active Jobs to accept ${card.name}'s Job.`,
+              text: `All 5 of your active Jobs are mandatory Prophet Jobs! Because Prophet Jobs can only be failed if a 6th Prophet Job is triggered, you cannot fail any of your active Jobs to accept ${card.name}'s Job.`,
             }),
             el(
               "div",
@@ -4892,8 +5444,8 @@ function renderPendingEncounterPanelCore(gs, viewer) {
           el("p", {
             style: { fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "0.85rem", color: "#ffffff" },
             text: isStrictThreat
-              ? `${card.name} is threatening you with a Job (!!), and you already hold the maximum of 5 active Jobs. To accept this Job and avoid Combat, you must choose one of your failable (non-Schizophrenic) Jobs below to fail right now, or refuse and fight in Combat!`
-              : `You already hold the maximum of 5 active Jobs. To accept this new Job from ${card.name}, select one of your failable (non-Schizophrenic) Jobs below to fail (applying its failure penalty):`,
+              ? `${card.name} is threatening you with a Job (!!), and you already hold the maximum of 5 active Jobs. To accept this Job and avoid Combat, you must choose one of your failable (non-Prophet) Jobs below to fail right now, or refuse and fight in Combat!`
+              : `You already hold the maximum of 5 active Jobs. To accept this new Job from ${card.name}, select one of your failable (non-Prophet) Jobs below to fail (applying its failure penalty):`,
           }),
           el(
             "div",
@@ -4958,8 +5510,8 @@ function renderPendingEncounterPanelCore(gs, viewer) {
                 el(
                   "div",
                   {},
-                  el("div", { style: { fontWeight: "700", color: "#d8b4fe", fontSize: "0.88rem" }, text: `🔮 ${m.name || "Schizophrenic Job"}` }),
-                  el("div", { style: { fontSize: "0.76rem", color: "#e9d5ff" }, text: "🔒 Mandatory Schizophrenic Job — Cannot Fail" })
+                  el("div", { style: { fontWeight: "700", color: "#d8b4fe", fontSize: "0.88rem" }, text: `🔮 ${m.name || "Prophet Job"}` }),
+                  el("div", { style: { fontSize: "0.76rem", color: "#e9d5ff" }, text: "🔒 Mandatory Prophet Job — Cannot Fail" })
                 )
               )
             )
@@ -6929,6 +7481,28 @@ function renderOstiaMarketBoard(gs, viewer) {
         onScroll: (e) => {
           appState.marketBoardScrollLeft = e.currentTarget.scrollLeft;
           appState.marketBoardScrollTop = e.currentTarget.scrollTop;
+          appState.marketBoardLastScrollAt = Date.now();
+        },
+        onTouchstart: () => {
+          appState.marketBoardTouchActive = true;
+          appState.marketBoardLastScrollAt = Date.now();
+        },
+        onTouchmove: () => {
+          appState.marketBoardTouchActive = true;
+          appState.marketBoardLastScrollAt = Date.now();
+        },
+        onTouchend: () => {
+          appState.marketBoardTouchActive = false;
+          appState.marketBoardLastScrollAt = Date.now();
+        },
+        onTouchcancel: () => {
+          appState.marketBoardTouchActive = false;
+        },
+        onWheel: () => {
+          appState.marketBoardLastScrollAt = Date.now();
+        },
+        onPointerdown: () => {
+          appState.marketBoardLastScrollAt = Date.now();
         },
       },
       colHeadersRow,
@@ -7612,6 +8186,325 @@ function renderRomeNightBoard(gs, viewer) {
         ),
         el("div", { className: "rome-grid" }, ...gridCells, renderRomeNpcAnimationLayer())
       )
+    ),
+    renderRomeClockBoard(gs)
+  );
+}
+
+const ROME_CLOCK_SLOTS = [
+  { turn: 1, numeral: "Turn 1", label: "8:00 P.M." },
+  { turn: 2, numeral: "Turn 2", label: "9:00 P.M." },
+  { turn: 3, numeral: "Turn 3", label: "10:00 P.M." },
+  { turn: 4, numeral: "Turn 4", label: "11:00 P.M." },
+  { turn: 5, numeral: "Turn 5", label: "12:00 A.M." },
+  { turn: 6, numeral: "Turn 6", label: "1:00 A.M." },
+  { turn: 7, numeral: "Turn 7", label: "2:00 A.M." },
+  { turn: 8, numeral: "Turn 8", label: "3:00 A.M." },
+  { turn: 9, numeral: "Turn 9", label: "4:00 A.M." },
+  { turn: 10, numeral: "Turn 10", label: "5:00 A.M." },
+  { turn: 11, numeral: "DAWN", label: "6:00 A.M." },
+];
+
+function renderRomeClockBoard(gs) {
+  const phase = (gs && gs.phase) || "market";
+  const rawTurn = Math.max(1, Math.min(10, Number(gs && gs.turn) || 1));
+  const activeSlotTurn =
+    phase === "cleanup" || phase === "finished"
+      ? 11
+      : phase === "delivery" || phase === "delivery_entry"
+        ? rawTurn
+        : 1;
+  const nightRaw = (gs && (gs.night || gs.season)) || "Thursday";
+  const nightLabel =
+    nightRaw === "Fall"
+      ? "Saturday"
+      : nightRaw === "Summer"
+        ? "Friday"
+        : nightRaw === "Spring"
+          ? "Thursday"
+          : nightRaw;
+  const fineBase = nightLabel === "Saturday" ? 32 : nightLabel === "Friday" ? 20 : 12;
+  const fineGate = Math.floor(fineBase / 2);
+  const activeSlot = ROME_CLOCK_SLOTS.find((s) => s.turn === activeSlotTurn) || ROME_CLOCK_SLOTS[0];
+  const isClockCollapsed = Boolean(appState.collapsedSections && appState.collapsedSections.clockBoard);
+
+  if (isClockCollapsed) {
+    const turnNumStr = activeSlot.turn <= 10 ? String(activeSlot.turn) : "DAWN";
+    const turnStr = `Turn ${turnNumStr} - ${activeSlot.label}`;
+    return el(
+      "section",
+      { className: "rome-clock-board-panel is-collapsed", id: "rome-clock-board" },
+      el(
+        "div",
+        { className: "rome-clock-collapsed-row" },
+        el(
+          "div",
+          { className: "rome-clock-collapsed-summary" },
+          el("span", {
+            className: "rome-clock-collapsed-turn",
+            text: `Clock: ${turnStr}`,
+          }),
+          el("span", {
+            className: "rome-clock-collapsed-curfew",
+            text: `${nightLabel} Curfew: City: ₿${fineBase}, Gate: ₿${fineGate}`,
+          })
+        ),
+        createSectionCollapseToggleBtn("clockBoard", true, "Expand Clock Board & Roll Charts")
+      )
+    );
+  }
+
+  const hourNodes = ROME_CLOCK_SLOTS.map((slot) => {
+    const isActive = slot.turn === activeSlotTurn;
+    const isDawn = slot.turn === 11;
+    const isLateNight = slot.turn >= 6 && slot.turn <= 10;
+    return el(
+      "div",
+      {
+        className: `rome-clock-hour-slot ${isDawn ? "is-dawn" : ""} ${isLateNight ? "is-late-night" : ""} ${isActive ? "is-active" : ""
+          }`.trim(),
+        "data-clock-turn": String(slot.turn),
+        title: isDawn
+          ? `6:00 A.M. Dawn Curfew — Fine: ₿${fineBase} in City, ₿${fineGate} on a Gate`
+          : `Turn ${slot.turn} (${slot.label})`,
+      },
+      el("div", { className: "rome-clock-numeral", text: slot.numeral }),
+      el("div", { className: "rome-clock-hour-label", text: slot.label }),
+      el(
+        "div",
+        { className: "rome-clock-token-well" },
+        isActive
+          ? el("span", {
+            className: "rome-clock-token",
+            id: "rome-clock-active-piece",
+            title: "Current Night Hour Marker",
+            text: "⏳",
+          })
+          : null
+      )
+    );
+  });
+
+  const keyItems = [
+    {
+      img: "/assets/icons/celebrities_icon.png?v=121",
+      title: "CELEBRITY",
+    },
+    {
+      img: "/assets/icons/prophet_icon.png?v=121",
+      title: "PROPHET",
+    },
+    {
+      img: "/assets/icons/cops_icon.png?v=121",
+      title: "COP",
+    },
+    {
+      img: "/assets/icons/angry_mob.png?v=121",
+      title: "PROTEST",
+    },
+    {
+      img: "/assets/icons/criminals_icon.png?v=121",
+      title: "CRIMINAL",
+    },
+    {
+      img: "/assets/icons/theater_masks.png?v=121",
+      title: "OPEN MIC",
+    },
+    {
+      img: "/assets/icons/persist.png?v=121",
+      title: "PERSISTENT",
+      desc: "Stays revealed all night.",
+    },
+    {
+      img: "/assets/icons/refresh.png?v=121",
+      title: "REFRESH",
+      desc: "Discards & draws new tile",
+    },
+    {
+      img: "/assets/icons/dice.png?v=121",
+      title: "GAMBLING",
+      desc: "Wager up to 20(d) as Transaction",
+    },
+    {
+      tollText: "10(d)",
+      title: "EDGE TOLL",
+      desc: "Pay (d) to cross (Shortcut / City Hall Fixer waives)",
+    },
+    {
+      barClass: "edge-green",
+      title: "GREEN BORDER",
+      desc: "Open road",
+    },
+    {
+      barClass: "edge-red",
+      title: "RED BORDER",
+      desc: "Blocked",
+    },
+  ];
+
+  const charts = [
+    {
+      title: "Stand-Up Comic (Roll 1®)",
+      icon: "/assets/icons/theater_masks.png?v=121",
+      rows: [
+        ["0", "Lose all Friendly favor outcomes."],
+        ["I", "Lose all Hostile favor outcomes."],
+        ["II", "Lose rest of this turn AND next turn (flip SUV)."],
+        ["III", "Roll 1(R) and draw that many Influence cards."],
+      ],
+    },
+    {
+      title: "Protest (Roll 1®)",
+      icon: "/assets/icons/angry_mob.png?v=121",
+      rows: [
+        ["0", "Takes all Opiates on your SUV."],
+        ["I", "Takes all Weed on your SUV."],
+        ["II", "Takes your single most expensive Good."],
+        ["III", "Chants noisily (no cargo lost)."],
+      ],
+    },
+    {
+      title: "Prophet Rant (Roll 1®)",
+      icon: "/assets/icons/prophet_icon.png?v=121",
+      rows: [
+        ["0–III", "Draw top Job Deck card as a mandatory Prophet Job."],
+        ["Seal", "Seal rolled 1(R) Influence cards face-down beneath until completed."],
+      ],
+    },
+    {
+      title: "Driver Fate Chart (Roll 1®)",
+      icon: "/assets/icons/combat.png?v=121",
+      rows: [
+        ["0", "Out for the night. Turn & night end (no Goods or Cash lost)."],
+        ["I", "Left for dead. Lose all Goods; night continues."],
+        ["II", "Beaten & mugged. Lose all Cash; night continues."],
+        ["III", "Begged for mercy. Lose all Influence; night continues."],
+      ],
+    },
+  ];
+
+  const gambleChart = {
+    title: "Stadium Gambling (Roll 1®)",
+    icon: "/assets/icons/dice.png?v=121",
+    rows: [
+      ["Wager", "Up to 20(d) cash."],
+      ["0", "Lose wager to the bank."],
+      ["I", "1× Wager (Break even)."],
+      ["II", "2× Wager (Double Up)."],
+      ["III", "3× Wager (Triple Up)."],
+    ],
+  };
+
+  return el(
+    "section",
+    { className: "rome-clock-board-panel", id: "rome-clock-board" },
+    el(
+      "div",
+      { className: "rome-clock-board-header" },
+      el("div", { className: "rome-clock-board-title", text: "🕰️ Nocturnal Clock Board, Encounter Key & Roll Charts" }),
+      el(
+        "div",
+        { className: "rome-clock-header-actions" },
+        el("div", {
+          className: "rome-clock-curfew-note",
+          text: `${nightLabel} Dawn Curfew: ₿${fineBase} in City • ₿${fineGate} on a Gate`,
+        }),
+        createSectionCollapseToggleBtn("clockBoard", false, "Collapse Clock Board")
+      )
+    ),
+    el("div", { className: "rome-clock-hours-grid" }, ...hourNodes),
+    el(
+      "div",
+      { className: "rome-clock-lower-grid" },
+      el(
+        "div",
+        { className: "rome-clock-left-stack" },
+        el(
+          "div",
+          { className: "rome-clock-subcard" },
+          el("div", { className: "rome-clock-subcard-title", text: "🗝️ City Tile & Edge Encounter Key" }),
+          el(
+            "div",
+            { className: "rome-clock-key-grid" },
+            ...keyItems.map((k) =>
+              el(
+                "div",
+                { className: "rome-clock-key-item" },
+                el(
+                  "div",
+                  { className: "rome-clock-key-icon-box" },
+                  k.tollText
+                    ? el("span", { className: "dyn-edge-toll rome-clock-key-toll", text: k.tollText })
+                    : k.barClass
+                      ? el("span", { className: `rome-clock-key-bar ${k.barClass}`, "aria-label": k.title })
+                      : el("img", { className: "rome-clock-key-icon", src: resolveAssetUrl(k.img), alt: k.title })
+                ),
+                el(
+                  "div",
+                  { className: "rome-clock-key-text" },
+                  el("strong", { text: k.title }),
+                  k.desc ? el("span", { text: k.desc }) : null
+                )
+              )
+            )
+          )
+        ),
+        el(
+          "div",
+          { className: "rome-clock-subcard rome-clock-gamble-subcard" },
+          el(
+            "div",
+            { className: "rome-clock-subcard-title rome-clock-gamble-head" },
+            el("img", {
+              className: "rome-chart-box-icon",
+              src: resolveAssetUrl(gambleChart.icon),
+              alt: gambleChart.title,
+            }),
+            el("span", { text: gambleChart.title })
+          ),
+          el(
+            "div",
+            { className: "rome-chart-box" },
+            ...gambleChart.rows.map(([dieLbl, desc]) =>
+              el(
+                "div",
+                { className: "rome-chart-row" },
+                el("span", { className: "rome-chart-die-pill", text: dieLbl }),
+                el("span", { text: desc })
+              )
+            )
+          )
+        )
+      ),
+      el(
+        "div",
+        { className: "rome-clock-subcard" },
+        el("div", { className: "rome-clock-subcard-title", text: "🎲 Encounter & Driver Fate Roll Charts" }),
+        el(
+          "div",
+          { className: "rome-clock-charts-grid" },
+          ...charts.map((ch) =>
+            el(
+              "div",
+              { className: "rome-chart-box" },
+              el(
+                "div",
+                { className: "rome-chart-box-head" },
+                el("img", { className: "rome-chart-box-icon", src: resolveAssetUrl(ch.icon), alt: ch.title }),
+                el("span", { text: ch.title })
+              ),
+              ...ch.rows.map(([dieLbl, desc]) =>
+                el(
+                  "div",
+                  { className: "rome-chart-row" },
+                  el("span", { className: "rome-chart-die-pill", text: dieLbl }),
+                  el("span", { text: desc })
+                )
+              )
+            )
+          )
+        )
+      )
     )
   );
 }
@@ -7916,133 +8809,223 @@ function renderPlayerSidebar(gs, viewer) {
   const viewerMissionsFail = Number(viewer.missionsFailed) || 0;
   const viewerNetMissions =
     typeof viewer.netMissions === "number" ? viewer.netMissions : viewerMissionsDone - viewerMissionsFail;
+  const isMerchantsCollapsed = Boolean(appState.collapsedSections && appState.collapsedSections.merchantsInRome);
+  const isFavorCollapsed = Boolean(appState.collapsedSections && appState.collapsedSections.factionStandings);
+  const focusFavorPlayer =
+    viewer || (gs.players && gs.players[gs.activePlayerIndex]) || (gs.players && gs.players[0]) || null;
+  const isMiniMode = shouldUseMiniCards();
 
   return el(
     "div",
     { className: "sidebar-stack" },
-    // All Players Summary
-    el(
-      "div",
-      { className: "panel" },
-      el(
-        "h3",
-        { className: "panel-title" },
-        el("span", { text: "👥 Merchants in Rome" }),
-        el("span", { style: { fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: "600" }, text: "Click to inspect SUV" })
-      ),
-      el(
+    // All Players Summary (Dealers in San Francisco)
+    isMerchantsCollapsed
+      ? el(
         "div",
-        { className: "players-strip" },
-        ...gs.players.map((p) => {
-          const swatchColor = resolveDieSwatchColor(p.color, "player");
-          const pDone = Number(p.missionsCompleted) || 0;
-          const pFail = Number(p.missionsFailed) || 0;
-          const pNet = typeof p.netMissions === "number" ? p.netMissions : pDone - pFail;
-          return el(
+        { className: "panel merchants-panel is-collapsed", id: "merchants-rome-panel" },
+        el(
+          "div",
+          { className: "merchants-collapsed-row" },
+          el("span", { className: "merchants-collapsed-label", text: "Dealers:" }),
+          el(
             "div",
-            {
-              className: `player-mini-card clickable-merchant-card ${p.index === gs.activePlayerIndex ? "active-turn" : ""}`,
-              style: { borderLeft: `3px solid ${swatchColor}` },
-              title: `Click to view ${p.name}'s SUV Mat (${p.usedBlocks}/${p.maxBlocks}■ Goods, ${p.usedHenchmen}/${p.maxHenchmen}▲ Henchmen, Net Missions ${pNet >= 0 ? `+${pNet}` : pNet}, 𐆖${p.cash})`,
-              onClick: () => openPlayerSUVModal(gs, p, viewer),
-            },
-            el(
-              "div",
-              { style: { display: "flex", alignItems: "center", gap: "0.35rem", fontWeight: "700" } },
-              renderSUVIconNode(p.color, "", `${p.name}'s SUV`),
-              el("span", { text: p.eliminated ? `☠️ ${p.name}` : p.name })
-            ),
-            el("div", {
-              style: { color: p.eliminated ? "#b91c1c" : swatchColor, fontWeight: "800", marginTop: "0.2rem" },
-              text: p.eliminated ? `☠️ ${p.cash}(d) (Eliminated)` : `💰 ${p.cash}(d)`,
-            }),
-            el("div", {
-              style: { fontSize: "0.71rem", color: "var(--text-muted)" },
-              text: `SUV: ${p.usedBlocks}/${p.maxBlocks}■ • ${p.usedHenchmen}/${p.maxHenchmen}▲ • 📜 Net ${pNet >= 0 ? `+${pNet}` : pNet}`,
-            }),
-            el("div", {
-              style: { fontSize: "0.72rem", color: p.exitedRome ? "#15803d" : "var(--text-main)", fontWeight: p.exitedRome ? "700" : "400" },
-              text: p.position ? `📍 At ${p.position}` : p.exitedRome ? "✓ Exited Safely" : "At Ostia",
-            })
-          );
-        })
-      )
-    ),
-
-    // Imperial Faction Standings (Directly under Merchants in Rome, above SUV Holdings)
-    el(
-      "div",
-      { className: "panel" },
-      el(
-        "h3",
-        { className: "panel-title" },
-        el("span", { text: "🏛️ Faction Standings" }),
-        el("span", {
-          style: { fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: "600" },
-          text: "Click a Gem for Details",
-        })
-      ),
-      el(
-        "div",
-        { className: "favor-row", style: { margin: "0" } },
-        ...FACTION_META.map((fm) => {
-          const val = (viewer.favor && viewer.favor[fm.key]) || 0;
-          const rivals = (gs.players || []).filter((p) => p.index !== viewer.index);
-          return el(
-            "div",
-            {
-              className: "favor-box clickable-favor-box",
-              style: { cursor: "pointer" },
-              title: `Click to view ${fm.label || fm.key} Favor breakdown, alignments & deck counts`,
-              onClick: () => openFactionFavorModal(gs, viewer, fm.key),
-            },
-            el("img", { className: "favor-gem-img", src: fm.gem, alt: fm.key }),
-            el("div", { style: { fontWeight: "700", color: fm.color }, text: fm.label || fm.key }),
-            el("div", {
-              style: {
-                fontWeight: "800",
-                fontSize: "0.86rem",
-                color: val > 0 ? "#15803d" : val < 0 ? "#b91c1c" : "var(--text-main)",
-              },
-              text: val > 0 ? `+${val}` : String(val),
-            }),
-            rivals.length > 0
-              ? el(
-                "div",
-                { className: "faction-standings-rivals" },
-                ...rivals.map((rv) => {
-                  const rVal = (rv.favor && rv.favor[fm.key]) || 0;
-                  const rShort = String(rv.name || "Rival").split(" ")[0];
-                  return el(
-                    "div",
-                    {
-                      className: "faction-standing-rival-line",
-                      title: `${rv.name}: ${rVal > 0 ? `+${rVal}` : rVal} ${fm.label || fm.key}`,
-                    },
-                    el(
-                      "span",
-                      { className: "faction-standing-rival-name" },
-                      el("span", {
-                        className: "faction-standing-swatch",
-                        style: { background: resolveDieSwatchColor(rv.color, "player") },
-                      }),
-                      el("span", { text: rShort })
-                    ),
-                    el("strong", {
-                      style: {
-                        color: rVal > 0 ? "#15803d" : rVal < 0 ? "#b91c1c" : "var(--text-muted)",
-                      },
-                      text: rVal > 0 ? `+${rVal}` : String(rVal),
-                    })
-                  );
+            { className: "merchants-collapsed-strip" },
+            ...(gs.players || []).map((p) => {
+              const dotColor = resolveDieSwatchColor(p.color, "player");
+              const cashColor = p.eliminated ? "#f87171" : dotColor;
+              const shortName = getAbbrevMerchantName(p);
+              const isActiveTurn = p.index === gs.activePlayerIndex;
+              return el(
+                "button",
+                {
+                  type: "button",
+                  className: `merchant-collapsed-chip ${isActiveTurn ? "is-active-turn" : ""} ${p.eliminated ? "is-eliminated" : ""
+                    }`,
+                  style: { borderBottomColor: dotColor },
+                  title: `${p.name}: ${p.cash}(d) (Click to inspect SUV)`,
+                  onClick: () => openPlayerSUVModal(gs, p, viewer),
+                },
+                el("span", { className: "merchant-collapsed-dot", style: { background: dotColor } }),
+                el("span", { className: "merchant-collapsed-name", style: { color: dotColor }, text: shortName }),
+                el("span", {
+                  className: "merchant-collapsed-cash",
+                  style: { color: cashColor },
+                  text: `${p.cash}d`,
                 })
-              )
-              : null
-          );
-        })
+              );
+            })
+          ),
+          createSectionCollapseToggleBtn("merchantsInRome", true, "Expand Dealers in San Francisco")
+        )
+      )
+      : el(
+        "div",
+        { className: "panel merchants-panel", id: "merchants-rome-panel" },
+        el(
+          "h3",
+          { className: "panel-title" },
+          el("span", { text: "👥 Merchants in Rome" }),
+          el(
+            "div",
+            { className: "panel-title-right-group" },
+            el("span", { style: { fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: "600" }, text: "Click to inspect SUV" }),
+            createSectionCollapseToggleBtn("merchantsInRome", false, "Collapse Dealers in San Francisco")
+          )
+        ),
+        el(
+          "div",
+          { className: "players-strip" },
+          ...gs.players.map((p) => {
+            const swatchColor = resolveDieSwatchColor(p.color, "player");
+            const pDone = Number(p.missionsCompleted) || 0;
+            const pFail = Number(p.missionsFailed) || 0;
+            const pNet = typeof p.netMissions === "number" ? p.netMissions : pDone - pFail;
+            return el(
+              "div",
+              {
+                className: `player-mini-card clickable-merchant-card ${p.index === gs.activePlayerIndex ? "active-turn" : ""}`,
+                style: { borderLeft: `3px solid ${swatchColor}` },
+                title: `Click to view ${p.name}'s SUV Mat (${p.usedBlocks}/${p.maxBlocks}■ Goods, ${p.usedHenchmen}/${p.maxHenchmen}▲ Henchmen, Net Missions ${pNet >= 0 ? `+${pNet}` : pNet}, 𐆖${p.cash})`,
+                onClick: () => openPlayerSUVModal(gs, p, viewer),
+              },
+              el(
+                "div",
+                { style: { display: "flex", alignItems: "center", gap: "0.35rem", fontWeight: "700" } },
+                renderSUVIconNode(p.color, "", `${p.name}'s SUV`),
+                el("span", { text: p.eliminated ? `☠️ ${p.name}` : p.name })
+              ),
+              el("div", {
+                style: { color: p.eliminated ? "#b91c1c" : swatchColor, fontWeight: "800", marginTop: "0.2rem" },
+                text: p.eliminated ? `☠️ ${p.cash}(d) (Eliminated)` : `💰 ${p.cash}(d)`,
+              }),
+              el("div", {
+                style: { fontSize: "0.71rem", color: "var(--text-muted)" },
+                text: `SUV: ${p.usedBlocks}/${p.maxBlocks}■ • ${p.usedHenchmen}/${p.maxHenchmen}▲ • 📜 Net ${pNet >= 0 ? `+${pNet}` : pNet}`,
+              }),
+              el("div", {
+                style: { fontSize: "0.72rem", color: p.exitedRome ? "#15803d" : "var(--text-main)", fontWeight: p.exitedRome ? "700" : "400" },
+                text: p.position ? `📍 At ${p.position}` : p.exitedRome ? "✓ Exited Safely" : "At Ostia",
+              })
+            );
+          })
+        )
       ),
-      renderDomnaMediatorExchangeBar(gs, viewer, false)
-    ),
+
+    // Faction Standings (Directly under Dealers in San Francisco, above SUV Holdings)
+    isFavorCollapsed
+      ? el(
+        "div",
+        { className: "panel faction-standings-panel is-collapsed", id: "faction-standings-panel" },
+        el(
+          "div",
+          { className: "favor-collapsed-row" },
+          el("span", { className: "favor-collapsed-label", text: "Favor:" }),
+          el(
+            "div",
+            { className: "favor-collapsed-strip" },
+            ...FACTION_META.map((fm) => {
+              const val =
+                focusFavorPlayer && focusFavorPlayer.favor ? Number(focusFavorPlayer.favor[fm.key]) || 0 : 0;
+              const valText = val > 0 ? `+${val}` : String(val);
+              return el(
+                "button",
+                {
+                  type: "button",
+                  className: "favor-collapsed-gem-chip",
+                  title: `${fm.label || fm.key}: ${valText} Favor (Click for Details)`,
+                  onClick: () => {
+                    if (focusFavorPlayer) openFactionFavorModal(gs, focusFavorPlayer, fm.key);
+                  },
+                },
+                el("img", { className: "favor-collapsed-gem-img", src: resolveAssetUrl(fm.gem), alt: fm.key }),
+                el("span", {
+                  className: `favor-collapsed-gem-val ${val > 0 ? "pos" : val < 0 ? "neg" : "zero"}`,
+                  text: valText,
+                })
+              );
+            })
+          ),
+          createSectionCollapseToggleBtn("factionStandings", true, "Expand Faction Standings")
+        )
+      )
+      : el(
+        "div",
+        { className: "panel faction-standings-panel", id: "faction-standings-panel" },
+        el(
+          "h3",
+          { className: "panel-title" },
+          el("span", { text: "🏛️ Faction Standings" }),
+          el(
+            "div",
+            { className: "panel-title-right-group" },
+            el("span", {
+              style: { fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: "600" },
+              text: "Click a Gem for Details",
+            }),
+            createSectionCollapseToggleBtn("factionStandings", false, "Collapse Faction Standings")
+          )
+        ),
+        el(
+          "div",
+          { className: "favor-row", style: { margin: "0" } },
+          ...FACTION_META.map((fm) => {
+            const val = (viewer.favor && viewer.favor[fm.key]) || 0;
+            const rivals = (gs.players || []).filter((p) => p.index !== viewer.index);
+            return el(
+              "div",
+              {
+                className: "favor-box clickable-favor-box",
+                style: { cursor: "pointer" },
+                title: `Click to view ${fm.label || fm.key} Favor breakdown, alignments & deck counts`,
+                onClick: () => openFactionFavorModal(gs, viewer, fm.key),
+              },
+              el("img", { className: "favor-gem-img", src: fm.gem, alt: fm.key }),
+              el("div", { style: { fontWeight: "700", color: fm.color }, text: fm.label || fm.key }),
+              el("div", {
+                style: {
+                  fontWeight: "800",
+                  fontSize: "0.86rem",
+                  color: val > 0 ? "#15803d" : val < 0 ? "#b91c1c" : "var(--text-main)",
+                },
+                text: val > 0 ? `+${val}` : String(val),
+              }),
+              rivals.length > 0
+                ? el(
+                  "div",
+                  { className: "faction-standings-rivals" },
+                  ...rivals.map((rv) => {
+                    const rVal = (rv.favor && rv.favor[fm.key]) || 0;
+                    const rShort = String(rv.name || "Rival").split(" ")[0];
+                    return el(
+                      "div",
+                      {
+                        className: "faction-standing-rival-line",
+                        title: `${rv.name}: ${rVal > 0 ? `+${rVal}` : rVal} ${fm.label || fm.key}`,
+                      },
+                      el(
+                        "span",
+                        { className: "faction-standing-rival-name" },
+                        el("span", {
+                          className: "faction-standing-swatch",
+                          style: { background: resolveDieSwatchColor(rv.color, "player") },
+                        }),
+                        el("span", { text: rShort })
+                      ),
+                      el("strong", {
+                        style: {
+                          color: rVal > 0 ? "#15803d" : rVal < 0 ? "#b91c1c" : "var(--text-muted)",
+                        },
+                        text: rVal > 0 ? `+${rVal}` : String(rVal),
+                      })
+                    );
+                  })
+                )
+                : null
+            );
+          })
+        ),
+        renderDomnaMediatorExchangeBar(gs, viewer, false)
+      ),
 
     // Your Merchant SUV Mat & Integrated Navigation + Tile Inspector Tab
     el(
@@ -8104,15 +9087,15 @@ function renderPlayerSidebar(gs, viewer) {
         : renderPhysicalSUVMatNode(gs, viewer, viewer, false)
     ),
 
-    // Active Missions in Portrait 5:7 Format, Subtly Divided by Type (Starting → Encounter → Schizophrenic)
+    // Active Missions in Portrait 5:7 Format, Subtly Divided by Type (Starting → Encounter → Prophet)
     (() => {
       const allMissions = viewer.missions || [];
       const startingMissions = allMissions.filter((m) => !m.source || m.source === "starting");
       const encounterMissions = allMissions.filter((m) => m.source === "encounter");
-      const schizophrenicMissions = allMissions.filter((m) => m.source === "schizophrenic");
+      const ProphetMissions = allMissions.filter((m) => m.source === "Prophet");
       const canActivelyCancel =
         gs.phase !== "setup_discard" && gs.phase !== "setup_climate" && gs.phase !== "finished";
-      const canCancelSchizophrenic = canActivelyCancel && schizophrenicMissions.length > 5;
+      const canCancelProphet = canActivelyCancel && ProphetMissions.length > 5;
       const bondedCouriersActive = hasActiveClimateOption(gs, "missions_3");
 
       const activeGroups = [
@@ -8133,18 +9116,18 @@ function renderPlayerSidebar(gs, viewer) {
           cancelLabel: bondedCouriersActive ? "✕ Cancel (👎 + -10d)" : "✕ Cancel (👎 Penalty)",
         },
         {
-          key: "schizophrenic",
-          title: `Schizophrenic (${schizophrenicMissions.length})`,
-          sub: canCancelSchizophrenic ? "6th Job Overflow — Fail 1" : bondedCouriersActive ? "🔒 2× Cash / -10d" : "🔒 Unfailable",
-          missions: schizophrenicMissions,
-          canCancel: canCancelSchizophrenic,
-          cancelLabel: "✕ Fail 6th Schizophrenic Job",
+          key: "Prophet",
+          title: `Prophet (${ProphetMissions.length})`,
+          sub: canCancelProphet ? "6th Job Overflow — Fail 1" : bondedCouriersActive ? "🔒 2× Cash / -10d" : "🔒 Unfailable",
+          missions: ProphetMissions,
+          canCancel: canCancelProphet,
+          cancelLabel: "✕ Fail 6th Prophet Job",
         },
       ].filter((g) => g.missions.length > 0);
 
       const rowChildren = [];
       activeGroups.forEach((g, idx) => {
-        if (idx > 0) {
+        if (!isMiniMode && idx > 0) {
           rowChildren.push(
             el("div", {
               className: "mission-group-divider",
@@ -8157,6 +9140,12 @@ function renderPlayerSidebar(gs, viewer) {
             "div",
             {
               className: `mission-row-group mission-group-${g.key}`,
+              style: isMiniMode
+                ? {
+                  gridColumn: `span ${g.missions.length}`,
+                  minWidth: "0",
+                }
+                : undefined,
             },
             el(
               "div",
@@ -8168,13 +9157,18 @@ function renderPlayerSidebar(gs, viewer) {
               "div",
               {
                 className: "mission-row-group-cards",
+                style: isMiniMode
+                  ? {
+                    gridTemplateColumns: `repeat(${g.missions.length}, minmax(0, 1fr))`,
+                  }
+                  : undefined,
               },
               ...g.missions.map((m) =>
                 renderPhysicalMissionCardNode(m, {
                   showStatusTag: true,
                   canCancel: g.canCancel,
                   cancelLabel: g.cancelLabel,
-                  schizophrenicTotalCount: schizophrenicMissions.length,
+                  ProphetTotalCount: ProphetMissions.length,
                 })
               )
             )
@@ -8192,7 +9186,7 @@ function renderPlayerSidebar(gs, viewer) {
             "span",
             { text: `📜 Active Missions (${allMissions.length})${bondedCouriersActive ? " [2× Cash / -10d Fail]" : ""}` }
           ),
-          schizophrenicMissions.length > 5
+          ProphetMissions.length > 5
             ? el("span", {
               style: {
                 fontSize: "0.72rem",
@@ -8202,7 +9196,7 @@ function renderPlayerSidebar(gs, viewer) {
                 borderRadius: "4px",
                 fontWeight: "700",
               },
-              text: "⚠️ 6 Schizophrenic Jobs — Fail 1 Now!",
+              text: "⚠️ 6 Prophet Jobs — Fail 1 Now!",
             })
             : el("span", {
               style: {
@@ -8226,6 +9220,11 @@ function renderPlayerSidebar(gs, viewer) {
               "div",
               {
                 className: "missions-single-row",
+                style: isMiniMode
+                  ? {
+                    gridTemplateColumns: `repeat(${Math.max(5, allMissions.length)}, minmax(0, 1fr))`,
+                  }
+                  : undefined,
               },
               ...rowChildren
             )
@@ -8260,7 +9259,7 @@ function renderPlayerSidebar(gs, viewer) {
                 effCode === "buy_any_good_common" ||
                 cName.toLowerCase() === "procurer" ||
                 cName.toLowerCase() === "dark web plug";
-              const isProphecyCard = cName === "Prophecy" || effCode === "trigger_schizophrenic";
+              const isProphecyCard = cName === "Prophecy" || effCode === "trigger_Prophet";
               const isSurpriseShipmentCard =
                 cName === "Surprise Shipment" || effCode === "shift_category_scarcity_right";
               const isShortcutCard = cName.includes("Shortcut") || effCode === "shortcut";
@@ -8268,6 +9267,7 @@ function renderPlayerSidebar(gs, viewer) {
               const canPlayNow = isInfluenceCardPlayableNow(gs, viewer, c);
 
               let actionNode = null;
+              let modalActionNode = null;
               if (canPlayNow) {
                 const needsThugSwap =
                   cName.includes("Thug") && !doesItemFitWithoutSwap(viewer, { reqHenchmen: 1 });
@@ -8275,50 +9275,81 @@ function renderPlayerSidebar(gs, viewer) {
                   (cName.includes("Wine Forger") || cName.includes("Fentanyl Press")) &&
                   !doesItemFitWithoutSwap(viewer, { reqBlocks: 1 });
                 const isArmedCard = Boolean(appState.armedDieAction && appState.armedDieAction.cardId === c.id);
+                const fullBtnText =
+                  cName === "Casus Belli"
+                    ? "⚔️ Play Casus Belli"
+                    : isTop3Card
+                      ? "👁️ Inspect & Reorder Top 3"
+                      : isProcurerCard
+                        ? "🛒 Choose Good @ Common (>)"
+                        : isProphecyCard
+                          ? "🔮 Summon Prophet..."
+                          : isSurpriseShipmentCard
+                            ? "🚢 Shift Category Scarcity..."
+                            : isShortcutCard
+                              ? "🛣️ Ready Shortcut for Move"
+                              : isReactiveOnly
+                                ? isArmedCard
+                                  ? "👆 Click Any Die to Apply"
+                                  : "🎲 Click a Die to Apply"
+                                : needsThugSwap
+                                  ? "▶ Play Card (Fire Henchman)"
+                                  : needsWineForgerSwap
+                                    ? "▶ Play Card (Swap Good)"
+                                    : "▶ Play Card";
+                const shortBtnText =
+                  cName === "Casus Belli"
+                    ? "⚔️ Fight"
+                    : isTop3Card
+                      ? "👁️ Top 3"
+                      : isProcurerCard
+                        ? "🛒 Buy >"
+                        : isProphecyCard
+                          ? "🔮 5150"
+                          : isSurpriseShipmentCard
+                            ? "🚢 Shift"
+                            : isShortcutCard
+                              ? "🛣️ Cut"
+                              : isReactiveOnly
+                                ? isArmedCard
+                                  ? "👆 Die"
+                                  : "🎲 Roll"
+                                : "▶ Play";
+                const playHandler = (e) => {
+                  if (e) e.stopPropagation();
+                  closeModal();
+                  if (isTop3Card) {
+                    openInformantsTargetModal(gs, viewer, c);
+                  } else if (isProcurerCard) {
+                    openProcurerGoodModal(gs, viewer, c);
+                  } else if (isProphecyCard) {
+                    openProphecyTargetModal(gs, viewer, c);
+                  } else if (isSurpriseShipmentCard) {
+                    openSurpriseShipmentModal(gs, viewer, c);
+                  } else {
+                    triggerInfluenceCardPlay(gs, viewer, c);
+                  }
+                };
                 actionNode = el("button", {
-                  className: `btn btn-sm ${isArmedCard ? "btn-crimson" : "btn-primary"}`,
-                  style: { width: "100%", fontSize: "0.72rem", padding: "0.28rem 0.5rem" },
-                  text:
-                    cName === "Casus Belli"
-                      ? "⚔️ Play Casus Belli"
-                      : isTop3Card
-                        ? "👁️ Inspect & Reorder Top 3"
-                        : isProcurerCard
-                          ? "🛒 Choose Good @ Common (>)"
-                          : isProphecyCard
-                            ? "🔮 Summon Schizophrenic..."
-                            : isSurpriseShipmentCard
-                              ? "🚢 Shift Category Scarcity..."
-                              : isShortcutCard
-                                ? "🛣️ Ready Shortcut for Move"
-                                : isReactiveOnly
-                                  ? isArmedCard
-                                    ? "👆 Click Any Die to Apply"
-                                    : "🎲 Click a Die to Apply"
-                                  : needsThugSwap
-                                    ? "▶ Play Card (Fire Henchman)"
-                                    : needsWineForgerSwap
-                                      ? "▶ Play Card (Swap Good)"
-                                      : "▶ Play Card",
-                  onClick: (e) => {
-                    e.stopPropagation();
-                    if (isTop3Card) {
-                      openInformantsTargetModal(gs, viewer, c);
-                    } else if (isProcurerCard) {
-                      openProcurerGoodModal(gs, viewer, c);
-                    } else if (isProphecyCard) {
-                      openProphecyTargetModal(gs, viewer, c);
-                    } else if (isSurpriseShipmentCard) {
-                      openSurpriseShipmentModal(gs, viewer, c);
-                    } else {
-                      triggerInfluenceCardPlay(gs, viewer, c);
-                    }
-                  },
+                  type: "button",
+                  className: `btn btn-sm ${isMiniMode ? "mini-card-slot-btn" : ""} ${isArmedCard ? "btn-crimson" : "btn-primary"
+                    }`.trim(),
+                  style: isMiniMode ? undefined : { width: "100%", fontSize: "0.72rem", padding: "0.28rem 0.5rem" },
+                  title: fullBtnText,
+                  text: isMiniMode ? shortBtnText : fullBtnText,
+                  onClick: playHandler,
+                });
+                modalActionNode = el("button", {
+                  type: "button",
+                  className: `btn ${isArmedCard ? "btn-crimson" : "btn-primary"}`,
+                  text: fullBtnText,
+                  onClick: playHandler,
                 });
               }
 
               return renderPhysicalInfluenceCardNode(c, {
                 actionButton: actionNode,
+                modalActionButton: modalActionNode,
               });
             })
           ),
@@ -8648,4 +9679,4 @@ window.addEventListener("DOMContentLoaded", () => {
   bootstrap();
 });
 
-export { navigateToMarketBoardForCategory, FACTION_GEM_MAP, renderFactionGemNodes, getSellCategoryClass, buildEncounterFigureNodes, renderDynamicEdgeSlotNode, renderDynamicTileCardNode, renderBuriedInfluenceStackCardBackNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, installChronicleViewportScrollWatcher, bootstrap, startPolling, refreshPortalOverview, seedSeenScoutIds, enqueueNewMissionEvents, persistSkipMissionCompletionPopups, openMissionCompletionModal, checkPostActionModals, openGame, sendGameAction, renderApp, createTopbarSvgIcon, createTopbarLobbyWirelessIcon, createTopbarRulebookMagnifierIcon, createTopbarProfileCogIcon, createTopbarSignOutIcon, createTopbarReturnGameIcon, renderTopbar, renderPendingUndoBanner, renderTabletopView, renderClockAndTurnBanner, renderContextualPromptBanner, renderActiveClimateStrip, buildPoliticalClimateExplainerNode, buildPoliticalClimateBoardGridNode, renderPoliticalClimateBoard, renderSetupDiscardPanel, formatSignedFlat, armDieCardAction, handleDieSelectionClick, renderInlineClickableDiceRow, buildConsumableWeaponPickerNodes, openConsumableWeaponsPromptModal, initiateCombatWithConsumablePrompt, buildCombatInfluenceCardActionNode, renderOpponentPublicSUVSummaryNode, renderPendingEncounterPanel, renderPendingEncounterPanelCore, renderPendingNpcOfferPanel, renderPendingMarketRewardPanel, renderPendingSUVOverflowPanel, renderCleanupPhasePanel, openSUVGoodDetailModal, openSUVHenchmanDetailModal, renderLoadedGoodPhysicalCardNode, renderHiredHenchmanPhysicalCardNode, renderPhysicalSUVMatNode, openFactionFavorModal, openPlayerSUVModal, renderDomnaMediatorExchangeBar, getActiveForumBuySpec, computeForumBuyPriceForCard, renderMarketHeaderDenariiCounts, renderOstiaMarketBoard, TIBER_UNBRIDGED_CELL_CLASSES, TIBER_BRIDGE_BADGES_BY_CELL, positionRomeHoverTooltip, showRomeHoverTooltip, showRomeSimpleHoverTooltip, showRomeUnrevealedCellHoverTooltip, getCellOffBoardDirs, renderRomeNightBoard, renderSUVNavigationWidget, renderPlayerSidebar, installGlobalHotkeys };
+export { shouldUseMiniCards, getAbbrevMerchantName, createSectionCollapseToggleBtn, renderRomeClockBoard, navigateToMarketBoardForCategory, FACTION_GEM_MAP, renderFactionGemNodes, getSellCategoryClass, buildEncounterFigureNodes, renderDynamicEdgeSlotNode, renderDynamicTileCardNode, renderBuriedInfluenceStackCardBackNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, installChronicleViewportScrollWatcher, bootstrap, startPolling, refreshPortalOverview, seedSeenScoutIds, enqueueNewMissionEvents, persistSkipMissionCompletionPopups, openMissionCompletionModal, checkPostActionModals, openGame, sendGameAction, renderApp, createTopbarSvgIcon, createTopbarLobbyWirelessIcon, createTopbarRulebookMagnifierIcon, createTopbarProfileCogIcon, createTopbarSignOutIcon, createTopbarReturnGameIcon, renderTopbar, renderPendingUndoBanner, renderTabletopView, renderClockAndTurnBanner, renderContextualPromptBanner, renderActiveClimateStrip, buildPoliticalClimateExplainerNode, buildPoliticalClimateBoardGridNode, renderPoliticalClimateBoard, renderSetupDiscardPanel, formatSignedFlat, armDieCardAction, handleDieSelectionClick, renderInlineClickableDiceRow, buildConsumableWeaponPickerNodes, openConsumableWeaponsPromptModal, initiateCombatWithConsumablePrompt, buildCombatInfluenceCardActionNode, renderOpponentPublicSUVSummaryNode, renderPendingEncounterPanel, renderPendingEncounterPanelCore, renderPendingNpcOfferPanel, renderPendingMarketRewardPanel, renderPendingSUVOverflowPanel, renderCleanupPhasePanel, openSUVGoodDetailModal, openSUVHenchmanDetailModal, renderLoadedGoodPhysicalCardNode, renderHiredHenchmanPhysicalCardNode, renderPhysicalSUVMatNode, openFactionFavorModal, openPlayerSUVModal, renderDomnaMediatorExchangeBar, getActiveForumBuySpec, computeForumBuyPriceForCard, renderMarketHeaderDenariiCounts, renderOstiaMarketBoard, TIBER_UNBRIDGED_CELL_CLASSES, TIBER_BRIDGE_BADGES_BY_CELL, positionRomeHoverTooltip, showRomeHoverTooltip, showRomeSimpleHoverTooltip, showRomeUnrevealedCellHoverTooltip, getCellOffBoardDirs, renderRomeNightBoard, renderSUVNavigationWidget, renderPlayerSidebar, installGlobalHotkeys };

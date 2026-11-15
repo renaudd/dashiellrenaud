@@ -1,5 +1,5 @@
-import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=121";
-import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=121";
+import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=124";
+import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=124";
 
 const GOOD_CATEGORY_DISPLAY_MAP = {
   Grain: "Weed",
@@ -1205,9 +1205,9 @@ function openScoutResultModal(si) {
     if (dk === "celebrities" || dk === "cops" || dk === "criminals") {
       cardNode = renderPhysicalEncounterCardNode(rData, dk, { interactive: true });
     } else if (dk === "missions") {
-      cardNode = renderPhysicalMissionCardNode(rData, { showStatusTag: false });
+      cardNode = renderPhysicalMissionCardNode(rData, { showStatusTag: false, fullImage: true });
     } else if (dk === "influence") {
-      cardNode = renderPhysicalInfluenceCardNode(rData);
+      cardNode = renderPhysicalInfluenceCardNode(rData, { fullImage: true });
     } else if (dk === "market") {
       cardNode = renderScoutedMarketCardPreview(rData);
     }
@@ -1291,7 +1291,7 @@ function openLoadCargoPromptModal(m, viewer) {
       el(
         "div",
         { style: { display: "flex", justifyContent: "center", margin: "0.75rem 0" } },
-        el("div", { style: { width: "265px" } }, renderPhysicalMissionCardNode(m, { showStatusTag: true }))
+        el("div", { style: { width: "265px" } }, renderPhysicalMissionCardNode(m, { showStatusTag: true, fullImage: true }))
       ),
       !hasSpace
         ? el("p", {
@@ -1342,7 +1342,7 @@ function openDeliverCargoPromptModal(m, _viewer) {
       el(
         "div",
         { style: { display: "flex", justifyContent: "center", margin: "0.75rem 0" } },
-        el("div", { style: { width: "265px" } }, renderPhysicalMissionCardNode(m, { showStatusTag: true }))
+        el("div", { style: { width: "265px" } }, renderPhysicalMissionCardNode(m, { showStatusTag: true, fullImage: true }))
       ),
       el("p", {
         style: { color: "var(--text-muted)", fontSize: "0.8rem" },
@@ -1373,10 +1373,10 @@ function openDeliverCargoPromptModal(m, _viewer) {
   );
 }
 
-function openCancelMissionConfirmModal(m, schizophrenicTotalCount = 0) {
+function openCancelMissionConfirmModal(m, ProphetTotalCount = 0) {
   const src = m.source || "starting";
-  if (src === "schizophrenic" && schizophrenicTotalCount <= 5) {
-    showToast("Canceling or failing a Schizophrenic job is impossible unless you already have 5 active Schizophrenic jobs and trigger a 6th!", true);
+  if (src === "Prophet" && ProphetTotalCount <= 5) {
+    showToast("Canceling or failing a Prophet job is impossible unless you already have 5 active Prophet jobs and trigger a 6th!", true);
     return;
   }
 
@@ -1388,8 +1388,8 @@ function openCancelMissionConfirmModal(m, schizophrenicTotalCount = 0) {
   if (src === "encounter") {
     const hList = formatHostileFavorPenaltyText(m);
     ruleExplanation = `Per the rulebook, canceling or failing an Encounter Job incurs its Thumbs-Down reputational consequences (${hList}).`;
-  } else if (src === "schizophrenic") {
-    ruleExplanation = "Because you hold 6 active Schizophrenic jobs (after triggering a 6th), you must fail one of your Schizophrenic jobs to return to the 5-job limit.";
+  } else if (src === "Prophet") {
+    ruleExplanation = "Because you hold 6 active Prophet jobs (after triggering a 6th), you must fail one of your Prophet jobs to return to the 5-job limit.";
   } else {
     ruleExplanation = "Per the rulebook, Starting Jobs can be canceled voluntarily at any time with no Favor penalty.";
   }
@@ -1417,7 +1417,7 @@ function openCancelMissionConfirmModal(m, schizophrenicTotalCount = 0) {
       el(
         "div",
         { style: { display: "flex", justifyContent: "center", margin: "0.75rem 0" } },
-        el("div", { style: { width: "255px" } }, renderPhysicalMissionCardNode(m, { showStatusTag: true }))
+        el("div", { style: { width: "255px" } }, renderPhysicalMissionCardNode(m, { showStatusTag: true, fullImage: true }))
       ),
       el(
         "div",
@@ -1574,10 +1574,10 @@ function describeSUVItemDiscardWarning(item, viewer) {
     const penText = linked ? formatHostileFavorPenaltyText(linked) : "👎 Favor penalty";
     return `⚠️ Encounter Mission Cargo — discarding fails "${mName}" (${penText})!`;
   }
-  if (src === "schizophrenic") {
+  if (src === "Prophet") {
     const linked = ((viewer && viewer.missions) || []).find((m) => m.id === item.missionId);
     const pCell = (linked && linked.pickupCell) || "pickup tile";
-    return `⚠️ Schizophrenic Cargo — discarding resets pickup back to ${pCell}!`;
+    return `⚠️ Prophet Cargo — discarding resets pickup back to ${pCell}!`;
   }
   return `⚠️ Starting Mission Cargo — discarding cancels "${mName}" (no penalty).`;
 }
@@ -2058,7 +2058,7 @@ function openProphecyTargetModal(gs, viewer, card) {
       { style: { display: "flex", flexDirection: "column", gap: "0.75rem" } },
       el("p", {
         style: { fontSize: "0.88rem", color: "var(--text-main)", margin: "0" },
-        text: "Trigger a Schizophrenic encounter for any player (including yourself or a rival dealer).",
+        text: "Trigger a Prophet encounter for any player (including yourself or a rival dealer).",
       }),
       el(
         "div",

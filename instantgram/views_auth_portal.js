@@ -1,6 +1,6 @@
-import { maskEmailClient, isFirebaseClientConfigured, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, FACTION_META, SUV_COLOR_PALETTE, renderSUVIconNode, renderGoogleLogoSvg, appState, el, showToast, closeModal, showModal } from "./core_ui.js?v=121";
-import { apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, refreshPortalOverview, seedSeenScoutIds, openGame, renderApp } from "./app.js?v=121";
-import { stopNpcTurnPacing, enqueueNewNpcEvents } from "./dice_and_sfx.js?v=121";
+import { maskEmailClient, isFirebaseClientConfigured, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, FACTION_META, SUV_COLOR_PALETTE, renderSUVIconNode, renderGoogleLogoSvg, appState, el, showToast, closeModal, showModal } from "./core_ui.js?v=124";
+import { apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, refreshPortalOverview, seedSeenScoutIds, openGame, renderApp } from "./app.js?v=124";
+import { stopNpcTurnPacing, enqueueNewNpcEvents } from "./dice_and_sfx.js?v=124";
 
 function buildFallbackFinalStandings(state) {
   if (!state || !Array.isArray(state.players)) return [];
@@ -299,9 +299,9 @@ function openFinalScoringModal(standings, meta = {}) {
       ["Celebrities", Number(enc.celebrities) || 0],
       ["Criminals", Number(enc.criminals) || 0],
       ["Cops", Number(enc.cops) || 0],
-      ["Protesters", Number(enc.angryMobs) || 0],
+      ["Protest", Number(enc.angryMobs) || 0],
       ["Open Mics", Number(enc.theaterTroupes) || 0],
-      ["Schizophrenics", Number(enc.schizophrenics) || 0],
+      ["Prophets", Number(enc.Prophets) || 0],
     ];
 
     return el(

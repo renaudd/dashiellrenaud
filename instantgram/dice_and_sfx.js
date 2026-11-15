@@ -1,5 +1,5 @@
-import { resolveAssetUrl, COLS, ROWS, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getPlayerHexColor, renderSUVIconNode, ROME_DIE_ROMAN_FACES, appState, replaceDenariiTokens, el, resolveGoodCardArtUrl, resolveFullGoodCardFaceUrl, resolveFullEncounterCardFaceUrl } from "./core_ui.js?v=121";
-import { checkPostActionModals, sendGameAction, renderApp, armDieCardAction, handleDieSelectionClick, renderOpponentPublicSUVSummaryNode, getCellOffBoardDirs } from "./app.js?v=121";
+import { resolveAssetUrl, COLS, ROWS, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getPlayerHexColor, renderSUVIconNode, ROME_DIE_ROMAN_FACES, appState, replaceDenariiTokens, el, resolveGoodCardArtUrl, resolveFullGoodCardFaceUrl, resolveFullEncounterCardFaceUrl } from "./core_ui.js?v=124";
+import { checkPostActionModals, sendGameAction, renderApp, armDieCardAction, handleDieSelectionClick, renderOpponentPublicSUVSummaryNode, getCellOffBoardDirs } from "./app.js?v=124";
 
 function toRomanDieSymbol(val) {
   if (typeof val === "string" && ["0", "I", "II", "III", "IV", "V", "VI"].includes(val)) {
@@ -496,7 +496,7 @@ function getDieClickMetaForOverlay(ev, _grp, gIdx, dIdx) {
     const cType = pend.chartType || "death";
     const twistCard = (viewer.influence || []).find((c) => String(c.name || "") === "Twist Of Fate");
     const luckyCard =
-      cType !== "soothsayer" && cType !== "schizophrenic"
+      cType !== "soothsayer" && cType !== "Prophet"
         ? (viewer.influence || []).find((c) => String(c.name || "") === "Lucky Break")
         : null;
     if (!twistCard && !luckyCard) return null;
@@ -746,7 +746,7 @@ function buildDiceOverlayInteractiveControls() {
     const postChartCards = (viewer.influence || []).filter((c) => {
       const nm = String(c.name || "");
       if (nm === "Twist Of Fate") return true;
-      if (nm === "Lucky Break" && cType !== "soothsayer" && cType !== "schizophrenic") return true;
+      if (nm === "Lucky Break" && cType !== "soothsayer" && cType !== "Prophet") return true;
       if (!isOtherPlayerEncounter && cType === "mob" && nm === "Man Of The People") return true;
       if (!isOtherPlayerEncounter && cType === "theater" && nm === "Dramaturge") return true;
       return false;
@@ -760,7 +760,7 @@ function buildDiceOverlayInteractiveControls() {
         text:
           postChartCards.length > 0
             ? isOtherPlayerEncounter
-              ? `⚡ Intervention Window on ${encPlayer.name}'s ${(cType === "soothsayer" || cType === "schizophrenic") ? "Schizophrenic" : "Chart"} Roll: Click the die above to modify/re-roll, or pass!`
+              ? `⚡ Intervention Window on ${encPlayer.name}'s ${(cType === "soothsayer" || cType === "Prophet") ? "Prophet" : "Chart"} Roll: Click the die above to modify/re-roll, or pass!`
               : `🃏 Post-Roll Influence Available: Click the die above to modify/re-roll, or confirm outcome!`
             : `Confirm Roll Outcome:`,
       }),
@@ -1267,7 +1267,7 @@ function getNpcBubbleOutcomeTone(ev) {
   if (act === "sell" || act === "deliver" || out === "sell" || out === "gift") return "is-gain";
   if (act === "market_buy" || act === "buy" || out === "buy") return "is-spend";
   if (act === "pickup") return "is-cargo";
-  if (act === "mission" || out === "mission" || vis.chartType === "soothsayer" || vis.chartType === "schizophrenic") return "is-quest";
+  if (act === "mission" || out === "mission" || vis.chartType === "soothsayer" || vis.chartType === "Prophet") return "is-quest";
   return "is-neutral";
 }
 
@@ -1299,7 +1299,7 @@ function buildNpcSpeechBubbleVisualNodes(ev) {
         ? "/assets/icons/angry_mob.png"
         : vis.chartType === "theater"
           ? "/assets/icons/theater_masks.png"
-          : "/assets/icons/schizophrenic_icon.png";
+          : "/assets/icons/prophet_icon.png";
     thumbs.push(
       el(
         "div",
@@ -1386,9 +1386,9 @@ function renderRomeNpcAnimationLayer() {
   } else {
     const fallbackPlayerPos =
       appState.gameState &&
-      Array.isArray(appState.gameState.players) &&
-      typeof ev.playerIndex === "number" &&
-      appState.gameState.players[ev.playerIndex]
+        Array.isArray(appState.gameState.players) &&
+        typeof ev.playerIndex === "number" &&
+        appState.gameState.players[ev.playerIndex]
         ? appState.gameState.players[ev.playerIndex].position
         : null;
     const cellRef = ev.toCell || ev.fromCell || fallbackPlayerPos;
@@ -1552,6 +1552,12 @@ function enqueueNewNpcEvents(state, isInitialLoad = false) {
     stepNextNpcPacingEvent();
     appState.npcPacingTimer = setInterval(() => {
       if (appState.activeDiceOverlay) return; // Pause NPC ticks while a 3D dice overlay is open
+      if (
+        appState.marketBoardTouchActive ||
+        (appState.marketBoardLastScrollAt > 0 && Date.now() - appState.marketBoardLastScrollAt < 900)
+      ) {
+        return; // Pause NPC ticks while the player is actively scrolling the market board
+      }
       stepNextNpcPacingEvent();
     }, 1500);
   }

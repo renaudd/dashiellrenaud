@@ -649,9 +649,9 @@ const EDGE_LABELS = {
   toll_2: "Toll 2(d)",
   toll_10: "Toll 10(d)",
   toll_15: "Toll 15(d)",
-  mob: "Protesters",
+  mob: "Protest",
   theater: "Open Mic",
-  schizophrenic: "Schizophrenic",
+  Prophet: "Prophet",
   celebrities_1: "Celebrities ×1",
   celebrities_2: "Celebrities ×2",
   celebrities_3: "Celebrities ×3",
@@ -998,7 +998,19 @@ const appState = {
   _wasViewerTurn: false,
   marketBoardScrollLeft: 0,
   marketBoardScrollTop: 0,
+  marketBoardLastScrollAt: 0,
+  marketBoardTouchActive: false,
   climateBoardScrollLeft: 0,
+  _lastTabletopPollJson: "",
+  _tabletopPollInFlight: false,
+  _pendingActionCount: 0,
+  lastFlashedCopsEncounterKey: null,
+  _copsSirenFlashTimer: null,
+  collapsedSections: {
+    clockBoard: false,
+    merchantsInRome: false,
+    factionStandings: false,
+  },
 };
 
 /**
@@ -1259,10 +1271,10 @@ const SF_RESKIN_RULES = [
   [/\bPolitical Climate\b/g, "Ballot Initiatives"],
   [/\bDecrees\b/g, "Ballot Initiatives"],
   [/\bDecree\b/g, "Ballot Initiative"],
-  [/\bProtesterss?\b/g, "Protesters"],
+  [/\bProtests?\b/g, "Protest"],
   [/\bTheat(?:er|re) Troupes?\b/g, "Stand-Up Comic"],
-  [/\bSoothsayers?\b/gi, "Schizophrenic"],
-  [/\bSchizophrenics?\b/g, "Schizophrenic"],
+  [/\bSoothsayers?\b/gi, "Prophet"],
+  [/\bProphets?\b/g, "Prophet"],
   [/\bMerchants\b/g, "Dealers"],
   [/\bMerchant\b/g, "Dealer"],
   [/\bmerchants\b/g, "dealers"],
@@ -1670,7 +1682,6 @@ function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
       className: "market-good-card-full-img",
       src: resolveFullGoodCardFaceUrl(c, trackName),
       alt: c.name || trackName || "SF Good",
-      loading: "lazy",
     })
   );
 }
@@ -1730,12 +1741,12 @@ function resolveFullEncounterCardFaceUrl(card, deckKey = "") {
 const FACTION_FAVOR_INFLUENCE_SPECS = {
   "DSA Favor": {
     effectText:
-      "Receive 6(d), gain 1 DSA Favor (Sapphire), and lose 1 MAGA Favor (Ruby) (can be played after encounter is revealed)",
+      "Receive 4(d), gain 1 DSA Favor (Sapphire), and lose 1 MAGA Favor (Ruby) (can be played after encounter is revealed)",
     gems: ["DSA", "-MAGA"],
   },
   "MS13 Favor": {
     effectText:
-      "Receive 6(d), gain 1 MS13 Favor (Amethyst), and lose 1 MAGA Favor (Ruby) (can be played after encounter is revealed)",
+      "Receive 4(d), gain 1 MS13 Favor (Amethyst), and lose 1 MAGA Favor (Ruby) (can be played after encounter is revealed)",
     gems: ["MS13", "-MAGA"],
   },
   "ISIS Favor": {
@@ -1745,7 +1756,7 @@ const FACTION_FAVOR_INFLUENCE_SPECS = {
   },
   "TECH Favor": {
     effectText:
-      "Receive 6(d), gain 1 TECH Favor (Diamond), and lose 1 DSA Favor (Sapphire) and 1 MS13 Favor (Amethyst) (can be played after encounter is revealed)",
+      "Receive 4(d), gain 1 TECH Favor (Diamond), and lose 1 DSA Favor (Sapphire) and 1 MS13 Favor (Amethyst) (can be played after encounter is revealed)",
     gems: ["TECH", "-DSA", "-MS13"],
   },
   "MAGA Favor": {
@@ -1763,13 +1774,276 @@ function getInfluenceCardEffectText(c) {
   }
   if (cname === "Patron") {
     if (c.id === "inf_2") {
-      return "Receive 8(d), and lose 1 MAGA Favor (Ruby) and 1 TECH Favor (Diamond)";
+      return "Receive 6(d), and lose 1 MAGA Favor (Ruby) and 1 TECH Favor (Diamond)";
     }
     if (c.id === "inf_39") {
-      return "Receive 8(d), and lose 1 ISIS Favor (Emerald) and 1 DSA Favor (Sapphire)";
+      return "Receive 6(d), and lose 1 ISIS Favor (Emerald) and 1 DSA Favor (Sapphire)";
     }
   }
   return String(c.effectText || "");
+}
+
+function getInfluenceCardFavorList(c) {
+  if (!c) return [];
+  const cname = String(c.name || "").trim();
+  if (FACTION_FAVOR_INFLUENCE_SPECS[cname] && Array.isArray(FACTION_FAVOR_INFLUENCE_SPECS[cname].gems)) {
+    return FACTION_FAVOR_INFLUENCE_SPECS[cname].gems.slice();
+  }
+  if (cname === "Patron" || cname === "Sponsor") {
+    if (c.id === "inf_2") return ["-MAGA", "-TECH"];
+    if (c.id === "inf_39") return ["-ISIS", "-DSA"];
+  }
+  const fg = c.favorGain;
+  if (fg && typeof fg === "object") {
+    const raw = [];
+    if (fg.faction) raw.push(String(fg.faction));
+    if (Array.isArray(fg.extraFavor)) {
+      for (const tok of fg.extraFavor) {
+        if (tok && !raw.includes(String(tok))) {
+          raw.push(String(tok));
+        }
+      }
+    }
+    const pos = raw.filter((g) => !String(g).startsWith("-"));
+    const neg = raw.filter((g) => String(g).startsWith("-"));
+    return [...pos, ...neg];
+  }
+  if (Array.isArray(c.favor)) {
+    return c.favor.slice();
+  }
+  return [];
+}
+
+function getInfluenceCardMiniEffectText(c) {
+  if (!c) return "";
+  const cname = String(c.name || "").trim();
+  if (cname === "Patron" || cname === "Sponsor") {
+    return replaceDenariiTokens(sfReskinText("Receive 6(d)"));
+  }
+  if (cname === "DSA Favor" || cname === "MS13 Favor" || cname === "TECH Favor" || cname === "POLICE Favor") {
+    return replaceDenariiTokens(sfReskinText("Receive 4(d)"));
+  }
+  if (cname === "ISIS Favor" || cname === "MAGA Favor") {
+    return replaceDenariiTokens(sfReskinText("Receive 5(d)"));
+  }
+  if (cname === "Twist Of Fate") {
+    return "Re-roll any 1(R) die";
+  }
+  if (cname === "Flying Chamber Pot" || cname === "Pepper Spray") {
+    return "+1 CP post-roll";
+  }
+  if (cname === "Gladiator's Intervention" || cname === "Drive-By Backup") {
+    return "+1(R) CP post-roll";
+  }
+  if (cname === "Mercenary Ambush" || cname === "Hit Squad") {
+    return "+2(R) CP pre-roll";
+  }
+  if (cname === "Distraction") {
+    return "-1(R) CP pre-roll";
+  }
+  if (cname === "Procurer" || cname === "Dark Web Plug") {
+    return "Buy Deck Good at >";
+  }
+  if (cname === "Change Of Plans" || cname === "Burner Reroute") {
+    return replaceDenariiTokens(sfReskinText("Cycle tile & +2(d)"));
+  }
+  if (cname === "Lucky Break") {
+    return "+1 to Chart Roll";
+  }
+  if (cname === "Prophecy" || cname === "5150 Hold") {
+    return "Trigger Prophet";
+  }
+  if (cname === "Shortcut" || cname === "Alleyway Cut") {
+    return "Pass 1 edge as green";
+  }
+  if (cname === "Supplicant" || cname === "PR Spin") {
+    return "+2 Favor next enc.";
+  }
+  if (cname === "Plea" || cname === "Fake Invoice") {
+    return "Satisfy Goods demand";
+  }
+  if (cname === "Trained Dog" || cname === "Guard Pitbull") {
+    return replaceDenariiTokens(sfReskinText("Satisfy (d) demand"));
+  }
+  if (cname === "Make Haste" || cname === "Redline") {
+    return "Move twice this turn";
+  }
+  if (cname === "SUVwright" || cname === "Cartwright" || cname === "Body Shop") {
+    return "Permanent +2■ SUV";
+  }
+  if (cname.includes("Friend In The City") || cname === "City Insider") {
+    return "No Tolls & ½ Fine";
+  }
+  if (cname === "Informants" || cname === "Wiretap") {
+    return "Reorder top 3 cards";
+  }
+  if (cname === "Thug") {
+    return "Free Henchman 1(R) CP";
+  }
+  if (cname === "Match Fixing" || cname === "Rigged Sideshow") {
+    return "+1(R) to Gamble roll";
+  }
+  if (cname === "Man Of The People") {
+    return replaceDenariiTokens(sfReskinText("Skip Protest +4(d)"));
+  }
+  if (cname === "Surprise Shipment" || cname === "Supply Drop") {
+    return "Shift 1 Good scarcity ▶";
+  }
+  if (cname === "Dramaturge" || cname === "Heckler Plant") {
+    return "Open Mic auto-III";
+  }
+  if (cname === "Puffery" || cname === "Hype Beast") {
+    return "+1 Scarcity on sales";
+  }
+  if (cname === "Wine Forger" || cname === "Opiates Forger" || cname === "Fentanyl Press") {
+    return "Opiates for Job or sell";
+  }
+  if (cname === "Casus Belli" || cname === "Doxxing") {
+    return "Start combat anytime";
+  }
+  return replaceDenariiTokens(sfReskinText(getInfluenceCardEffectText(c)));
+}
+
+function formatMiniJobRewardText(m) {
+  if (!m) return "Special";
+  let raw = replaceDenariiTokens(sfReskinText(String(m.rewardText || "Special").trim()));
+  raw = raw.replace(/\s*&\s*Cancels.*$/i, "").trim();
+  raw = raw.replace(
+    /\b(Cheapest|Any|Most Expensive)\s+(.+?)\s+(?:on|from)\s+(?:the\s+)?(?:Mkt|Market)\b/gi,
+    "$1 Mkt $2"
+  );
+  if (m.patronRewardText) {
+    const pRew = replaceDenariiTokens(sfReskinText(String(m.patronRewardText).trim())).replace(
+      /\b(Cheapest|Any|Most Expensive)\s+(.+?)\s+(?:on|from)\s+(?:the\s+)?(?:Mkt|Market)\b/gi,
+      "$1 Mkt $2"
+    );
+    if (pRew && !raw.includes(pRew)) {
+      raw = `${raw} + ${pRew}`;
+    }
+  }
+  return raw;
+}
+
+function formatMiniJobFullDescriptionText(m) {
+  if (!m) return "";
+  const kind = String(m.kind || "").toLowerCase();
+  if (kind === "delivery") {
+    const item = sfReskinText(m.item || "Cargo");
+    const pCell = m.pickupCell || "A1";
+    const dCell = m.deliverCell || "C3";
+    return `Pick up ${item} at ${pCell} and deliver to ${dCell}.`;
+  }
+  if (kind === "sell") {
+    const cat = sfReskinText(m.item && m.item !== "Cargo" ? m.item : m.category || "Goods");
+    const mod = m.modifier || "=";
+    const cell = m.cell || "A5";
+    return `Sell ${cat} at ${mod} in ${cell}.`;
+  }
+  let obj = replaceDenariiTokens(
+    sfReskinText(String(m.objectiveText || m.description || m.text || m.name || "Complete Job.").trim())
+  );
+  obj = obj.replace(/\s*Reward:.*$/i, "").trim();
+  if (obj && !/[.!]$/.test(obj)) {
+    obj += ".";
+  }
+  return obj;
+}
+
+let _miniMeasureCanvasCtx = null;
+function getMiniMeasureCanvasCtx() {
+  if (_miniMeasureCanvasCtx) return _miniMeasureCanvasCtx;
+  if (typeof document === "undefined") return null;
+  try {
+    const c = document.createElement("canvas");
+    _miniMeasureCanvasCtx = c.getContext("2d");
+    return _miniMeasureCanvasCtx;
+  } catch (_e) {
+    return null;
+  }
+}
+
+/**
+ * Abbreviates a Job description with a single period (".") if it is longer than
+ * two lines when rendered at 12px font within availWidthPx.
+ */
+function abbreviateAtTwoLines12Font(rawText, availWidthPx = 64) {
+  const clean = String(rawText || "").replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  const width = Math.max(48, Number(availWidthPx) || 64);
+  const ctx = getMiniMeasureCanvasCtx();
+  const measure = (str) => {
+    if (ctx) {
+      ctx.font = '600 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      const rawW = ctx.measureText(str).width;
+      return Math.max(0, rawW - str.length * 0.32);
+    }
+    let est = 0;
+    for (let i = 0; i < str.length; i += 1) {
+      const ch = str[i];
+      if (" iIl1.,:;-!'|()".includes(ch)) est += 2.8;
+      else if ("mwMW@%".includes(ch)) est += 7.2;
+      else est += 5.1;
+    }
+    return est;
+  };
+
+  const words = clean.split(" ");
+  const lines = [];
+  let current = "";
+  for (let i = 0; i < words.length; i += 1) {
+    const w = words[i];
+    const candidate = current ? `${current} ${w}` : w;
+    if (measure(candidate) <= width || !current) {
+      current = candidate;
+    } else {
+      lines.push(current);
+      current = w;
+    }
+  }
+  if (current) lines.push(current);
+
+  if (lines.length <= 2 && lines.every((ln) => measure(ln) <= width + 2)) {
+    return clean;
+  }
+
+  const line1 = lines[0] || "";
+  const restText = words.slice(line1.split(" ").length).join(" ");
+  if (!restText) {
+    let trimmed1 = line1.replace(/[.!?,;:-\s]+$/, "");
+    while (trimmed1.length > 1 && measure(`${trimmed1}.`) > width) {
+      trimmed1 = trimmed1.slice(0, -1).replace(/[.!?,;:-\s]+$/, "");
+    }
+    return `${trimmed1}.`;
+  }
+
+  let bestLine2 = "";
+  const restWords = restText.split(" ");
+  let acc = "";
+  for (let i = 0; i < restWords.length; i += 1) {
+    const nextAcc = acc ? `${acc} ${restWords[i]}` : restWords[i];
+    const withDot = `${nextAcc.replace(/[.!?,;:-\s]+$/, "")}.`;
+    if (measure(withDot) <= width) {
+      acc = nextAcc;
+      bestLine2 = withDot;
+    } else {
+      if (!bestLine2) {
+        let ch = nextAcc.replace(/[.!?,;:-\s]+$/, "");
+        while (ch.length > 1 && measure(`${ch}.`) > width) {
+          ch = ch.slice(0, -1).replace(/[.!?,;:-\s]+$/, "");
+        }
+        bestLine2 = `${ch}.`;
+      }
+      break;
+    }
+  }
+  if (!bestLine2) {
+    let ch = restText.replace(/[.!?,;:-\s]+$/, "");
+    while (ch.length > 1 && measure(`${ch}.`) > width) {
+      ch = ch.slice(0, -1).replace(/[.!?,;:-\s]+$/, "");
+    }
+    bestLine2 = `${ch}.`;
+  }
+  return `${line1} ${bestLine2}`.trim();
 }
 
 const INFLUENCE_SOCIAL_PLATFORMS = [
@@ -1951,4 +2225,4 @@ const NUMPAD_DIGIT_TO_DIR = {
   "3": "SE",
 };
 
-export { getNightMerchantRuntimeConfig, getNightMerchantApiBaseUrl, resolveAssetUrl, maskEmailClient, getStoredSessionToken, setStoredSessionToken, _fbAuthModule, _fbAuthInstance, _fbInitPromise, getEffectiveFirebaseConfig, isFirebaseClientConfigured, initFirebaseClientIfConfigured, getFirebaseIdToken, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, EDGE_LABELS, parseTollAmount, formatEdgeLabel, WEST_BANK_CELLS, TIBER_BRIDGES, getTiberBridgeName, isTiberCrossingBlocked, DIR_DELTAS_8, getNeighborCoordInDir, SUV_COLOR_PALETTE, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getSUVColorLabel, getPlayerHexColor, renderSUVIconNode, renderGoogleLogoSvg, ROME_DIE_ROMAN_FACES, appState, DENARIUS_SYM, BTC_SYM, formatBtc, replaceDenariiTokens, GAME_TOKEN_REGEX, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createCombatInlineIconNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, SF_RESKIN_RULES, sfReskinText, appendTextWithRomeDice, resolveGoodTrackClass, el, TILE_MODIFIER_MAP, formatTileModifier, getTileModifierClass, resolveGoodCardArtUrl, GOODS_NAME_TO_ID, JOBS_NAME_TO_ID, INF_NAME_TO_ID, ENC_NAME_TO_ID, resolveFullGoodCardFaceUrl, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, FACTION_FAVOR_INFLUENCE_SPECS, getInfluenceCardEffectText, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, ENCOUNTER_FACE_ARCHETYPES, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR };
+export { getNightMerchantRuntimeConfig, getNightMerchantApiBaseUrl, resolveAssetUrl, maskEmailClient, getStoredSessionToken, setStoredSessionToken, _fbAuthModule, _fbAuthInstance, _fbInitPromise, getEffectiveFirebaseConfig, isFirebaseClientConfigured, initFirebaseClientIfConfigured, getFirebaseIdToken, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, EDGE_LABELS, parseTollAmount, formatEdgeLabel, WEST_BANK_CELLS, TIBER_BRIDGES, getTiberBridgeName, isTiberCrossingBlocked, DIR_DELTAS_8, getNeighborCoordInDir, SUV_COLOR_PALETTE, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getSUVColorLabel, getPlayerHexColor, renderSUVIconNode, renderGoogleLogoSvg, ROME_DIE_ROMAN_FACES, appState, DENARIUS_SYM, BTC_SYM, formatBtc, replaceDenariiTokens, GAME_TOKEN_REGEX, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createCombatInlineIconNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, SF_RESKIN_RULES, sfReskinText, appendTextWithRomeDice, resolveGoodTrackClass, el, TILE_MODIFIER_MAP, formatTileModifier, getTileModifierClass, resolveGoodCardArtUrl, GOODS_NAME_TO_ID, JOBS_NAME_TO_ID, INF_NAME_TO_ID, ENC_NAME_TO_ID, resolveFullGoodCardFaceUrl, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, FACTION_FAVOR_INFLUENCE_SPECS, getInfluenceCardEffectText, getInfluenceCardFavorList, getInfluenceCardMiniEffectText, formatMiniJobRewardText, formatMiniJobFullDescriptionText, abbreviateAtTwoLines12Font, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, ENCOUNTER_FACE_ARCHETYPES, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR };
