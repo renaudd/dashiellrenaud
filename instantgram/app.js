@@ -1,8 +1,8 @@
-import { getNightMerchantApiBaseUrl, resolveAssetUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, sfReskinText, appendTextWithRomeDice, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, getInfluenceCardEffectText, getInfluenceCardFavorList, getInfluenceCardMiniEffectText, formatMiniJobRewardText, formatMiniJobFullDescriptionText, abbreviateAtTwoLines12Font, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=124";
-import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=124";
-import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=124";
-import { renderRulebookView } from "./rulebook_view.js?v=124";
-import { toRomanDieSymbol, resolveDieSymbolColor, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=124";
+import { getNightMerchantApiBaseUrl, resolveAssetUrl, getStoredSessionToken, setStoredSessionToken, initFirebaseClientIfConfigured, getFirebaseIdToken, signOutFirebaseClient, COLS, ROWS, TRACK_NAMES, COL_SYMBOLS, MARKET_COLUMNS_META, ROME_LANDMARKS, FACTION_META, DEFAULT_POLITICAL_CLIMATE_FACTORS, DEFAULT_POLITICAL_CLIMATE_OPTIONS, hasActiveClimateOption, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, getNeighborCoordInDir, getSUVColorLabel, renderSUVIconNode, appState, replaceDenariiTokens, sfReskinText, appendTextWithRomeDice, resolveGoodTrackClass, el, formatTileModifier, getTileModifierClass, renderFullGoodCardFaceNode, resolveFullJobCardFaceUrl, resolveFullInfluenceCardFaceUrl, resolveFullEncounterCardFaceUrl, getInfluenceCardEffectText, getInfluenceCardFavorList, getInfluenceCardMiniEffectText, formatMiniJobRewardText, formatMiniJobFullDescriptionText, abbreviateAtTwoLines12Font, INFLUENCE_SOCIAL_PLATFORMS, formatReactionCondition, formatReactionTypeSymbol, formatHostileFavorPenaltyText, getEncounterCardFaceArchetype, showToast, closeModal, showModal, NUMPAD_CODE_TO_DIR, NUMPAD_DIGIT_TO_DIR } from "./core_ui.js?v=125";
+import { buildFallbackFinalStandings, openFinalScoringModal, openCompletedGamesPage, renderCompletedGamesView, handlePendingInviteDeepLink, renderGoogleUsernameSetupView, renderAuthView, buildPortalGamesListNodes, buildPortalLeaderboardNodes, renderPortalView, getCustomHotkeys, renderProfileView } from "./views_auth_portal.js?v=125";
+import { openEncounterDecksOverviewModal, openFaceUpTileUpCloseModal, openConfirmScoutNeighborhoodModal, openNpcOfferModal, openMarketRewardModal, openScoutResultModal, openLoadCargoPromptModal, openDeliverCargoPromptModal, openCancelMissionConfirmModal, openProcurerGoodModal, doesItemFitWithoutSwap, openSUVReplacementModal, triggerMissionCargoLoadWithOverflow, triggerInfluenceCardPlay, openPendingSUVOverflowModal, openProphecyTargetModal, openSurpriseShipmentModal, openInformantsTargetModal, openTop3ReorderModal, openMarketSourceModal, openGambleModal, openScoutModal, openTrashModal } from "./modals_tabletop.js?v=125";
+import { renderRulebookView } from "./rulebook_view.js?v=125";
+import { toRomanDieSymbol, resolveDieSymbolColor, resolveDieSwatchColor, clearDiceOverlayState, enqueueNewDiceEvents, dismissDiceOverlay, buildArmedDieBannerNode, renderDiceOverlay, playSfx, computeNpcReplayPositions, renderRomeNpcAnimationLayer, renderMarketNpcSpeechBubble, updateTabTurnTitle, stopNpcTurnPacing, enqueueNewNpcEvents, stepNextNpcPacingEvent, renderNpcPacingBanner, hideRomeHoverTooltip } from "./dice_and_sfx.js?v=125";
 
 function navigateToMarketBoardForCategory(category) {
   appState.highlightedMarketTrack = category || null;
@@ -172,7 +172,7 @@ function renderDynamicTileCardNode(tile, coord, mode = "board") {
             navigateToMarketBoardForCategory(buys[0].category);
           },
         },
-        "Sells: ",
+        "Buy: ",
         ...buys.map((b, idx) => {
           const modText = formatTileModifier(b.modifier);
           return el(
@@ -191,7 +191,7 @@ function renderDynamicTileCardNode(tile, coord, mode = "board") {
       el(
         "div",
         { className: "dyn-tile-sells-banner" },
-        el("span", { className: "dyn-tile-buys-prefix", text: "Buys:" }),
+        el("span", { className: "dyn-tile-buys-prefix", text: "Sell:" }),
         ...sells.map((s) => {
           const shortCat =
             s.category === "Exotic Animals"
@@ -349,6 +349,127 @@ function getAbbrevMerchantName(player) {
   if (!raw) return "Player";
   const firstWord = raw.split(/\s+/)[0];
   return firstWord.length > 8 ? `${firstWord.slice(0, 7)}…` : firstWord;
+}
+
+function getBoardFieldZoom(fieldKey) {
+  if (!appState.boardFieldZoom) {
+    appState.boardFieldZoom = { rome: 1, market: 1, climate: 1 };
+  }
+  const raw = Number(appState.boardFieldZoom[fieldKey]);
+  return Number.isFinite(raw) && raw >= 0.65 && raw <= 2.25 ? raw : 1;
+}
+
+function applyBoardFieldZoomToDom(fieldKey, zoomVal) {
+  const safeZoom = Math.max(0.65, Math.min(2.25, Math.round(Number(zoomVal || 1) * 100) / 100));
+  if (!appState.boardFieldZoom) {
+    appState.boardFieldZoom = { rome: 1, market: 1, climate: 1 };
+  }
+  appState.boardFieldZoom[fieldKey] = safeZoom;
+  if (typeof document !== "undefined") {
+    document.querySelectorAll(`.board-zoom-stage[data-zoom-field="${fieldKey}"]`).forEach((stageEl) => {
+      stageEl.style.width = safeZoom === 1 ? "100%" : `${Math.round(safeZoom * 100)}%`;
+    });
+    document.querySelectorAll(`.board-zoom-pct[data-zoom-field="${fieldKey}"]`).forEach((pctEl) => {
+      pctEl.textContent = `${Math.round(safeZoom * 100)}%`;
+    });
+  }
+}
+
+function createBoardFieldZoomControls(fieldKey, labelText = "Field Zoom") {
+  const currZoom = getBoardFieldZoom(fieldKey);
+  return el(
+    "div",
+    { className: "board-field-zoom-controls" },
+    el("span", { className: "board-zoom-label", text: `🔍 ${labelText}:` }),
+    el("button", {
+      type: "button",
+      className: "btn btn-sm board-zoom-btn",
+      title: "Zoom Out Field",
+      text: "−",
+      onClick: (e) => {
+        e.stopPropagation();
+        applyBoardFieldZoomToDom(fieldKey, getBoardFieldZoom(fieldKey) - 0.15);
+      },
+    }),
+    el("button", {
+      type: "button",
+      className: "btn btn-sm board-zoom-btn board-zoom-pct",
+      "data-zoom-field": fieldKey,
+      title: "Reset Field Zoom to 100%",
+      text: `${Math.round(currZoom * 100)}%`,
+      onClick: (e) => {
+        e.stopPropagation();
+        applyBoardFieldZoomToDom(fieldKey, 1);
+      },
+    }),
+    el("button", {
+      type: "button",
+      className: "btn btn-sm board-zoom-btn",
+      title: "Zoom In Field",
+      text: "+",
+      onClick: (e) => {
+        e.stopPropagation();
+        applyBoardFieldZoomToDom(fieldKey, getBoardFieldZoom(fieldKey) + 0.15);
+      },
+    })
+  );
+}
+
+function attachFieldPinchAndWheelZoom(viewportNode, fieldKey) {
+  if (!viewportNode) return viewportNode;
+  let pinchStartDist = null;
+  let pinchStartZoom = 1;
+  const getTouchDist = (touches) => {
+    if (!touches || touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  };
+  viewportNode.addEventListener(
+    "touchstart",
+    (e) => {
+      if (e.touches && e.touches.length === 2) {
+        pinchStartDist = getTouchDist(e.touches);
+        pinchStartZoom = getBoardFieldZoom(fieldKey);
+      }
+    },
+    { passive: true }
+  );
+  viewportNode.addEventListener(
+    "touchmove",
+    (e) => {
+      if (e.touches && e.touches.length === 2 && pinchStartDist > 10) {
+        if (e.cancelable) e.preventDefault();
+        const currDist = getTouchDist(e.touches);
+        if (currDist > 10) {
+          const nextZoom = pinchStartZoom * (currDist / pinchStartDist);
+          applyBoardFieldZoomToDom(fieldKey, nextZoom);
+        }
+      }
+    },
+    { passive: false }
+  );
+  viewportNode.addEventListener(
+    "touchend",
+    (e) => {
+      if (!e.touches || e.touches.length < 2) {
+        pinchStartDist = null;
+      }
+    },
+    { passive: true }
+  );
+  viewportNode.addEventListener(
+    "wheel",
+    (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.cancelable) e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.1 : -0.1;
+        applyBoardFieldZoomToDom(fieldKey, getBoardFieldZoom(fieldKey) + delta);
+      }
+    },
+    { passive: false }
+  );
+  return viewportNode;
 }
 
 function createSectionCollapseToggleBtn(sectionKey, isCollapsed, labelText) {
@@ -2283,6 +2404,7 @@ function renderApp() {
     }
     const gs = appState.gameState;
     checkAndTriggerCopsSirenFlash(gs);
+    ensureInterventionCountdownTimer(gs);
     const pend = gs && gs.pendingEncounter;
     if (pend) {
       const encKey = `${appState.currentGameId || ""}:${pend.stage || "pre_decision"}:${(pend.card && (pend.card.id || pend.card.name)) || pend.chartType || ""
@@ -2638,6 +2760,135 @@ function renderTopbar() {
   );
 }
 
+function renderPendingInterventionBanner(gs, viewer) {
+  const pend = gs && gs.pendingEncounter;
+  if (!pend) return null;
+  const intervIdx = pend.interveningPlayerIndex;
+  if (intervIdx === null || intervIdx === undefined) return null;
+  const intervPlayer =
+    (gs.players && gs.players[intervIdx]) || { name: pend.interveningPlayerName || `Player ${intervIdx + 1}` };
+  const encPlayer =
+    (gs.players && gs.players[pend.playerIndex]) || { name: "Active Player" };
+  const isMyIntervention = Boolean(viewer && viewer.index === intervIdx);
+  const deadline = Number(pend.interventionDeadline) || 0;
+  const remSec =
+    deadline > 0
+      ? Math.max(0, Math.ceil(deadline - Date.now() / 1000))
+      : Math.max(0, Math.ceil(Number(pend.interventionRemainingSeconds || 60)));
+
+  return el(
+    "div",
+    {
+      className: "panel intervention-waiting-banner",
+      style: {
+        borderColor: isMyIntervention ? "#00e5ff" : "#d97706",
+        background: isMyIntervention ? "rgba(12, 48, 88, 0.96)" : "rgba(14, 42, 84, 0.92)",
+        marginBottom: "0.75rem",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: "0.75rem",
+      },
+    },
+    el(
+      "div",
+      {},
+      el("div", {
+        style: { fontWeight: "800", color: "#7dd3fc", fontSize: "0.95rem", marginBottom: "0.2rem" },
+        text: isMyIntervention
+          ? `⚡ Your Intervention Window on ${encPlayer.name}'s Roll / Combat`
+          : `⏳ Intervention Window (${encPlayer.name}'s Encounter)`,
+      }),
+      el("div", {
+        className: "intervention-countdown-text",
+        "data-intervening-name": intervPlayer.name,
+        "data-deadline": String(deadline),
+        style: { fontSize: "0.84rem", color: "#fde68a", fontWeight: "700" },
+        text: `⏳ Awaiting approval from: ${intervPlayer.name} (${remSec}s remaining)`,
+      })
+    ),
+    isMyIntervention
+      ? el(
+        "div",
+        { style: { display: "flex", gap: "0.5rem", flexWrap: "wrap" } },
+        el("button", {
+          type: "button",
+          className: "btn btn-sm btn-primary",
+          text: "✅ Pass Intervention",
+          onClick: () => {
+            const stg = pend.stage || "pre_decision";
+            const dec =
+              stg === "pre_decision"
+                ? "fight"
+                : stg === "combat_pre_strike_post_roll"
+                  ? "finalize_pre_strike"
+                  : stg === "combat_post_roll"
+                    ? "finalize_combat"
+                    : stg === "driver_fate_post_roll"
+                      ? "finalize_driver_fate"
+                      : stg === "chart_post_roll"
+                        ? "finalize_chart_roll"
+                        : stg === "demand_post_roll"
+                          ? "finalize_demand_roll"
+                          : stg === "gamble_post_roll"
+                            ? "finalize_gamble_roll"
+                            : "fight";
+            sendGameAction({ type: "resolve_encounter", decision: dec });
+          },
+        })
+      )
+      : null
+  );
+}
+
+function ensureInterventionCountdownTimer(gs) {
+  const pend = gs && gs.pendingEncounter;
+  const hasInterv = Boolean(
+    pend && pend.interveningPlayerIndex !== null && pend.interveningPlayerIndex !== undefined
+  );
+  if (!hasInterv) {
+    if (appState._interventionCountdownInterval) {
+      clearInterval(appState._interventionCountdownInterval);
+      appState._interventionCountdownInterval = null;
+    }
+    appState._expiredInterventionKey = null;
+    return;
+  }
+  if (appState._interventionCountdownInterval) return;
+  appState._interventionCountdownInterval = setInterval(() => {
+    const currGs = appState.gameState;
+    const currPend = currGs && currGs.pendingEncounter;
+    if (!currPend || currPend.interveningPlayerIndex === null || currPend.interveningPlayerIndex === undefined) {
+      clearInterval(appState._interventionCountdownInterval);
+      appState._interventionCountdownInterval = null;
+      return;
+    }
+    const intervIdx = currPend.interveningPlayerIndex;
+    const intervPlayer =
+      (currGs.players && currGs.players[intervIdx]) || {
+        name: currPend.interveningPlayerName || `Player ${intervIdx + 1}`,
+      };
+    const deadline = Number(currPend.interventionDeadline) || 0;
+    const remSec =
+      deadline > 0
+        ? Math.max(0, Math.ceil(deadline - Date.now() / 1000))
+        : 0;
+    if (typeof document !== "undefined") {
+      document.querySelectorAll(".intervention-countdown-text").forEach((node) => {
+        node.textContent = `⏳ Awaiting approval from: ${intervPlayer.name} (${remSec}s remaining)`;
+      });
+    }
+    if (deadline > 0 && remSec <= 0 && !appState._pendingActionCount) {
+      const expKey = `${currPend.stage || ""}:${intervIdx}:${deadline}`;
+      if (appState._expiredInterventionKey !== expKey) {
+        appState._expiredInterventionKey = expKey;
+        sendGameAction({ type: "expire_intervention_timeout" });
+      }
+    }
+  }, 1000);
+}
+
 function renderPendingUndoBanner(gs) {
   const pend = gs.pendingUndoRequest;
   if (!pend) return null;
@@ -2795,6 +3046,7 @@ function renderTabletopView() {
     renderClockAndTurnBanner(gs, viewer, activePlayer),
     renderNpcPacingBanner(),
     renderPendingUndoBanner(gs),
+    renderPendingInterventionBanner(gs, viewer),
     renderContextualPromptBanner(gs, viewer, activePlayer),
     renderActiveClimateStrip(gs, viewer),
     el(
@@ -2925,15 +3177,16 @@ function renderContextualPromptBanner(gs, viewer, activePlayer) {
       );
     }
   } else if (gs.phase === "delivery_entry") {
-    promptText =
-      "🚙 Start of Night Delivery (8:00 P.M.): You must roll into the city at one of the five road entry points highlighted in gold on the map: B1 (Golden Gate Bridge), F1 (Bay Bridge), F5 (US-101), D6 (I-280), or A5 (Route 1). You may optionally Scout 1 neighborhood stack or deck card first.";
+    promptText = viewer.scoutedThisTurn
+      ? "🚙 Start of Night Delivery (8:00 P.M.): Pre-Gate Scout complete! Now select one of the five gold-highlighted entry points on the map: B1 (Golden Gate Bridge), F1 (Bay Bridge), F5 (US-101), D6 (I-280), or A5 (Route 1)."
+      : "🚙 Start of Night Delivery (8:00 P.M.): Step 1 — You must Scout 1 neighborhood tile or deck card first before selecting your entry point (B1, F1, F5, D6, or A5).";
     if (gs.activePlayerIndex === viewer.index) {
       extraActions.push(
         el("button", {
           type: "button",
-          className: "btn btn-sm",
-          title: "Scout a neighborhood tile or card deck before selecting your Via entrance",
-          text: "👁️ Scout",
+          className: `btn btn-sm ${!viewer.scoutedThisTurn ? "btn-primary" : ""}`,
+          title: "Mandatory: Scout 1 neighborhood tile or card deck before selecting your entry point",
+          text: viewer.scoutedThisTurn ? "👁️ Scouted ✓" : "👁️ Step 1: Scout Tile or Deck",
           disabled: viewer.scoutedThisTurn,
           onClick: () => openScoutModal(gs, viewer),
         })
@@ -2944,10 +3197,10 @@ function renderContextualPromptBanner(gs, viewer, activePlayer) {
     const fineGate = Math.floor(fineBase / 2);
     if (gs.turn === 1 && viewer.movesRemaining === 0) {
       promptText = `Turn 1 (8:00 P.M.) at ${viewer.position || "Gate"}: ${viewer.transactedThisTurn ? "Transacted ✓" : "1 Transaction available"
-        } • Scout (ends turn) or End Turn.`;
+        } • Scout (1 tile/card) or End Turn.`;
     } else {
       promptText = `Night Delivery (${gs.turnHourLabel}): ${viewer.movesRemaining} move left • ${viewer.transactedThisTurn ? "Transacted ✓" : "1 Transaction available"
-        }. Exit before Turn 10 ends (${fineBase}d Curfew Fine; ${fineGate}d on a Gate).`;
+        } • ${viewer.scoutedThisTurn ? "Scouted ✓" : "1 Scout available"}. Exit before Turn 10 ends (${fineBase}d Curfew Fine; ${fineGate}d on a Gate).`;
     }
     if (gs.activePlayerIndex === viewer.index) {
       if (viewer.canReturnShortcut) {
@@ -2990,8 +3243,8 @@ function renderContextualPromptBanner(gs, viewer, activePlayer) {
         el("button", {
           type: "button",
           className: "btn btn-sm",
-          title: "Scout a neighborhood tile or card deck at the end of your turn",
-          text: "👁️ Scout",
+          title: "Scout 1 neighborhood tile or card deck (only ends your turn if you have already completed all moves and transactions)",
+          text: viewer.scoutedThisTurn ? "👁️ Scouted ✓" : "👁️ Scout",
           disabled: viewer.scoutedThisTurn,
           onClick: () => openScoutModal(gs, viewer),
         }),
@@ -3234,21 +3487,27 @@ function buildPoliticalClimateBoardGridNode(gs, viewer, interactiveDraft = false
     }
   }
 
-  return el(
+  const climateZoom = getBoardFieldZoom("climate");
+  const climateViewport = el(
     "div",
     {
-      className: "senate-climate-board-matrix",
+      className: "senate-climate-board-matrix board-zoom-viewport",
       onScroll: (e) => {
         appState.climateBoardScrollLeft = e.currentTarget.scrollLeft;
       },
     },
     el(
       "div",
-      { className: "senate-climate-stage" },
+      {
+        className: "senate-climate-stage board-zoom-stage",
+        "data-zoom-field": "climate",
+        style: { width: climateZoom === 1 ? "100%" : `${Math.round(climateZoom * 100)}%` },
+      },
       el("div", { className: "senate-col-headers" }, ...colHeaderNodes),
       el("div", { className: "senate-climate-grid" }, ...matrixCellNodes)
     )
   );
+  return attachFieldPinchAndWheelZoom(climateViewport, "climate");
 }
 
 function renderPoliticalClimateBoard(gs, viewer) {
@@ -3269,6 +3528,7 @@ function renderPoliticalClimateBoard(gs, viewer) {
       el(
         "div",
         { style: { display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap" } },
+        createBoardFieldZoomControls("climate", "Zoom"),
         isDraftPhase
           ? el("span", {
             className: "badge",
@@ -4066,6 +4326,40 @@ function renderPendingEncounterPanel(gs, viewer) {
   const panelNode = renderPendingEncounterPanelCore(gs, viewer);
   if (!panelNode || !gs || !gs.pendingEncounter || !viewer) return panelNode;
   const pend = gs.pendingEncounter;
+  if (pend.interveningPlayerIndex !== null && pend.interveningPlayerIndex !== undefined) {
+    const intervPlayer =
+      (gs.players && gs.players[pend.interveningPlayerIndex]) || {
+        name: pend.interveningPlayerName || `Player ${pend.interveningPlayerIndex + 1}`,
+      };
+    const deadline = Number(pend.interventionDeadline) || 0;
+    const remSec =
+      deadline > 0
+        ? Math.max(0, Math.ceil(deadline - Date.now() / 1000))
+        : Math.max(0, Math.ceil(Number(pend.interventionRemainingSeconds || 60)));
+    const waitNotice = el(
+      "div",
+      {
+        className: "intervention-countdown-text",
+        style: {
+          padding: "0.5rem 0.75rem",
+          marginBottom: "0.65rem",
+          borderRadius: "5px",
+          background: "rgba(14, 42, 84, 0.95)",
+          border: "1.5px solid #d97706",
+          color: "#fde68a",
+          fontWeight: "800",
+          fontSize: "0.84rem",
+        },
+        text: `⏳ Awaiting approval from: ${intervPlayer.name} (${remSec}s remaining)`,
+      }
+    );
+    const titleEl = panelNode.querySelector && panelNode.querySelector(".panel-title");
+    if (titleEl && titleEl.nextSibling) {
+      panelNode.insertBefore(waitNotice, titleEl.nextSibling);
+    } else {
+      panelNode.prepend(waitNotice);
+    }
+  }
   if (pend.playerIndex !== viewer.index) {
     const encPlayer = (gs.players && gs.players[pend.playerIndex]) || null;
     const summaryNode = renderOpponentPublicSUVSummaryNode(gs, encPlayer, viewer, "light");
@@ -4359,10 +4653,10 @@ function renderPendingEncounterPanelCore(gs, viewer) {
         ]
         : cType === "theater"
           ? [
-            { roll: "0", color: "#ff6ec7", bg: "rgba(68, 12, 48, 0.92)", border: "#dc2626", title: "Roll 0 — Roasted:", desc: "Undo every gem change you got from Positive outcomes (satisfying demands, accepting offers, Influence cards, completed missions)." },
-            { roll: "I", color: "#15803d", bg: "#f0fdf4", border: "#16a34a", title: "Roll I — The Bit Clears Your Name:", desc: "Undo every gem change you got from Hostile outcomes (refused threats, combat, failed missions)." },
-            { roll: "II", color: "#7dd3fc", bg: "rgba(14, 42, 84, 0.92)", border: "#ca8a04", title: "Roll II — Blocked by Revelers:", desc: "Lose the rest of this turn AND skip your next turn." },
-            { roll: "III", color: "#14532d", bg: "#ecfdf5", border: "#15803d", title: "Roll III — Inspired Patron:", desc: "Roll 1(R) and draw that many Influence cards!" },
+            { roll: "0", color: "#ff6ec7", bg: "rgba(68, 12, 48, 0.92)", border: "#dc2626", title: "Roll 0 — Roasted:", desc: "Lose all Friendly favor outcomes (satisfying demands, accepting offers, Influence cards, completed missions)." },
+            { roll: "I", color: "#15803d", bg: "#f0fdf4", border: "#16a34a", title: "Roll I — The Bit Clears Your Name:", desc: "Lose all Hostile favor outcomes (refused threats, combat, failed missions)." },
+            { roll: "II", color: "#7dd3fc", bg: "rgba(14, 42, 84, 0.92)", border: "#ca8a04", title: "Roll II — Wasted Time:", desc: "Wasted time! Lose the rest of this turn AND skip your next turn." },
+            { roll: "III", color: "#14532d", bg: "#ecfdf5", border: "#15803d", title: "Roll III — Inspired Performance:", desc: "Roll a second 1(R) die and draw that many Influence cards!" },
           ]
           : [
             { roll: "0", color: "#ff6ec7", bg: "rgba(68, 12, 48, 0.92)", border: "#dc2626", title: "Roll 0 — Bare Prophecy:", desc: "Accept the mandatory Mission (0 bonus Influence sealed)." },
@@ -4580,6 +4874,56 @@ function renderPendingEncounterPanelCore(gs, viewer) {
             })
         )
       )
+    );
+  }
+
+  // Stage 0B-2: Open Mic Roll III — Prompt Player to Roll Second 1(R) Die for Bonus Influence Cards
+  if (stage === "theater_bonus_pre_roll") {
+    return el(
+      "div",
+      {
+        id: "pending-encounter-panel",
+        className: "panel",
+        style: { borderColor: "#16a34a" },
+      },
+      el(
+        "h3",
+        { className: "panel-title" },
+        el("span", { text: `🎭 Open Mic — Roll III (Inspired Performance)!` }),
+        el("span", {
+          style: { fontSize: "0.78rem", color: "var(--gold-bright)" },
+          text: "🎲 Roll a second 1(R) die to collect Influence cards!",
+        })
+      ),
+      el(
+        "div",
+        {
+          style: {
+            padding: "0.75rem 0.9rem",
+            background: "rgba(14, 42, 84, 0.92)",
+            border: "1.5px solid #16a34a",
+            borderRadius: "4px",
+            fontSize: "0.88rem",
+            color: "#86efac",
+            marginBottom: "0.95rem",
+            boxShadow: "var(--bevel-sunken)",
+          },
+        },
+        el("strong", { text: "🎭 Open Mic Roll III — Inspired Performance: " }),
+        pend.previewText || "Roll a second 1(R) die and draw that many Influence cards!"
+      ),
+      !isOtherPlayerEncounter
+        ? el("button", {
+          type: "button",
+          className: "btn btn-primary",
+          style: { fontSize: "0.95rem", padding: "0.55rem 1.25rem" },
+          text: "🎲 Roll Second 1(R) Die to Collect Influence Cards",
+          onClick: () => sendGameAction({ type: "resolve_encounter", decision: "roll_theater_bonus" }),
+        })
+        : el("div", {
+          style: { fontSize: "0.84rem", color: "var(--text-muted)" },
+          text: `Waiting for ${encPlayer.name} to roll their bonus 1(R) die for Influence cards...`,
+        })
     );
   }
 
@@ -6289,6 +6633,79 @@ function openSUVGoodDetailModal(item, gs, viewer, readOnly = false) {
         },
       })
     );
+    if (
+      (sellOpt.category === "Grain" || sellOpt.category === "Weed") &&
+      !sellOpt.isFencedCargo &&
+      Number(sellOpt.bulkGrainCount) >= 2 &&
+      Array.isArray(sellOpt.bulkGrainCardIds)
+    ) {
+      actionBtns.push(
+        el("button", {
+          type: "button",
+          className: "btn btn-primary",
+          disabled: viewer.transactedThisTurn,
+          text: `🌿 Bulk Sell All ${sellOpt.bulkGrainCount} Weed (${sellOpt.bulkGrainTotalPrice}(d) @ ${sellOpt.scarcitySymbol || "="})`,
+          onClick: () => {
+            closeModal();
+            sendGameAction({
+              type: "delivery_sell",
+              category: "Weed",
+              bulkGrain: true,
+              cardIds: sellOpt.bulkGrainCardIds,
+              missionId: sellOpt.missionId || undefined,
+            });
+          },
+        })
+      );
+    }
+    if (Array.isArray(sellOpt.amethystBoostOptions) && sellOpt.amethystBoostOptions.length > 0 && !viewer.transactedThisTurn) {
+      for (const boost of sellOpt.amethystBoostOptions) {
+        actionBtns.push(
+          el("button", {
+            type: "button",
+            className: "btn amethyst-boost-btn",
+            text: `🔮 Spend ${boost.spend} Sapphire → Sell (${boost.price}(d) @ ${boost.scarcitySymbol})`,
+            onClick: () => {
+              closeModal();
+              sendGameAction({
+                type: "delivery_sell",
+                category: sellOpt.category,
+                cardIds: [item.id],
+                missionId: sellOpt.missionId || undefined,
+                spendAmethysts: boost.spend,
+              });
+            },
+          })
+        );
+      }
+    }
+    if (
+      Array.isArray(sellOpt.bulkAmethystBoostOptions) &&
+      sellOpt.bulkAmethystBoostOptions.length > 0 &&
+      !viewer.transactedThisTurn &&
+      Array.isArray(sellOpt.bulkGrainCardIds)
+    ) {
+      for (const boost of sellOpt.bulkAmethystBoostOptions) {
+        actionBtns.push(
+          el("button", {
+            type: "button",
+            className: "btn amethyst-boost-btn",
+            text: `🔮 Spend ${boost.spend} Sapphire → Bulk Sell All ${sellOpt.bulkGrainCount} Weed (${boost.totalPrice}(d) @ ${boost.scarcitySymbol})`,
+            onClick: () => {
+              closeModal();
+              sendGameAction({
+                type: "delivery_sell",
+                category: "Weed",
+                bulkGrain: true,
+                cardIds: sellOpt.bulkGrainCardIds,
+                missionId: sellOpt.missionId || undefined,
+                spendAmethysts: boost.spend,
+              });
+            },
+          })
+        );
+      }
+    }
   }
   actionBtns.push(
     el("button", {
@@ -6486,7 +6903,7 @@ function renderLoadedGoodPhysicalCardNode(item, gs, viewer, readOnly = false) {
           className: "btn btn-sm amethyst-boost-btn",
           style: { width: "100%", padding: "0.15rem 0.24rem", fontSize: "0.64rem" },
           title: `Rent Control: Spend ${boost.spend} Sapphire${boost.spend > 1 ? "s" : ""
-            } (MS13 Favor) to boost sale to ${boost.scarcitySymbol} (${boost.price}d)`,
+            } (DSA Favor) to boost sale to ${boost.scarcitySymbol} (${boost.price}d)`,
           text: `🔮 -${boost.spend} Sapphire → ${boost.price}d (${boost.scarcitySymbol})`,
           onClick: () =>
             sendGameAction({
@@ -6495,6 +6912,33 @@ function renderLoadedGoodPhysicalCardNode(item, gs, viewer, readOnly = false) {
               cardIds: [item.id],
               missionId: sellOpt.missionId || undefined,
               spendAmethysts: boost.spend,
+            }),
+        })
+      );
+    }
+    if (
+      Array.isArray(sellOpt.bulkAmethystBoostOptions) &&
+      sellOpt.bulkAmethystBoostOptions.length > 0 &&
+      !viewer.transactedThisTurn &&
+      Array.isArray(sellOpt.bulkGrainCardIds)
+    ) {
+      const bBoost = sellOpt.bulkAmethystBoostOptions[sellOpt.bulkAmethystBoostOptions.length - 1];
+      externalMetaNodes.push(
+        el("button", {
+          type: "button",
+          className: "btn btn-sm amethyst-boost-btn",
+          style: { width: "100%", padding: "0.15rem 0.24rem", fontSize: "0.64rem" },
+          title: `Rent Control Bulk Weed Sale: Spend ${bBoost.spend} Sapphire${bBoost.spend > 1 ? "s" : ""
+            } to sell all ${sellOpt.bulkGrainCount} Weed cards at ${bBoost.scarcitySymbol} (${bBoost.totalPrice}d total)`,
+          text: `🔮 -${bBoost.spend} Sapphire → Bulk All ${sellOpt.bulkGrainCount} (${bBoost.totalPrice}d)`,
+          onClick: () =>
+            sendGameAction({
+              type: "delivery_sell",
+              category: "Weed",
+              bulkGrain: true,
+              cardIds: sellOpt.bulkGrainCardIds,
+              missionId: sellOpt.missionId || undefined,
+              spendAmethysts: bBoost.spend,
             }),
         })
       );
@@ -7422,6 +7866,53 @@ function renderOstiaMarketBoard(gs, viewer) {
     }
   }
 
+  const marketZoom = getBoardFieldZoom("market");
+  const marketViewport = attachFieldPinchAndWheelZoom(
+    el(
+      "div",
+      {
+        className: "ostia-market-board-matrix board-zoom-viewport",
+        onScroll: (e) => {
+          appState.marketBoardScrollLeft = e.currentTarget.scrollLeft;
+          appState.marketBoardScrollTop = e.currentTarget.scrollTop;
+          appState.marketBoardLastScrollAt = Date.now();
+        },
+        onTouchstart: () => {
+          appState.marketBoardTouchActive = true;
+          appState.marketBoardLastScrollAt = Date.now();
+        },
+        onTouchmove: () => {
+          appState.marketBoardTouchActive = true;
+          appState.marketBoardLastScrollAt = Date.now();
+        },
+        onTouchend: () => {
+          appState.marketBoardTouchActive = false;
+          appState.marketBoardLastScrollAt = Date.now();
+        },
+        onTouchcancel: () => {
+          appState.marketBoardTouchActive = false;
+        },
+        onWheel: () => {
+          appState.marketBoardLastScrollAt = Date.now();
+        },
+        onPointerdown: () => {
+          appState.marketBoardLastScrollAt = Date.now();
+        },
+      },
+      el(
+        "div",
+        {
+          className: "market-board-zoom-stage board-zoom-stage",
+          "data-zoom-field": "market",
+          style: { width: marketZoom === 1 ? "100%" : `${Math.round(marketZoom * 100)}%` },
+        },
+        colHeadersRow,
+        el("div", { className: "ostia-market-grid" }, ...gridCells)
+      )
+    ),
+    "market"
+  );
+
   return el(
     "div",
     { className: "market-board" },
@@ -7429,7 +7920,12 @@ function renderOstiaMarketBoard(gs, viewer) {
       "div",
       { className: "panel-title fresco-banner-header fresco-merchants", style: { flexWrap: "wrap", gap: "0.5rem" } },
       el("span", { text: "🧳 Safe House Motel — Open Suitcase Market Board" }),
-      renderMarketHeaderDenariiCounts(gs, viewer)
+      el(
+        "div",
+        { style: { display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap" } },
+        createBoardFieldZoomControls("market", "Zoom"),
+        renderMarketHeaderDenariiCounts(gs, viewer)
+      )
     ),
     renderMarketNpcSpeechBubble(),
     forumSpec
@@ -7474,40 +7970,7 @@ function renderOstiaMarketBoard(gs, viewer) {
           : null
       )
       : null,
-    el(
-      "div",
-      {
-        className: "ostia-market-board-matrix",
-        onScroll: (e) => {
-          appState.marketBoardScrollLeft = e.currentTarget.scrollLeft;
-          appState.marketBoardScrollTop = e.currentTarget.scrollTop;
-          appState.marketBoardLastScrollAt = Date.now();
-        },
-        onTouchstart: () => {
-          appState.marketBoardTouchActive = true;
-          appState.marketBoardLastScrollAt = Date.now();
-        },
-        onTouchmove: () => {
-          appState.marketBoardTouchActive = true;
-          appState.marketBoardLastScrollAt = Date.now();
-        },
-        onTouchend: () => {
-          appState.marketBoardTouchActive = false;
-          appState.marketBoardLastScrollAt = Date.now();
-        },
-        onTouchcancel: () => {
-          appState.marketBoardTouchActive = false;
-        },
-        onWheel: () => {
-          appState.marketBoardLastScrollAt = Date.now();
-        },
-        onPointerdown: () => {
-          appState.marketBoardLastScrollAt = Date.now();
-        },
-      },
-      colHeadersRow,
-      el("div", { className: "ostia-market-grid" }, ...gridCells)
-    )
+    marketViewport
   );
 }
 
@@ -7605,8 +8068,8 @@ function showRomeHoverTooltip(coord, cell, previewTile, isScoutedPreview, crossi
     el(
       "div",
       { style: { fontSize: "0.72rem", marginTop: "0.38rem", lineHeight: "1.35", color: "#f8f1e5", width: "100%" } },
-      el("div", {}, el("strong", { style: { color: "var(--arch-gold)" }, text: "Buys: " }), sellsStr),
-      buysStr ? el("div", {}, el("strong", { style: { color: "#7dd3fc" }, text: "Sells: " }), buysStr) : null,
+      el("div", {}, el("strong", { style: { color: "var(--arch-gold)" }, text: "Sell: " }), sellsStr),
+      buysStr ? el("div", {}, el("strong", { style: { color: "#7dd3fc" }, text: "Buy: " }), buysStr) : null,
       centerParts.length > 0 ? el("div", { style: { color: "#fde68a" }, text: centerParts.join(" • ") }) : null,
       crossingSummary
         ? el("div", {
@@ -7692,30 +8155,33 @@ function showRomeUnrevealedCellHoverTooltip(coord, cell, unrevealedCount, crossi
   positionRomeHoverTooltip(tooltipEl, clientX, clientY);
 }
 
+const PERIMETER_SINGLE_EXIT_DIR = {
+  A1: "W",
+  B1: "N",
+  C1: "N",
+  D1: "N",
+  E1: "N",
+  F1: "E",
+  A2: "W",
+  F2: "E",
+  A3: "W",
+  F3: "E",
+  A4: "W",
+  F4: "E",
+  A5: "W",
+  F5: "E",
+  A6: "S",
+  B6: "S",
+  C6: "S",
+  D6: "S",
+  E6: "S",
+  F6: "E",
+};
+
 function getCellOffBoardDirs(coord) {
   if (!coord || coord.length < 2) return [];
-  const colIdx = COLS.indexOf(coord.slice(0, 1));
-  const rowIdx = ROWS.indexOf(coord.slice(1));
-  if (colIdx < 0 || rowIdx < 0) return [];
-  const deltas = {
-    N: [0, -1],
-    NE: [1, -1],
-    E: [1, 0],
-    SE: [1, 1],
-    S: [0, 1],
-    SW: [-1, 1],
-    W: [-1, 0],
-    NW: [-1, -1],
-  };
-  const offDirs = [];
-  for (const [d, [dx, dy]] of Object.entries(deltas)) {
-    const nx = colIdx + dx;
-    const ny = rowIdx + dy;
-    if (nx < 0 || nx >= COLS.length || ny < 0 || ny >= ROWS.length) {
-      offDirs.push(d);
-    }
-  }
-  return offDirs;
+  const singleDir = PERIMETER_SINGLE_EXIT_DIR[coord];
+  return singleDir ? [singleDir] : [];
 }
 
 function renderRomeNightBoard(gs, viewer) {
@@ -8065,31 +8531,12 @@ function renderRomeNightBoard(gs, viewer) {
   const showViaStartBanner =
     gs.phase === "delivery_entry" || (gs.phase === "delivery" && Number(gs.turn) === 1);
 
-  return el(
-    "div",
-    { className: "rome-layout" },
-    showViaStartBanner
-      ? el(
-        "div",
-        {
-          className: "via-start-reminder-bar",
-        },
-        el("span", { className: "via-start-reminder-icon", text: "⛩️" }),
-        el(
-          "span",
-          {
-            text:
-              gs.phase === "delivery_entry"
-                ? "Start at an Entry Point: Every dealer must enter San Francisco at one of the five gold-outlined entry points — B1 (Golden Gate Bridge), F1 (Bay Bridge), F5 (US-101), D6 (I-280), or A5 (Route 1)."
-                : "8:00 P.M. Entry Hour: Dealers begin the night at one of San Francisco's five gold-outlined entry points (B1, F1, F5, D6, A5).",
-          }
-        )
-      )
-      : null,
+  const romeZoom = getBoardFieldZoom("rome");
+  const romeFrameViewport = attachFieldPinchAndWheelZoom(
     el(
       "div",
       {
-        className: `rome-board-frame ${canExitOnEdgeClick && passableExitDir ? "can-exit-rome-edge" : ""}`,
+        className: `rome-board-frame board-zoom-viewport ${canExitOnEdgeClick && passableExitDir ? "can-exit-rome-edge" : ""}`,
         onMouseLeave: () => hideRomeHoverTooltip(),
         onClick: (e) => {
           if (e.target === e.currentTarget) {
@@ -8100,7 +8547,9 @@ function renderRomeNightBoard(gs, viewer) {
       el(
         "div",
         {
-          className: "rome-board-matrix",
+          className: "rome-board-matrix board-zoom-stage",
+          "data-zoom-field": "rome",
+          style: { width: romeZoom === 1 ? "100%" : `${Math.round(romeZoom * 100)}%` },
           onMouseLeave: () => hideRomeHoverTooltip(),
         },
         el("div", {
@@ -8187,6 +8636,37 @@ function renderRomeNightBoard(gs, viewer) {
         el("div", { className: "rome-grid" }, ...gridCells, renderRomeNpcAnimationLayer())
       )
     ),
+    "rome"
+  );
+
+  return el(
+    "div",
+    { className: "rome-layout" },
+    el(
+      "div",
+      { className: "rome-field-toolbar" },
+      el("span", { className: "rome-field-toolbar-title", text: "🗺️ San Francisco 6×6 Night Delivery Map" }),
+      createBoardFieldZoomControls("rome", "Map Zoom")
+    ),
+    showViaStartBanner
+      ? el(
+        "div",
+        {
+          className: "via-start-reminder-bar",
+        },
+        el("span", { className: "via-start-reminder-icon", text: "⛩️" }),
+        el(
+          "span",
+          {
+            text:
+              gs.phase === "delivery_entry"
+                ? "Start at an Entry Point: Every dealer must enter San Francisco at one of the five gold-outlined entry points — B1 (Golden Gate Bridge), F1 (Bay Bridge), F5 (US-101), D6 (I-280), or A5 (Route 1)."
+                : "8:00 P.M. Entry Hour: Dealers begin the night at one of San Francisco's five gold-outlined entry points (B1, F1, F5, D6, A5).",
+          }
+        )
+      )
+      : null,
+    romeFrameViewport,
     renderRomeClockBoard(gs)
   );
 }
@@ -8349,8 +8829,8 @@ function renderRomeClockBoard(gs) {
       rows: [
         ["0", "Lose all Friendly favor outcomes."],
         ["I", "Lose all Hostile favor outcomes."],
-        ["II", "Lose rest of this turn AND next turn (flip SUV)."],
-        ["III", "Roll 1(R) and draw that many Influence cards."],
+        ["II", "Wasted time. Lose rest of this turn AND next turn (flip SUV)."],
+        ["III", "Roll a second 1(R) die and draw that many Influence cards."],
       ],
     },
     {
@@ -8700,7 +9180,25 @@ function renderSUVNavigationWidget(gs, viewer) {
                       spendAmethysts: boost.spend,
                     }),
                 })
-              )
+              ),
+              ...(Array.isArray(sOpt.bulkAmethystBoostOptions) && Array.isArray(sOpt.bulkGrainCardIds)
+                ? sOpt.bulkAmethystBoostOptions.map((bBoost) =>
+                  el("button", {
+                    type: "button",
+                    className: "btn btn-sm amethyst-boost-btn",
+                    text: `🔮 Spend ${bBoost.spend} Sapphire${bBoost.spend > 1 ? "s" : ""} → Bulk All ${sOpt.bulkGrainCount} Weed (${bBoost.totalPrice}d @ ${bBoost.scarcitySymbol})`,
+                    onClick: () =>
+                      sendGameAction({
+                        type: "delivery_sell",
+                        category: "Weed",
+                        bulkGrain: true,
+                        cardIds: sOpt.bulkGrainCardIds,
+                        missionId: sOpt.missionId || undefined,
+                        spendAmethysts: bBoost.spend,
+                      }),
+                  })
+                )
+                : [])
             )
           );
         }
@@ -8760,9 +9258,28 @@ function renderSUVNavigationWidget(gs, viewer) {
             border: "1px solid rgba(216, 169, 75, 0.35)",
           },
         },
+        !viewer.scoutedThisTurn
+          ? el(
+            "div",
+            { style: { marginBottom: "0.45rem" } },
+            el("div", {
+              style: { fontSize: "0.74rem", fontWeight: "700", color: "#38bdf8", marginBottom: "0.28rem" },
+              text: "👁️ Step 1 (Required): Scout 1 Tile or Deck Card Before Selecting a Gate:",
+            }),
+            el("button", {
+              type: "button",
+              className: "btn btn-sm btn-primary",
+              style: { width: "100%" },
+              text: "👁️ Scout 1 Tile or Deck Card First",
+              onClick: () => openScoutModal(gs, viewer),
+            })
+          )
+          : null,
         el("div", {
           style: { fontSize: "0.74rem", fontWeight: "700", color: "var(--gold-bright)", marginBottom: "0.35rem" },
-          text: "🚪 Enter Rome via a City Gate:",
+          text: viewer.scoutedThisTurn
+            ? "🚪 Step 2: Enter San Francisco via an Entry Gate:"
+            : "🚪 Step 2: Select Entry Gate (Scout 1 Tile/Card First):",
         }),
         el(
           "div",
@@ -8771,8 +9288,11 @@ function renderSUVNavigationWidget(gs, viewer) {
             el("button", {
               type: "button",
               className: "btn btn-sm btn-primary",
+              disabled: !viewer.scoutedThisTurn,
               text: `🚪 ${gCoord}`,
-              title: `Move onto Gate ${gCoord}`,
+              title: viewer.scoutedThisTurn
+                ? `Move onto Gate ${gCoord}`
+                : "Scout 1 tile or deck card first before selecting your entry gate",
               onClick: () => sendGameAction({ type: "select_gate", gate: gCoord }),
             })
           )

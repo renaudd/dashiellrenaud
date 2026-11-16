@@ -1,5 +1,5 @@
-import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=124";
-import { renderApp } from "./app.js?v=124";
+import { appState, createDenariusSvgNode, createSellPriceSymbolNode, createBuyPriceSymbolNode, createDeckOfCardsIconNode, createAncientRomanChestIconNode, createMoveActionCircleNode, createTransactionActionCircleNode, appendTextWithRomeDice, el } from "./core_ui.js?v=125";
+import { renderApp } from "./app.js?v=125";
 
 const RULEBOOK_SECTIONS = [
   {
@@ -116,7 +116,7 @@ const RULEBOOK_SECTIONS = [
     id: "delivery",
     title: "5. Phase II: Night Delivery in San Francisco & Tile Icons",
     paragraphs: [
-      "At 8:00 P.M. (Turn 1), each dealer may take 1 Initial Scout (tile or deck card) and then enters San Francisco through one of the 5 road entry points: B1 (Golden Gate Bridge), F1 (Bay Bridge), F5 (US-101), D6 (I-280), or A5 (Route 1). Entering uses your Turn 1 movement. Leaving is different: the Pacific (west) edge has almost no way out except rare, expensive Speedboats; the Bay (north and east) edges offer cheaper boat escapes (Sailboat 1(d), Ferry 2(d), Cargo Ship 3(d)); and the Peninsula (south) edge has the most exits, usually free.",
+      "At 8:00 P.M. (Turn 1), each dealer must first Scout 1 neighborhood tile or 1 deck card, and then enters San Francisco through one of the 5 road entry points: B1 (Golden Gate Bridge), F1 (Bay Bridge), F5 (US-101), D6 (I-280), or A5 (Route 1). Entering uses your Turn 1 movement. Leaving is different: the Pacific (west) edge has almost no way out except rare, expensive Speedboats; the Bay (north and east) edges offer cheaper boat escapes (Sailboat 1(d), Ferry 2(d), Cargo Ship 3(d)); and the Peninsula (south) edge has the most exits, usually free.",
       "Across Turns 1–10 (8:00 P.M. to 5:00 A.M.), each active dealer resolves their hourly turn in strict sequence:",
     ],
     iconGrid: [
@@ -157,8 +157,8 @@ const RULEBOOK_SECTIONS = [
       "Step 3 — Edge Cost / Hazard: Pay any 2(d) road toll or resolve any Edge Encounter crossed.",
       "Step 4 — Job Cargo Pickup & Delivery: Upon arriving in a neighborhood—BEFORE any Center Tile Encounter triggers—you may load or deliver matching Job Cargo!",
       "Step 5 — Center Tile Encounter: Resolve any Center Encounter on the tile (Celebrities, Cops, Criminals, Protest, Open Mic, or Prophet).",
-      "Step 6 — One Transaction (1 Good/Hr (T), or Bulk Weed!): Sell AT MOST 1 Good card matching a buyer ('Buys:') on your current tile (or an active Sell Job here) at its bold Green (SELL_SYM) price—EXCEPT for non-fenced WEED, where 1 hourly Transaction may sell ANY NUMBER (or all!) of your Weed cards together at the current Weed scarcity modifier! Alternatively, Purchase 1 Good at a Wholesale Spot ('Sells:' at C3, D3, or D4) at its italic Red (BUY_SYM) price, OR Gamble once at a Dice Game tile (up to 20(d) wager).",
-      "Step 7 — End-of-Turn Scout: After completing your Move and Transaction actions, you may Scout one time at the end of your turn by peeking at the top unrevealed tile of any neighborhood stack or the top card of any deck. Committing to your Scout action immediately advances the turn so the next dealer in sequence can begin their turn while you finish examining the scouted tile or card.",
+      "Step 6 — One Transaction (1 Good/Hr (T), or Bulk Weed!): Sell AT MOST 1 Good card matching a buyer ('Sell:') on your current tile (or an active Sell Job here) at its bold Green (SELL_SYM) price—EXCEPT for non-fenced WEED, where 1 hourly Transaction may sell ANY NUMBER (or all!) of your Weed cards together at the current Weed scarcity modifier! Alternatively, Purchase 1 Good at a Wholesale Spot ('Buy:' at C3, D3, or D4) at its italic Red (BUY_SYM) price, OR Gamble once at a Dice Game tile (up to 20(d) wager).",
+      "Step 7 — Scout (1 Tile or Deck Card): Once per turn (before or after moving or transacting), you may Scout by peeking at the top unrevealed tile of any neighborhood stack or the top card of any deck. Scouting only ends your turn automatically if you have already completed all of your Move and Transaction actions for the hour.",
     ],
   },
   {
@@ -202,7 +202,7 @@ const RULEBOOK_SECTIONS = [
       {
         img: "./assets/icons/theater_masks.png?v=121",
         title: "Open Mic (1R Chart)",
-        desc: "Dark gray microphone icon. Roll 1(R): 0 = Lose all positive Favor; 1 = Lose all negative Favor; 2 = Lose rest of turn & next turn; 3 = Draw 1(R) Influence.",
+        desc: "Dark gray microphone icon. Roll 1(R): 0 = Lose all Friendly Favor outcomes; 1 = Lose all Hostile Favor outcomes; 2 = Wasted time (lose rest of turn & next turn); 3 = Roll 1(R) to draw Influence.",
       },
       {
         img: "./assets/icons/prophet_icon.png?v=121",
@@ -235,7 +235,7 @@ const RULEBOOK_SECTIONS = [
       "Combat Power (CP), Cargo Gear, & Pre-Roll Strike (Pipe Bomb): Both sides roll Action Dice (R) plus Henchmen, Weapons, mandatory Uppers, and Influence modifiers (plus +1 CP per positive Ruby & +2 CP to Cops if Back the Blue is active). Note that Body Armor carries 0 CP in street ambushes (it absorbs wounds instead). Pipe Bomb is a one-time use Pre-Roll (R) Strike weapon used immediately before combat: each unabsorbed wound kills a Henchman or reduces the opponent's count X by 1 (if X reaches 0, if X cannot be reduced, or if a Henchman cannot be killed, the opponent or player is defeated outright!). If Player CP ≥ Opponent CP against an NPC, you win!",
       "Addiction Rule (Mandatory Uppers & Open Mic Sets): Dealers cannot resist dipping into their own stash of stimulants. Any Uppers loaded in your SUV are automatically used in combat (adding both their positive CP rolls/bonuses and any negative crash penalties), and if you encounter an Open Mic on a tile edge or center, you must stop in for a mandatory 1(R) set!",
       "Armor, Henchmen, & Dealer Fate (Damage Deficit Note): If Opponent CP > Player CP, suffer Raw Wounds = (Opponent CP − Player CP). Body Armor/Shields reduce Wounds first; each remaining Wound kills 1 Henchman. If an unblocked Wound reaches you, roll 1(R) on the Dealer Fate Chart: 0 = Out for the night (your night ends without losing any Goods or Bitcoin); 1 = Left for dead (lose all Goods); 2 = Jumped & robbed (lose all Bitcoin); 3 = Begged for mercy (lose all Influence cards).",
-      "1(R) Street Charts: Protest (0: lose all Opiates; 1: lose all Weed; 2: lose most expensive Good; 3: safe), Open Mic (0: undo all Positive-outcome gem changes; 1: undo all Hostile-outcome gem changes; 2: lose rest of turn & next turn; 3: draw 1(R) Influence), Prophet (take mandatory Job + seal 1(R) Influence cards).",
+      "1(R) Street Charts: Protest (0: lose all Opiates; 1: lose all Weed; 2: lose most expensive Good; 3: safe), Open Mic (0: lose all Friendly favor outcomes; 1: lose all Hostile favor outcomes; 2: Wasted time — lose rest of turn & next turn; 3: roll 1(R) to draw Influence), Prophet (take mandatory Job + seal 1(R) Influence cards).",
       "Street Dice Gambling: On a tile with the Dice icon, wager 1(d) to 20(d) (capped at 20(d) per gamble action) and roll 1(R) to win Wager × Roll!",
     ],
   },
@@ -586,7 +586,7 @@ function renderRulebookView() {
   });
 
   if (typeof appState.rulebookTocCollapsed !== "boolean") {
-    appState.rulebookTocCollapsed = typeof window !== "undefined" && window.innerWidth <= 980;
+    appState.rulebookTocCollapsed = true;
   }
 
   const tocBody = el(

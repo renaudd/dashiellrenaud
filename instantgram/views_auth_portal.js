@@ -1,6 +1,6 @@
-import { maskEmailClient, isFirebaseClientConfigured, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, FACTION_META, SUV_COLOR_PALETTE, renderSUVIconNode, renderGoogleLogoSvg, appState, el, showToast, closeModal, showModal } from "./core_ui.js?v=124";
-import { apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, refreshPortalOverview, seedSeenScoutIds, openGame, renderApp } from "./app.js?v=124";
-import { stopNpcTurnPacing, enqueueNewNpcEvents } from "./dice_and_sfx.js?v=124";
+import { maskEmailClient, isFirebaseClientConfigured, signInWithFirebaseCustomToken, signInWithFirebaseEmailPassword, signInWithFirebaseGooglePopup, FACTION_META, SUV_COLOR_PALETTE, renderSUVIconNode, renderGoogleLogoSvg, appState, el, showToast, closeModal, showModal } from "./core_ui.js?v=125";
+import { apiRequest, applyUserDefaultBoardView, syncGameUiTransitions, refreshPortalOverview, seedSeenScoutIds, openGame, renderApp } from "./app.js?v=125";
+import { stopNpcTurnPacing, enqueueNewNpcEvents } from "./dice_and_sfx.js?v=125";
 
 function buildFallbackFinalStandings(state) {
   if (!state || !Array.isArray(state.players)) return [];
@@ -1442,7 +1442,7 @@ function renderPortalView() {
     text:
       appState.portalInviteMode === "invite_only"
         ? "✉️ Create Invite-Only Lobby & Email Invites"
-        : "🌐 Open Multiplayer Lobby (Open Invitation)",
+        : "🌐 Launch Multiplayer Game (Open Invitation)",
     onClick: () => createGame(false),
   });
 
@@ -1456,7 +1456,7 @@ function renderPortalView() {
         openModeBtn.classList.add("selected");
         inviteOnlyModeBtn.classList.remove("selected");
         inviteUsernamesContainer.style.display = "none";
-        openLobbyBtn.textContent = "🌐 Open Multiplayer Lobby (Open Invitation)";
+        openLobbyBtn.textContent = "🌐 Launch Multiplayer Game (Open Invitation)";
       },
     },
     el("span", { className: "invite-mode-card-title", text: "🌐 Open Invitation" }),

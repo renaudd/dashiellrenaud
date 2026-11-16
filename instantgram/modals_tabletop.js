@@ -1,5 +1,5 @@
-import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=124";
-import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=124";
+import { COLS, ROWS, FACTION_META, EDGE_LABELS, parseTollAmount, formatEdgeLabel, getTiberBridgeName, isTiberCrossingBlocked, renderSUVIconNode, appState, replaceDenariiTokens, createMoveActionCircleNode, createTransactionActionCircleNode, resolveGoodTrackClass, el, formatTileModifier, renderFullGoodCardFaceNode, getInfluenceCardEffectText, formatHostileFavorPenaltyText, showToast, closeModal, showModal } from "./core_ui.js?v=125";
+import { renderDynamicTileCardNode, renderPhysicalMissionCardNode, renderPhysicalInfluenceCardNode, renderPhysicalEncounterCardNode, sendGameAction, armDieCardAction } from "./app.js?v=125";
 
 const GOOD_CATEGORY_DISPLAY_MAP = {
   Grain: "Weed",
@@ -340,7 +340,7 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
     moveDir &&
     Number(viewer.movesRemaining || 0) > 0
   );
-  const canMoveHere = Boolean(canMoveStep || isGateEntrance);
+  const canMoveHere = Boolean(canMoveStep || (isGateEntrance && viewer && viewer.scoutedThisTurn));
   const canEndTurnHere = Boolean(!isEntryPhase && isDeliveryPhase && isMyTurn);
 
   const unusedMoves =
@@ -448,7 +448,9 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
   }
 
   const moveBtnLabel = isGateEntrance
-    ? `🚪 Enter at ${cellName} (${coord})`
+    ? viewer && viewer.scoutedThisTurn
+      ? `🚪 Enter at ${cellName} (${coord})`
+      : "👁️ Scout 1 Tile/Card Before Entering Gate"
     : moveDir
       ? `🚙 Move to ${cellName} (${moveDir})`
       : `🚙 Move to ${cellName}`;
@@ -527,9 +529,9 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
           `${coord} — ${cellName}${isCurrent ? " (Your Current Tile)" : ""}`
         ),
         activeInfoTile
-          ? el("div", {}, el("strong", { style: { color: "var(--gold-bright)" }, text: exposedTile ? "Buys: " : "Scouted Top Tile Buys: " }), sellsStr)
+          ? el("div", {}, el("strong", { style: { color: "var(--gold-bright)" }, text: exposedTile ? "Sell: " : "Scouted Top Tile Sell: " }), sellsStr)
           : null,
-        buysStr ? el("div", {}, el("strong", { style: { color: "#38bdf8" }, text: "Market Sells: " }), buysStr) : null,
+        buysStr ? el("div", {}, el("strong", { style: { color: "#38bdf8" }, text: "Buy: " }), buysStr) : null,
         centerParts.length > 0
           ? el(
             "div",
@@ -602,8 +604,8 @@ function openFaceUpTileUpCloseModal(gs, viewer, coord, cell, tileData = null, mo
             disabled: !canScoutTile,
             title: canScoutTile
               ? isEntryPhase
-                ? `Scout the top face-down tile of ${coord} before entering San Francisco`
-                : `Scout the top face-down tile of ${coord} and end your turn`
+                ? `Scout the top face-down tile of ${coord} before selecting your entry Gate`
+                : `Scout the top face-down tile of ${coord} (only ends turn if all moves and transactions are completed)`
               : "Scout Tile is unavailable (already scouted, no face-down tiles, or not your turn)",
             text: `👁️ Scout Tile ${coord}`,
             onClick: () => {
@@ -871,7 +873,30 @@ function openNpcOfferModal(gs, viewer) {
         el("div", {
           style: { fontSize: "0.8rem", color: "var(--text-main)" },
           text: `Your Holdings: 𐆖${viewer.cash} Denarii  •  SUV Space: ${usedBlocks}/${maxBlocks}■ used`,
-        })
+        }),
+        !isBuy && offer.canBulkSellWeed && Number(offer.bulkWeedCount) >= 2
+          ? el(
+            "div",
+            { style: { marginTop: "0.55rem" } },
+            el("button", {
+              type: "button",
+              className: "btn btn-primary",
+              style: { width: "100%" },
+              text: replaceDenariiTokens(
+                `🌿 Bulk Sell All ${offer.bulkWeedCount} Weed Cards for ${offer.bulkWeedTotalPrice}(d) Total!`
+              ),
+              onClick: () => {
+                closeModal();
+                sendGameAction({
+                  type: "resolve_npc_offer",
+                  decision: "accept",
+                  bulkGrain: true,
+                  bulkWeed: true,
+                });
+              },
+            })
+          )
+          : null
       ),
       candidateCards.length === 0
         ? el("p", {
@@ -1179,8 +1204,8 @@ function openScoutResultModal(si) {
           },
         },
         el("div", {}, el("strong", { style: { color: "var(--gold-bright)" }, text: "Tile ID: " }), rData.id || coord),
-        el("div", {}, el("strong", { style: { color: "var(--gold-bright)" }, text: "Buys: " }), sellsText),
-        buysText ? el("div", {}, el("strong", { style: { color: "#0369a1" }, text: "Forum Sells: " }), buysText) : null,
+        el("div", {}, el("strong", { style: { color: "var(--gold-bright)" }, text: "Sell: " }), sellsText),
+        buysText ? el("div", {}, el("strong", { style: { color: "#0369a1" }, text: "Buy: " }), buysText) : null,
         el(
           "div",
           {},
@@ -1915,6 +1940,8 @@ function triggerMissionCargoLoadWithOverflow(m, viewer) {
       sendGameAction({
         type: "delivery_load_cargo",
         missionId: m.id,
+        discardSUVIds,
+        fireHenchmanIds,
         discardCartIds: discardSUVIds,
         fireGuardIds: fireHenchmanIds,
       });
@@ -2032,16 +2059,18 @@ function openPendingSUVOverflowModal(_gs, viewer) {
     showInspectBoardBtn: true,
     onConfirm: (discardSUVIds, fireHenchmanIds) => {
       sendGameAction({
-        type: "resolve_cart_overflow",
+        type: "resolve_suv_overflow",
         overflowId: ovf.id,
         decision: "accept",
+        discardSUVIds,
+        fireHenchmanIds,
         discardCartIds: discardSUVIds,
         fireGuardIds: fireHenchmanIds,
       });
     },
     onCancel: () => {
       sendGameAction({
-        type: "resolve_cart_overflow",
+        type: "resolve_suv_overflow",
         overflowId: ovf.id,
         decision: "refuse",
       });
@@ -2908,17 +2937,17 @@ function openScoutModal(gs, _viewer) {
 
   showModal(
     isEntryPhase
-      ? "👁️ Pre-Night Initial Scout (Before Selecting Entry Point)"
-      : "👁️ Scout Action (Ends Turn)",
+      ? "👁️ Mandatory Pre-Gate Scout (Scout 1 Tile or Deck Card First)"
+      : "👁️ Scout Action (1 Tile or Deck Card)",
     el(
       "div",
       {},
-      !isEntryPhase
-        ? el("p", {
-          style: { fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "0", marginBottom: "0.75rem" },
-          text: "Committing to your Scout action immediately advances the turn so the next dealer in sequence can begin while you examine the scouted card or tile.",
-        })
-        : null,
+      el("p", {
+        style: { fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "0", marginBottom: "0.75rem" },
+        text: isEntryPhase
+          ? "Before selecting your entry Gate into San Francisco, you must Scout 1 neighborhood tile stack or 1 card deck."
+          : "You may Scout before or after moving and transacting. Scouting only ends your turn automatically if you have already completed all of your moves and transactions for this hour.",
+      }),
       el(
         "div",
         { style: { marginBottom: "1.1rem" } },

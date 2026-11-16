@@ -1,5 +1,5 @@
-import { resolveAssetUrl, COLS, ROWS, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getPlayerHexColor, renderSUVIconNode, ROME_DIE_ROMAN_FACES, appState, replaceDenariiTokens, el, resolveGoodCardArtUrl, resolveFullGoodCardFaceUrl, resolveFullEncounterCardFaceUrl } from "./core_ui.js?v=124";
-import { checkPostActionModals, sendGameAction, renderApp, armDieCardAction, handleDieSelectionClick, renderOpponentPublicSUVSummaryNode, getCellOffBoardDirs } from "./app.js?v=124";
+import { resolveAssetUrl, COLS, ROWS, DIE_SYMBOL_COLORS, DIE_SWATCH_COLORS, getPlayerHexColor, renderSUVIconNode, ROME_DIE_ROMAN_FACES, appState, replaceDenariiTokens, el, resolveGoodCardArtUrl, resolveFullGoodCardFaceUrl, resolveFullEncounterCardFaceUrl } from "./core_ui.js?v=125";
+import { checkPostActionModals, sendGameAction, renderApp, armDieCardAction, handleDieSelectionClick, renderOpponentPublicSUVSummaryNode, getCellOffBoardDirs } from "./app.js?v=125";
 
 function toRomanDieSymbol(val) {
   if (typeof val === "string" && ["0", "I", "II", "III", "IV", "V", "VI"].includes(val)) {
@@ -439,6 +439,9 @@ function getDieClickMetaForOverlay(ev, _grp, gIdx, dIdx) {
   if (!viewer) return null;
   const isEncounterOwner = pend.playerIndex === viewer.index;
   const isIntervenor = pend.interveningPlayerIndex === viewer.index;
+  if (pend.interveningPlayerIndex !== null && pend.interveningPlayerIndex !== undefined && !isIntervenor) {
+    return null;
+  }
   if (!isEncounterOwner && !isIntervenor) return null;
 
   const stage = pend.stage || "pre_decision";
@@ -566,6 +569,27 @@ function buildDiceOverlayInteractiveControls() {
   if (!viewer) return null;
   const isEncounterOwner = pend.playerIndex === viewer.index;
   const isIntervenor = pend.interveningPlayerIndex === viewer.index;
+  if (pend.interveningPlayerIndex !== null && pend.interveningPlayerIndex !== undefined && !isIntervenor) {
+    const intPlayer = gs.players[pend.interveningPlayerIndex];
+    const intName = pend.interveningPlayerName || (intPlayer && intPlayer.name) || "Another dealer";
+    const remSec =
+      typeof pend.interventionDeadlineAt === "number"
+        ? Math.max(0, Math.ceil(pend.interventionDeadlineAt - Date.now() / 1000))
+        : typeof pend.interventionRemainingSeconds === "number"
+          ? pend.interventionRemainingSeconds
+          : 60;
+    return el(
+      "div",
+      { className: "dice-post-roll-box", style: { borderColor: "#facc15", background: "rgba(161, 98, 7, 0.25)" } },
+      el("div", {
+        className: "intervention-countdown-text",
+        "data-deadline": pend.interventionDeadlineAt ? String(pend.interventionDeadlineAt) : "",
+        "data-intervenor": intName,
+        style: { fontSize: "0.84rem", fontWeight: "800", color: "#fef08a" },
+        text: `⏳ Awaiting approval from: ${intName} (${remSec}s remaining)`,
+      })
+    );
+  }
   if (!isEncounterOwner && !isIntervenor) return null;
 
   const encPlayer = gs.players[pend.playerIndex] || viewer;
@@ -737,6 +761,22 @@ function buildDiceOverlayInteractiveControls() {
         className: "btn btn-crimson",
         text: "🎲 Roll Driver Fate Die (1(R))",
         onClick: () => sendGameAction({ type: "resolve_encounter", decision: "roll_driver_fate" }),
+      })
+    );
+  }
+
+  if (stage === "theater_bonus_pre_roll") {
+    return el(
+      "div",
+      { className: "dice-post-roll-box", style: { borderColor: "#38bdf8", background: "rgba(14, 116, 144, 0.22)" } },
+      el("div", {
+        style: { fontSize: "0.84rem", fontWeight: "700", color: "#bae6fd" },
+        text: "🎭 Open Mic Roll III! Inspired performance — roll 1(R) to collect bonus Influence cards:",
+      }),
+      el("button", {
+        className: "btn btn-primary",
+        text: "🎲 Roll Bonus Influence Die (1(R))",
+        onClick: () => sendGameAction({ type: "resolve_encounter", decision: "roll_theater_bonus" }),
       })
     );
   }

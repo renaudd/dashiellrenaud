@@ -1006,10 +1006,17 @@ const appState = {
   _pendingActionCount: 0,
   lastFlashedCopsEncounterKey: null,
   _copsSirenFlashTimer: null,
+  _interventionCountdownTimer: null,
+  _lastExpiredInterventionDeadline: null,
+  boardFieldZoom: {
+    rome: 1,
+    market: 1,
+    climate: 1,
+  },
   collapsedSections: {
-    clockBoard: false,
-    merchantsInRome: false,
-    factionStandings: false,
+    clockBoard: true,
+    merchantsInRome: true,
+    factionStandings: true,
   },
 };
 
@@ -1687,55 +1694,58 @@ function renderFullGoodCardFaceNode(cardOrItem, trackName = "") {
 }
 
 function resolveFullJobCardFaceUrl(m) {
-  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=121";
+  if (!m) return "/assets/fp/cards/jobs/mis_1.jpg?v=125";
   if (m.source === "encounter" && m.encounterCard && !m.hasDrawnMissionCard) {
     return resolveFullEncounterCardFaceUrl(m.encounterCard);
   }
   const rawId = String(m.id || "").trim();
   const mJob = rawId.match(/^(mis_\d+)/i);
   if (mJob) {
-    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=121`;
+    return `/assets/fp/cards/jobs/${mJob[1].toLowerCase()}.jpg?v=125`;
   }
   const mEnc = rawId.match(/^enc_((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=121`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=125`;
   }
   const lowerName = String(m.name || "").trim().toLowerCase();
   if (JOBS_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=121`;
+    return `/assets/fp/cards/jobs/${JOBS_NAME_TO_ID[lowerName]}.jpg?v=125`;
   }
-  return "/assets/fp/cards/jobs/mis_1.jpg?v=121";
+  return "/assets/fp/cards/jobs/mis_1.jpg?v=125";
 }
 
 function resolveFullInfluenceCardFaceUrl(c) {
-  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=121";
+  if (!c) return "/assets/fp/cards/influence/inf_1.jpg?v=125";
   const rawId = String(c.id || "").trim();
   const mInf = rawId.match(/^(inf_\d+)/i);
   if (mInf) {
-    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=121`;
+    return `/assets/fp/cards/influence/${mInf[1].toLowerCase()}.jpg?v=125`;
   }
   const lowerName = String(c.name || "").trim().toLowerCase();
   if (INF_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=121`;
+    return `/assets/fp/cards/influence/${INF_NAME_TO_ID[lowerName]}.jpg?v=125`;
   }
-  return "/assets/fp/cards/influence/inf_1.jpg?v=121";
+  return "/assets/fp/cards/influence/inf_1.jpg?v=125";
 }
 
 function resolveFullEncounterCardFaceUrl(card, deckKey = "") {
-  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=121";
+  if (!card) return "/assets/fp/cards/encounters/pat_2.jpg?v=125";
   const rawId = String(card.id || "").trim();
   const mEnc = rawId.match(/^((?:pat|leg|nef)_\d+)/i);
   if (mEnc) {
-    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=121`;
+    return `/assets/fp/cards/encounters/${mEnc[1].toLowerCase()}.jpg?v=125`;
   }
   const lowerName = String(card.name || "").trim().toLowerCase();
-  if (ENC_NAME_TO_ID[lowerName]) {
-    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=121`;
-  }
   const dk = String(deckKey || card.deck || "").toLowerCase();
-  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=121";
-  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=121";
-  return "/assets/fp/cards/encounters/pat_2.jpg?v=121";
+  if (lowerName === "donald trump" && (dk === "criminals" || dk === "nefarious")) {
+    return "/assets/fp/cards/encounters/nef_32.jpg?v=125";
+  }
+  if (ENC_NAME_TO_ID[lowerName]) {
+    return `/assets/fp/cards/encounters/${ENC_NAME_TO_ID[lowerName]}.jpg?v=125`;
+  }
+  if (dk === "cops" || dk === "legionaries") return "/assets/fp/cards/encounters/leg_22.jpg?v=125";
+  if (dk === "criminals" || dk === "nefarious") return "/assets/fp/cards/encounters/nef_24.jpg?v=125";
+  return "/assets/fp/cards/encounters/pat_2.jpg?v=125";
 }
 
 const FACTION_FAVOR_INFLUENCE_SPECS = {
